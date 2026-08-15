@@ -1,0 +1,48 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "frame": "alyrioncore:block/airlock_frame",
+    "particle": "#frame"
+  },
+  "elements": [
+    {
+      "name": "left_jamb",
+      "from": [0, 0, 0],
+      "to": [16, 16, 2],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+        "west":  {"uv": [0, 0, 2, 16], "texture": "#frame"},
+        "east":  {"uv": [14, 0, 16, 16], "texture": "#frame"},
+        "up":    {"uv": [0, 0, 16, 2], "texture": "#frame"},
+        "down":  {"uv": [0, 0, 16, 2], "texture": "#frame"}
+      }
+    },
+    {
+      "name": "right_jamb",
+      "from": [0, 0, 14],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+        "west":  {"uv": [0, 0, 2, 16], "texture": "#frame"},
+        "east":  {"uv": [14, 0, 16, 16], "texture": "#frame"},
+        "up":    {"uv": [0, 0, 16, 2], "texture": "#frame"},
+        "down":  {"uv": [0, 0, 16, 2], "texture": "#frame"}
+      }
+    },
+    {
+      "name": "sill",
+      "from": [0, 0, 2],
+      "to": [16, 2, 14],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+        "south": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+        "west":  {"uv": [0, 0, 12, 2], "texture": "#frame"},
+        "east":  {"uv": [0, 0, 12, 2], "texture": "#frame"},
+        "up":    {"uv": [0, 0, 16, 12], "texture": "#frame"},
+        "down":  {"uv": [0, 0, 16, 12], "texture": "#frame"}
+      }
+    }
+  ]
+}

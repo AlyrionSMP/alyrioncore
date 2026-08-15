@@ -1,0 +1,61 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "panel": "alyrioncore:block/airlock_leaf_bottom",
+    "particle": "#panel"
+  },
+  "elements": [
+    {
+      "name": "leaf_bottom",
+      "from": [13, 2, 2],
+      "to": [16, 14, 14],
+      "faces": {
+        "north": {"uv": [2, 2, 14, 14], "texture": "#panel"},
+        "south": {"uv": [2, 2, 14, 14], "texture": "#panel"},
+        "west":  {"uv": [2, 2, 14, 14], "texture": "#panel"},
+        "east":  {"uv": [2, 2, 14, 14], "texture": "#panel"},
+        "up":    {"uv": [2, 2, 14, 5], "texture": "#panel"},
+        "down":  {"uv": [2, 2, 14, 5], "texture": "#panel"}
+      }
+    },
+    {
+      "name": "locking_bar_upper",
+      "from": [14.5, 9.5, 3.5],
+      "to": [16.4, 10.5, 12.5],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#panel"}
+      }
+    },
+    {
+      "name": "locking_bar_lower",
+      "from": [14.5, 7, 3.5],
+      "to": [16.4, 8, 12.5],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#panel"}
+      }
+    },
+    {
+      "name": "handle",
+      "from": [14.5, 4.5, 7],
+      "to": [16.6, 6.5, 9],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#panel"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#panel"}
+      }
+    }
+  ]
+}

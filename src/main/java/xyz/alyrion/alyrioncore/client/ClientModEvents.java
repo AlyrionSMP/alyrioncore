@@ -10,10 +10,13 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.client.renderer.AirlockBlockEntityRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.AlyrionCapeLayer;
+import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -40,6 +43,20 @@ public class ClientModEvents {
                 playerRenderer.addLayer(new AlyrionCapeLayer(playerRenderer));
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(ModBlockEntities.AIRLOCK.get(), AirlockBlockEntityRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
+        event.register(AirlockBlockEntityRenderer.LEAF_BOTTOM);
+        event.register(AirlockBlockEntityRenderer.LEAF_TOP);
+        event.register(AirlockBlockEntityRenderer.WINDOW);
+        event.register(AirlockBlockEntityRenderer.LED_GREEN);
+        event.register(AirlockBlockEntityRenderer.LED_RED);
     }
 }
 

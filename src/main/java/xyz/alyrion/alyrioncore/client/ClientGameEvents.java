@@ -6,13 +6,14 @@ import net.minecraft.client.gui.screens.Screen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 
 import xyz.alyrion.alyrioncore.client.gui.CosmeticStoreScreen;
-import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
+import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
 
 @EventBusSubscriber(modid = AlyrionCore.MODID, value = Dist.CLIENT)
 public class ClientGameEvents {
@@ -21,8 +22,6 @@ public class ClientGameEvents {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            CosmeticsManager.get().onClientTick(mc);
-
             if (mc.screen == null) {
                 while (ModKeyMappings.ESCAPE_KEY.consumeClick()) {
                     boolean pauseOnF3 = InputConstants.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_F3);
@@ -34,6 +33,13 @@ public class ClientGameEvents {
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        // Progress is server-side per-world: wipe the client mirror + cape cache
+        // so nothing leaks across servers or worlds.
+        CosmeticNetworking.clearClientData();
     }
 
     @SubscribeEvent

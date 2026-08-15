@@ -236,23 +236,68 @@ def make_airlock_models_and_blockstates():
     ensure_dir(models_item)
     ensure_dir(blockstates)
 
-    # Door model templates using vanilla door shapes
-    for name, top_bottom in [
-        ("airlock_bottom", "bottom"),
-        ("airlock_bottom_hinge", "bottom"),
-        ("airlock_top", "top"),
-        ("airlock_top_hinge", "top")
-    ]:
-        model_data = {
-            "parent": f"minecraft:block/door_{top_bottom}",
-            "textures": {
-                "bottom": "alyrioncore:block/airlock_bottom",
-                "top": "alyrioncore:block/airlock_top"
+    # Airlock uses a static bulkhead frame model (the animated hatch leaf is a
+    # BlockEntityRenderer), so the blockstate only needs facing + half variants.
+    frame_bottom = {
+        "ambientocclusion": False,
+        "textures": {
+            "frame": "alyrioncore:block/airlock_frame",
+            "particle": "#frame"
+        },
+        "elements": [
+            {
+                "name": "left_jamb",
+                "from": [0, 0, 0], "to": [16, 16, 2],
+                "faces": {
+                    "north": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+                    "south": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+                    "west": {"uv": [0, 0, 2, 16], "texture": "#frame"},
+                    "east": {"uv": [14, 0, 16, 16], "texture": "#frame"},
+                    "up": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+                    "down": {"uv": [0, 0, 16, 2], "texture": "#frame"}
+                }
+            },
+            {
+                "name": "right_jamb",
+                "from": [0, 0, 14], "to": [16, 16, 16],
+                "faces": {
+                    "north": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+                    "south": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+                    "west": {"uv": [0, 0, 2, 16], "texture": "#frame"},
+                    "east": {"uv": [14, 0, 16, 16], "texture": "#frame"},
+                    "up": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+                    "down": {"uv": [0, 0, 16, 2], "texture": "#frame"}
+                }
+            },
+            {
+                "name": "sill",
+                "from": [0, 0, 2], "to": [16, 2, 14],
+                "faces": {
+                    "north": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+                    "south": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+                    "west": {"uv": [0, 0, 12, 2], "texture": "#frame"},
+                    "east": {"uv": [0, 0, 12, 2], "texture": "#frame"},
+                    "up": {"uv": [0, 0, 16, 12], "texture": "#frame"},
+                    "down": {"uv": [0, 0, 16, 12], "texture": "#frame"}
+                }
             }
+        ]
+    }
+    frame_top = json.loads(json.dumps(frame_bottom))
+    frame_top["elements"] = frame_bottom["elements"][:2] + [{
+        "name": "header",
+        "from": [0, 14, 2], "to": [16, 16, 14],
+        "faces": {
+            "north": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+            "south": {"uv": [0, 0, 16, 2], "texture": "#frame"},
+            "west": {"uv": [0, 0, 12, 2], "texture": "#frame"},
+            "east": {"uv": [0, 0, 12, 2], "texture": "#frame"},
+            "up": {"uv": [0, 0, 16, 12], "texture": "#frame"},
+            "down": {"uv": [0, 0, 16, 12], "texture": "#frame"}
         }
-        if "hinge" in name:
-            model_data["parent"] = f"minecraft:block/door_{top_bottom}_rh"
-        write_json(os.path.join(models_block, f"{name}.json"), model_data)
+    }]
+    write_json(os.path.join(models_block, "airlock_frame_bottom.json"), frame_bottom)
+    write_json(os.path.join(models_block, "airlock_frame_top.json"), frame_top)
 
     # Item model
     write_json(os.path.join(models_item, "airlock.json"), {
@@ -262,27 +307,15 @@ def make_airlock_models_and_blockstates():
         }
     })
 
-    # Blockstate
-    # Standard Minecraft door blockstate rotations
+    # Blockstate: static frame, facing + half only (hinge/open handled by renderer)
     variants = {}
     for facing, y_rot in [("east", 0), ("south", 90), ("west", 180), ("north", 270)]:
-        for half in ["lower", "upper"]:
-            h_suffix = "bottom" if half == "lower" else "top"
-            for hinge in ["left", "right"]:
-                hinge_suffix = "_hinge" if hinge == "right" else ""
-                for open_state in ["false", "true"]:
-                    key = f"facing={facing},half={half},hinge={hinge},open={open_state}"
-                    if open_state == "false":
-                        variants[key] = {
-                            "model": f"alyrioncore:block/airlock_{h_suffix}{hinge_suffix}",
-                            "y": y_rot
-                        }
-                    else:
-                        open_y = (y_rot + (90 if hinge == "left" else 270)) % 360
-                        variants[key] = {
-                            "model": f"alyrioncore:block/airlock_{h_suffix}{'_hinge' if hinge == 'left' else ''}",
-                            "y": open_y
-                        }
+        variants[f"facing={facing},half=lower"] = {
+            "model": "alyrioncore:block/airlock_frame_bottom", "y": y_rot
+        }
+        variants[f"facing={facing},half=upper"] = {
+            "model": "alyrioncore:block/airlock_frame_top", "y": y_rot
+        }
     write_json(os.path.join(blockstates, "airlock.json"), {"variants": variants})
 
 def make_farmland_models_and_blockstates():

@@ -73,7 +73,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | Feature | Description | Implementation Details |
 |---|---|---|
 | **Cosmetic Store & Wardrobe** | Built-in GUI for browsing, purchasing, and equipping custom 3D capes. | Accessible via `/store`, `/cosmetics`, or `K` keybind |
-| **Survival Playtime Economy** | Earn 1 Coin for every 1 hour (3600s) spent in survival/adventure mode. | Persistent client-side data tracker with live progress bar |
+| **Survival Playtime Economy** | Earn 1 Coin for every 1 hour (3600s) spent in survival/adventure mode. | Server-authoritative tracker persisted in the world save with live progress bar |
 | **5 Hand-Crafted Capes** | Custom 64x32 cape textures celebrating server milestones, spaceflight, and Mars. | Dedicated `AlyrionCapeLayer` with real-time motion physics |
 | **Milestone Tasks** | Unlock coins and exclusive capes by reaching Space, the Moon, Mars, or claiming the Dragon Egg. | Real-time event & player state evaluation |
 | **Multiplayer Cape Sync** | Network synchronization packets broadcast equipped capes to all nearby players. | Custom C2S / S2C payload network pipeline |
@@ -87,6 +87,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Dust Devils** | Towering conical dust columns spawn near players during midday or storm activity. | Server-tracked `DustDevilInstance`s rendered with swirling particle vortices |
 | **Storm-Aware Atmosphere** | Fog ramps into a dense ochre dust blackout and blue sunsets are suppressed during severe storms. | `MarsClientWeatherHandler` fog/color events + `MarsDimensionEffects` intensity blending |
 | **Pressurized Habitats** | Build airtight habitats and greenhouses that provide breathable air on the vacuum surface. | `HabitatSealManager` flood-fill seal detection with pressurized-room breathing events |
+| **Animated Pressurized Airlock** | Two-block airtight door with a swinging armored hatch, viewport window and status LED. | `AirlockBlockEntity` + `AirlockBlockEntityRenderer` with smoothstep pneumatic swing |
 | **Mars Sleeping Pod** | Two-block tech bed that lets players sleep on Mars — even through raging dust storms. | Custom `SleepingPodBlock` with NeoForge bed hooks & dimension-aware sleep logic |
 | **Greenhouse Farming** | Till Martian regolith into farmland and grow Martian Potatoes — but only inside sealed, lit greenhouses. | `RegolithFarmlandBlock`, `MartianPotatoCropBlock` + `HabitatSealManager` integration |
 | **Meteoric Iron Tier** | Full tool & weapon set (sword, pickaxe, axe, shovel, hoe) forged from meteoric nickel-iron. | `ModToolTiers.METEORIC_IRON` — diamond harvest level, 650 durability |
@@ -101,13 +102,13 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 
 ## 🎨 Cosmetic Store & Reward Progression System
 
-AlyrionCore features an integrated cosmetic wardrobe and progression reward economy built directly into the client and server.
+AlyrionCore features an integrated cosmetic wardrobe and progression reward economy. The **server is fully authoritative**: coins, cape unlocks, playtime and task progress are stored per-server inside the world save (keyed by player UUID) and only ever mutated by the server. The client renders a synchronized mirror of the state the server sends it.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                     ✦ ALYRION COSMETIC STORE & REWARDS ✦            Coins: ⛃ 15 │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│ [ Store & Wardrobe ]       [ Tasks & Playtime ]       [ Dev Controls ]          │
+│ [ Store & Wardrobe ]       [ Tasks & Playtime ]                                 │
 ├────────────────────────────────────────┬────────────────────────────────────────┤
 │ ┌────────────────────────────────────┐ │ ┌────────────────────────────────────┐ │
 │ │ 2 Year Celebration Cape   [★ FREE] │ │ │      The Martian Cape              │ │
@@ -125,9 +126,9 @@ AlyrionCore features an integrated cosmetic wardrobe and progression reward econ
 
 ### In-Game Store GUI & Economy
 - **Access**: Open via chat commands (`/store` or `/cosmetics`) or the dedicated hotkey (default: **`K`**).
-- **Playtime Currency**: Players earn **1 Coin** for every **1 hour (3600 seconds)** spent actively in Survival or Adventure mode (creative and spectator modes do not accumulate playtime).
-- **Progress Tracking**: The "Tasks & Playtime" tab displays total survival playtime down to the second, alongside a live progress bar tracking time toward the next coin reward.
-- **Persistent Storage**: Progression and unlocked cosmetics are saved locally in `config/alyrion_cosmetics.json` and synchronized with active server sessions.
+- **Playtime Currency**: Players earn **1 Coin** for every **1 hour (3600 seconds)** spent actively in Survival or Adventure mode (creative and spectator modes do not accumulate playtime). Playtime is counted by the **server**, so it works identically for every client and cannot be spoofed.
+- **Progress Tracking**: The "Tasks & Playtime" tab displays total survival playtime down to the second, alongside a live progress bar tracking time toward the next coin reward. The GUI live-refreshes whenever the server syncs new state.
+- **Server-Side Persistent Storage**: All progression (coins, unlocked capes, equipped cape, playtime, completed tasks) is owned by the server and persisted per-world in the `alyrion_cosmetics` saved data (inside the world folder, `data/alyrion_cosmetics.dat`). Each server/world has its **own independent** progression for every player UUID — nothing is stored in `config/` anymore. The client only holds a transient mirror that is re-synced on every login and wiped on logout.
 
 ---
 
@@ -187,20 +188,28 @@ AlyrionCore implements `AlyrionCapeLayer.java`, a custom player render layer att
 
 ### Real-Time Multiplayer Synchronization
 
-Capes are fully synchronized across multiplayer servers using NeoForge custom payload networking (`CosmeticNetworking.java`):
+All cosmetics state is synchronized using NeoForge custom payload networking (`CosmeticNetworking.java`). The client never decides anything — it requests, the server validates and persists, then the server broadcasts the result:
 
-- **Client-to-Server (`c2s_equip_cape`)**: When a player equips or unequips a cape, the client notifies the server.
-- **Server-to-Client (`s2c_sync_cape`)**: The server broadcasts the equipped cape ID to all clients tracking that entity.
-- **Graceful Fallback**: Functions offline and in singleplayer environments without requiring a dedicated server daemon.
+- **Client-to-Server (`c2s_equip_cape`)**: The client requests to equip/unequip a cape. The server validates that the cape is actually unlocked for that player before applying it.
+- **Client-to-Server (`c2s_purchase_cape`)**: The client requests a purchase. The server checks the player's coin balance, deducts coins, unlocks the cape and equips it — all against the world's saved data.
+- **Client-to-Server (`c2s_request_cosmetics`)**: Fallback sync request, used when the store is opened before the login sync arrives.
+- **Server-to-Client (`s2c_sync_cosmetics`)**: The full authoritative state for a player (coins, playtime, unlocked capes, equipped cape, completed tasks) — pushed on login and after every state change.
+- **Server-to-Client (`s2c_sync_cape`)**: The server broadcasts a player's equipped cape ID to all clients tracking that entity, so everyone sees the correct capes.
+- **Server-to-Client (`s2c_play_sound`)**: Reward sounds are triggered by the server (e.g. a coin earned or a task completed) and played locally.
+- **Server Tick Driver**: Playtime accumulation and milestone task detection run on the server tick (`ServerCosmeticsEvents`), so progression is identical for every client and persists in the world save.
 
 ---
 
-### Developer & Testing Controls
+### Developer & Admin Controls
 
-When `CosmeticConfig.DEV_MODE = true`, an additional **Dev Controls** tab is rendered in the Cosmetic Store screen:
-- **Instant Task Triggers**: One-click completion buttons for Space, Moon, Mars, and Dragon Egg tasks.
-- **Economy Acceleration**: Instant `+1 Hour Playtime (+1 Coin)` and `+10 Coins` testing buttons.
-- **State Reset Tools**: `Reset All Tasks Progress` and `Reset All Cosmetic Unlocks`.
+Dev/test overrides are **ops-only server commands** (replacing the old client-side Dev Controls tab, which could edit progress on any world or server from the client):
+
+- `/alyrioncosmetics coins` — anyone can view their own coins, playtime and cape count.
+- `/alyrioncosmetics addcoins <player> <amount>` — grant coins (op level 2).
+- `/alyrioncosmetics addplaytime <player> <seconds>` — add survival playtime, awarding any coins earned along the way (op level 2).
+- `/alyrioncosmetics completetask <player> <task>` — instantly complete a task (`task_space`, `task_moon`, `task_mars`, `task_dragon_egg`) (op level 2).
+- `/alyrioncosmetics resettasks <player>` — reset a player's task progression (op level 2).
+- `/alyrioncosmetics resetcosmetics <player>` — reset a player's cosmetic unlocks (op level 2).
 
 ---
 
@@ -318,7 +327,13 @@ Any solid-render / full-collision block seals, plus:
 - Outside a seal — on the open surface — normal vacuum suffocation rules from the dimension/atmosphere apply.
 
 ### The Pressurized Airlock (`airlock`)
-- A **two-block-tall airtight door** (`AirlockBlock`, extends `DoorBlock`) that seals habitats while closed.
+
+A **two-block-tall airtight door** (`AirlockBlock`, extends `DoorBlock`) that seals habitats while closed, featuring a fully animated hatch:
+
+- **Static bulkhead frame**: The doorway is framed by a fixed titanium bulkhead model (jambs + sill/header) with hazard-stripe markings — the blockstate only carries `facing` and `half` variants, while the door leaf is drawn at runtime.
+- **Animated hatch leaf**: The heavy armored door leaf is rendered by `AirlockBlockEntityRenderer` (block entity registered in `ModBlockEntities.AIRLOCK`). It swings up to **100° around its hinge** with smoothstep pneumatic easing, and the upper half carries a **translucent viewport window**.
+- **Status LED**: A status LED on the header — **green when sealed** (closed), **red when venting** (open), and **blinking while the hatch is mid-swing**.
+- **Collision & sealing**: While closed the airlock is a full solid block (sealing the habitat); while open it is fully walkable.
 - Right-clicking cycles open/closed with a **pneumatic hiss** (iron-door sounds at different pitches); opening an airlock breaks the seal, closing it restores it.
 - Tagged `#minecraft:doors` and `#minecraft:mineable/pickaxe`; beacon base-compatible.
 
@@ -337,6 +352,7 @@ The **Mars Sleeping Pod** (`sleeping_pod`) is a two-block technological bed that
 - **Respawn anchoring**: sleeping in a pod sets your respawn point in the current dimension; safe stand-up position is computed like a bed.
 - **Occupancy handling**: occupied pods refuse entry ("This sleeping pod is occupied") and both halves share occupancy state.
 - A **vanilla bed inside a sealed habitat** receives the same treatment via `CanPlayerSleepEvent` / `CanContinueSleepingEvent` overrides.
+- **Night-skip fix for custom dimensions**: Custom dimensions share the Overworld's time-of-day clock through `DerivedLevelData`, whose `setDayTime`/`setGameTime` are intentional no-ops (Mojang MC-190731: *"Sleep doesn't advance to day in custom dimensions"*) — vanilla sleep would wake players but never advance the night. On `SleepFinishedTimeEvent`, the mod now applies the computed morning time to the Overworld clock, which the Mars level reads back, so sleeping on Mars actually skips the night.
 
 ---
 
@@ -748,7 +764,8 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 - `generate_capes.py`: Regenerates all 64x32 custom capes with anti-aliased pixel art.
 - `generate_new_textures.py`: Generates the Meteoric Iron equipment tier, resource-block textures and the Martian Potato / Baked Martian Potato item art.
 - `generate_sleeping_pod_assets.py`: Generates the two-block Sleeping Pod blockstates, multi-part models and interior/casing/glass textures.
-- `generate_habitat_greenhouse_assets.py`: Generates Airlock and Regolith Farmland / crop-stage blockstates, models and textures.
+- `generate_habitat_greenhouse_assets.py`: Generates the Airlock bulkhead frame models + blockstate (the animated hatch is rendered at runtime) and the Regolith Farmland / crop-stage blockstates, models and textures.
+- `generate_airlock_assets.py`: Generates the Airlock textures — titanium bulkhead frame, armored hatch leaf, viewport window, status LEDs (green/red) and the item icon.
 - `generate_martian_moons.py`: Generates Phobos & Deimos `universe_planets` JSON and celestial sphere textures (AlyrionCore + Rocketnautics datapacks).
 - `generate_probe_structures.py`: Generates the crashed Soviet/US probe NBT structures, jigsaw pools, structure/structure-set configs and chest loot.
 - `generate_recipes_and_loot.py`: Generates the full recipe catalog and block/chest loot tables.

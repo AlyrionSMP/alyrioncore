@@ -5,9 +5,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import xyz.alyrion.alyrioncore.cosmetics.CapeDefinition;
-import xyz.alyrion.alyrioncore.cosmetics.CosmeticConfig;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
 import xyz.alyrion.alyrioncore.cosmetics.TaskDefinition;
 
@@ -15,13 +13,13 @@ public class CosmeticStoreScreen extends Screen {
 
     public enum Tab {
         STORE,
-        TASKS,
-        DEV
+        TASKS
     }
 
     private Tab currentTab = Tab.STORE;
     private CapeDefinition selectedCape = CapeDefinition.TWO_YEAR_CELEBRATION;
     private int scrollOffset = 0;
+    private int lastRevision = -1;
 
     public CosmeticStoreScreen() {
         super(Component.literal("Alyrion Cosmetic Store"));
@@ -30,9 +28,8 @@ public class CosmeticStoreScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        if (this.minecraft != null && this.minecraft.player != null) {
-            CosmeticsManager.get().checkTasks(this.minecraft.player);
-        }
+        // All progression is server-side; make sure we have the latest state from the server
+        CosmeticsManager.get().ensureSynced();
         rebuildWidgets();
     }
 
@@ -44,7 +41,7 @@ public class CosmeticStoreScreen extends Screen {
         int topY = 30;
         int tabWidth = 95;
         int tabHeight = 20;
-        int tabStartX = (this.width - (CosmeticConfig.DEV_MODE ? (tabWidth * 3 + 8) : (tabWidth * 2 + 4))) / 2;
+        int tabStartX = (this.width - (tabWidth * 2 + 4)) / 2;
 
         // Tab Buttons
         this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.STORE ? "§6§lStore & Wardrobe" : "Store & Wardrobe"), btn -> {
@@ -59,21 +56,12 @@ public class CosmeticStoreScreen extends Screen {
             rebuildWidgets();
         }).bounds(tabStartX + tabWidth + 4, topY, tabWidth, tabHeight).build());
 
-        if (CosmeticConfig.DEV_MODE) {
-            this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.DEV ? "§d§lDev Controls" : "Dev Controls"), btn -> {
-                currentTab = Tab.DEV;
-                rebuildWidgets();
-            }).bounds(tabStartX + (tabWidth + 4) * 2, topY, tabWidth, tabHeight).build());
-        }
-
         int contentY = 56;
 
         if (currentTab == Tab.STORE) {
             initStoreWidgets(manager, contentY);
         } else if (currentTab == Tab.TASKS) {
             initTasksWidgets(manager, contentY);
-        } else if (currentTab == Tab.DEV && CosmeticConfig.DEV_MODE) {
-            initDevWidgets(manager, contentY);
         }
 
         // Bottom Close Button
@@ -182,57 +170,6 @@ public class CosmeticStoreScreen extends Screen {
     private void initTasksWidgets(CosmeticsManager manager, int contentY) {
     }
 
-    private void initDevWidgets(CosmeticsManager manager, int contentY) {
-        int centerX = this.width / 2;
-        int btnWidth = 170;
-        int btnHeight = 20;
-
-        int col1X = centerX - btnWidth - 10;
-        int y = contentY + 14;
-
-        this.addRenderableWidget(Button.builder(Component.literal("§a✔ Complete: Space Task"), btn -> {
-            manager.completeTask(TaskDefinition.GOING_TO_SPACE, true);
-            rebuildWidgets();
-        }).bounds(col1X, y, btnWidth, btnHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("§a✔ Complete: Moon Task"), btn -> {
-            manager.completeTask(TaskDefinition.GOING_TO_MOON, true);
-            rebuildWidgets();
-        }).bounds(col1X, y + 25, btnWidth, btnHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("§a✔ Complete: Mars Task"), btn -> {
-            manager.completeTask(TaskDefinition.GOING_TO_MARS, true);
-            rebuildWidgets();
-        }).bounds(col1X, y + 50, btnWidth, btnHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("§a✔ Complete: Dragon Egg"), btn -> {
-            manager.completeTask(TaskDefinition.OBTAINING_DRAGON_EGG, true);
-            rebuildWidgets();
-        }).bounds(col1X, y + 75, btnWidth, btnHeight).build());
-
-        int col2X = centerX + 10;
-
-        this.addRenderableWidget(Button.builder(Component.literal("§e+1 Hour Playtime (+1 Coin)"), btn -> {
-            manager.devAddPlaytime(3600);
-            rebuildWidgets();
-        }).bounds(col2X, y, btnWidth, btnHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("§6+10 Coins"), btn -> {
-            manager.devAddCoins(10);
-            rebuildWidgets();
-        }).bounds(col2X, y + 25, btnWidth, btnHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("§cReset All Tasks Progress"), btn -> {
-            manager.devResetAllTasks();
-            rebuildWidgets();
-        }).bounds(col2X, y + 50, btnWidth, btnHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("§4Reset All Cosmetic Unlocks"), btn -> {
-            manager.devResetCosmetics();
-            rebuildWidgets();
-        }).bounds(col2X, y + 75, btnWidth, btnHeight).build());
-    }
-
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (currentTab == Tab.STORE || currentTab == Tab.TASKS) {
@@ -247,10 +184,17 @@ public class CosmeticStoreScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        CosmeticsManager manager = CosmeticsManager.get();
+
+        // Live-refresh the widgets whenever the server syncs new state (coins,
+        // unlocks, task completions) while the store is open.
+        if (manager.getRevision() != lastRevision) {
+            lastRevision = manager.getRevision();
+            rebuildWidgets();
+        }
+
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        CosmeticsManager manager = CosmeticsManager.get();
 
         // Top Header
         guiGraphics.fill(0, 0, this.width, 26, 0xDD0C0F17);
@@ -271,8 +215,6 @@ public class CosmeticStoreScreen extends Screen {
             renderStoreTab(guiGraphics, manager, contentY);
         } else if (currentTab == Tab.TASKS) {
             renderTasksTab(guiGraphics, manager, contentY);
-        } else if (currentTab == Tab.DEV && CosmeticConfig.DEV_MODE) {
-            renderDevTab(guiGraphics, manager, contentY);
         }
     }
 
@@ -416,7 +358,7 @@ public class CosmeticStoreScreen extends Screen {
             int ty = taskListY + i * (taskCardH + 4);
             if (ty + taskCardH > this.height - 26) break;
 
-            boolean completed = manager.getData().isTaskCompleted(task.getId());
+            boolean completed = manager.isTaskCompleted(task.getId());
 
             guiGraphics.fill(cardX, ty, cardX + cardW, ty + taskCardH, completed ? 0xCC0F291E : 0xCC1F2937);
             guiGraphics.renderOutline(cardX, ty, cardW, taskCardH, completed ? 0xFF10B981 : 0xFF4B5563);
@@ -432,17 +374,5 @@ public class CosmeticStoreScreen extends Screen {
             int sWidth = this.font.width(statusBadge);
             guiGraphics.drawString(this.font, statusBadge, cardX + cardW - sWidth - 8, ty + 16, 0xFFFFFF, false);
         }
-    }
-
-    private void renderDevTab(GuiGraphics guiGraphics, CosmeticsManager manager, int contentY) {
-        int cardX = 20;
-        int cardW = this.width - 40;
-        int cardH = this.height - contentY - 30;
-
-        guiGraphics.fill(cardX, contentY, cardX + cardW, contentY + cardH, 0xCC2A1B38);
-        guiGraphics.renderOutline(cardX, contentY, cardW, cardH, 0xFFC084FC);
-
-        guiGraphics.drawCenteredString(this.font, "§d§l🛠 DEV MODE ACTIVE: INSTANT TASK & ECONOMY TESTING 🛠", this.width / 2, contentY + 8, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, "§7Use these controls to complete any task on any world or server, add coins/time, or reset.", this.width / 2, contentY + 22, 0xCCCCCC);
     }
 }

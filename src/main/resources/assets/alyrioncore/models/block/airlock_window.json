@@ -1,0 +1,22 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "glass": "alyrioncore:block/airlock_window",
+    "particle": "#glass"
+  },
+  "elements": [
+    {
+      "name": "viewport_glass",
+      "from": [15.6, 6.5, 4.5],
+      "to": [16.1, 9.5, 11.5],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#glass"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#glass"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#glass"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#glass"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#glass"}
+      }
+    }
+  ]
+}

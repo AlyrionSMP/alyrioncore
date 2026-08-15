@@ -24,6 +24,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
@@ -206,6 +207,23 @@ public class CommonGameEvents {
                         event.setContinueSleeping(true);
                     }
                 }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSleepFinished(SleepFinishedTimeEvent event) {
+        // Custom dimensions such as Mars share the Overworld's time-of-day clock through
+        // DerivedLevelData, whose setDayTime/setGameTime are intentional no-ops (Mojang MC-190731:
+        // "Sleep doesn't advance to day in custom dimensions"). The vanilla skip-to-morning in
+        // ServerLevel.tick therefore never advances the clock for them: it wakes the players but
+        // leaves the night running. Apply the computed morning time to the Overworld clock, which
+        // the Mars level reads back, so the night is actually skipped.
+        if (event.getLevel() instanceof ServerLevel level
+                && level.dimension().equals(ModDimensions.MARS_LEVEL)) {
+            ServerLevel overworld = level.getServer().getLevel(Level.OVERWORLD);
+            if (overworld != null) {
+                overworld.setDayTime(event.getNewTime());
             }
         }
     }
