@@ -19,15 +19,21 @@ import java.util.Set;
 public class PlayerCosmeticsData {
     private static final String KEY_COINS = "Coins";
     private static final String KEY_PLAYTIME = "PlaytimeSeconds";
+    private static final String KEY_PVP_KILLS = "PvpKills";
     private static final String KEY_UNLOCKED_CAPES = "UnlockedCapes";
     private static final String KEY_EQUIPPED_CAPE = "EquippedCape";
     private static final String KEY_COMPLETED_TASKS = "CompletedTasks";
+    private static final String KEY_UNLOCKED_PETS = "UnlockedPets";
+    private static final String KEY_EQUIPPED_PET = "EquippedPet";
 
     private int coins = 0;
     private long survivalPlaytimeSeconds = 0;
+    private int pvpKills = 0;
     private Set<String> unlockedCapes = new HashSet<>();
     private String equippedCapeId = null;
     private Set<String> completedTasks = new HashSet<>();
+    private Set<String> unlockedPets = new HashSet<>();
+    private String equippedPetId = null;
 
     public PlayerCosmeticsData() {
         sanitize();
@@ -36,6 +42,14 @@ public class PlayerCosmeticsData {
     public void sanitize() {
         if (unlockedCapes == null) unlockedCapes = new HashSet<>();
         if (completedTasks == null) completedTasks = new HashSet<>();
+        if (unlockedPets == null) unlockedPets = new HashSet<>();
+
+        // Ensure default free pets are always unlocked
+        for (PetDefinition pet : PetDefinition.values()) {
+            if (pet.isUnlockedByDefault()) {
+                unlockedPets.add(pet.getId());
+            }
+        }
 
         // Ensure default free capes are always unlocked
         unlockedCapes.add(CapeDefinition.TWO_YEAR_CELEBRATION.getId());
@@ -51,16 +65,25 @@ public class PlayerCosmeticsData {
         if (completedTasks.contains(TaskDefinition.GOING_TO_MARS.getId())) {
             unlockedCapes.add(CapeDefinition.MARSIAN.getId());
         }
+        if (completedTasks.contains(TaskDefinition.SLAYING_PLAYERS.getId())) {
+            unlockedCapes.add(CapeDefinition.GRIM.getId());
+        }
 
         // Never leave an equipped cape that isn't unlocked
         if (equippedCapeId != null && !isCapeUnlocked(equippedCapeId)) {
             equippedCapeId = null;
+        }
+
+        // Never leave an equipped pet that isn't unlocked
+        if (equippedPetId != null && !isPetUnlocked(equippedPetId)) {
+            equippedPetId = null;
         }
     }
 
     public CompoundTag save(CompoundTag tag) {
         tag.putInt(KEY_COINS, coins);
         tag.putLong(KEY_PLAYTIME, survivalPlaytimeSeconds);
+        tag.putInt(KEY_PVP_KILLS, pvpKills);
 
         ListTag capes = new ListTag();
         for (String id : unlockedCapes) {
@@ -77,6 +100,16 @@ public class PlayerCosmeticsData {
             tasks.add(StringTag.valueOf(id));
         }
         tag.put(KEY_COMPLETED_TASKS, tasks);
+
+        ListTag pets = new ListTag();
+        for (String id : unlockedPets) {
+            pets.add(StringTag.valueOf(id));
+        }
+        tag.put(KEY_UNLOCKED_PETS, pets);
+
+        if (equippedPetId != null && !equippedPetId.isEmpty()) {
+            tag.putString(KEY_EQUIPPED_PET, equippedPetId);
+        }
         return tag;
     }
 
@@ -84,6 +117,7 @@ public class PlayerCosmeticsData {
         PlayerCosmeticsData data = new PlayerCosmeticsData();
         data.coins = Math.max(0, tag.getInt(KEY_COINS));
         data.survivalPlaytimeSeconds = Math.max(0, tag.getLong(KEY_PLAYTIME));
+        data.pvpKills = Math.max(0, tag.getInt(KEY_PVP_KILLS));
 
         ListTag capes = tag.getList(KEY_UNLOCKED_CAPES, Tag.TAG_STRING);
         for (int i = 0; i < capes.size(); i++) {
@@ -97,6 +131,15 @@ public class PlayerCosmeticsData {
         ListTag tasks = tag.getList(KEY_COMPLETED_TASKS, Tag.TAG_STRING);
         for (int i = 0; i < tasks.size(); i++) {
             data.completedTasks.add(tasks.getString(i));
+        }
+
+        ListTag pets = tag.getList(KEY_UNLOCKED_PETS, Tag.TAG_STRING);
+        for (int i = 0; i < pets.size(); i++) {
+            data.unlockedPets.add(pets.getString(i));
+        }
+
+        if (tag.contains(KEY_EQUIPPED_PET, Tag.TAG_STRING)) {
+            data.equippedPetId = tag.getString(KEY_EQUIPPED_PET);
         }
 
         data.sanitize();
@@ -131,6 +174,20 @@ public class PlayerCosmeticsData {
         this.survivalPlaytimeSeconds++;
     }
 
+    // --- Player Kills ---
+
+    public int getPvpKills() {
+        return pvpKills;
+    }
+
+    public void setPvpKills(int pvpKills) {
+        this.pvpKills = Math.max(0, pvpKills);
+    }
+
+    public void incrementPvpKills() {
+        this.pvpKills++;
+    }
+
     // --- Capes ---
 
     public Set<String> getUnlockedCapes() {
@@ -153,6 +210,11 @@ public class PlayerCosmeticsData {
             return true;
         }
         if (capeId.equalsIgnoreCase(CapeDefinition.STARS.getId()) && isTaskCompleted(TaskDefinition.GOING_TO_SPACE.getId())) {
+            return true;
+        }
+
+        // Check if unlocked via task
+        if (capeId.equalsIgnoreCase(CapeDefinition.GRIM.getId()) && isTaskCompleted(TaskDefinition.SLAYING_PLAYERS.getId())) {
             return true;
         }
 
@@ -196,12 +258,51 @@ public class PlayerCosmeticsData {
         sanitize();
     }
 
+    // --- Pets ---
+
+    public Set<String> getUnlockedPets() {
+        if (unlockedPets == null) unlockedPets = new HashSet<>();
+        return unlockedPets;
+    }
+
+    public boolean isPetUnlocked(String petId) {
+        if (petId == null) return false;
+        PetDefinition def = PetDefinition.fromId(petId);
+        if (def != null && def.isUnlockedByDefault()) return true;
+
+        return getUnlockedPets().contains(petId);
+    }
+
+    public void unlockPet(String petId) {
+        if (petId != null) {
+            getUnlockedPets().add(petId);
+        }
+    }
+
+    public String getEquippedPetId() {
+        return equippedPetId;
+    }
+
+    public void setEquippedPetId(String equippedPetId) {
+        this.equippedPetId = (equippedPetId != null && !equippedPetId.isEmpty()) ? equippedPetId : null;
+    }
+
     public void resetCosmetics() {
         getUnlockedCapes().clear();
         unlockedCapes.add(CapeDefinition.TWO_YEAR_CELEBRATION.getId());
         unlockedCapes.add(CapeDefinition.SEASON_8.getId());
+        setPvpKills(0);
         if (equippedCapeId != null && !isCapeUnlocked(equippedCapeId)) {
             equippedCapeId = null;
+        }
+        getUnlockedPets().clear();
+        for (PetDefinition pet : PetDefinition.values()) {
+            if (pet.isUnlockedByDefault()) {
+                getUnlockedPets().add(pet.getId());
+            }
+        }
+        if (equippedPetId != null && !isPetUnlocked(equippedPetId)) {
+            equippedPetId = null;
         }
         sanitize();
     }

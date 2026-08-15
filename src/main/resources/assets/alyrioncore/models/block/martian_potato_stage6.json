@@ -2,5 +2,6 @@
   "parent": "minecraft:block/crop",
   "textures": {
     "crop": "alyrioncore:block/martian_potato_stage6"
-  }
+  },
+  "render_type": "minecraft:cutout"
 }

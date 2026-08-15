@@ -40,7 +40,11 @@ public class ServerCosmeticsManager {
                 data.getSurvivalPlaytimeSeconds(),
                 new HashSet<>(data.getUnlockedCapes()),
                 data.getEquippedCapeId() != null ? data.getEquippedCapeId() : "",
-                new HashSet<>(data.getCompletedTasks())
+                new HashSet<>(data.getCompletedTasks()),
+                new CosmeticNetworking.S2CSyncCosmeticsPayload.PetState(
+                        new HashSet<>(data.getUnlockedPets()),
+                        data.getEquippedPetId() != null ? data.getEquippedPetId() : ""
+                )
         ));
     }
 
@@ -56,6 +60,20 @@ public class ServerCosmeticsManager {
         PlayerCosmeticsData data = getPlayerData(target);
         String capeId = data.getEquippedCapeId() != null ? data.getEquippedCapeId() : "";
         PacketDistributor.sendToPlayer(recipient, new CosmeticNetworking.S2CSyncCapePayload(target.getUUID(), capeId));
+    }
+
+    /** Broadcast a single player's equipped pet to everyone tracking them (and themselves). */
+    public void broadcastPet(ServerPlayer player) {
+        PlayerCosmeticsData data = getPlayerData(player);
+        String petId = data.getEquippedPetId() != null ? data.getEquippedPetId() : "";
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new CosmeticNetworking.S2CSyncPetPayload(player.getUUID(), petId));
+    }
+
+    /** Send another player's equipped pet to a specific recipient (used when someone logs in). */
+    public void sendPetTo(ServerPlayer recipient, ServerPlayer target) {
+        PlayerCosmeticsData data = getPlayerData(target);
+        String petId = data.getEquippedPetId() != null ? data.getEquippedPetId() : "";
+        PacketDistributor.sendToPlayer(recipient, new CosmeticNetworking.S2CSyncPetPayload(target.getUUID(), petId));
     }
 
     // --- Store actions ---
@@ -121,6 +139,69 @@ public class ServerCosmeticsManager {
         notify(player, "§6§l[Alyrion SMP] §7Cape unequipped.", CosmeticSound.CLICK);
     }
 
+    // --- Pet store actions ---
+
+    public boolean purchasePet(ServerPlayer player, String petId) {
+        PetDefinition pet = PetDefinition.fromId(petId);
+        if (pet == null) return false;
+
+        PlayerCosmeticsData data = getPlayerData(player);
+        if (data.isPetUnlocked(pet.getId())) {
+            // Already owned: just equip it
+            equipPet(player, pet.getId());
+            return true;
+        }
+
+        if (data.getCoins() >= pet.getPrice()) {
+            data.setCoins(data.getCoins() - pet.getPrice());
+            data.unlockPet(pet.getId());
+            data.setEquippedPetId(pet.getId());
+            markDirty(player);
+
+            syncToPlayer(player);
+            broadcastPet(player);
+            notify(player,
+                    "§6§l[Alyrion SMP] §aUnlocked " + pet.getDisplayName() + "! §7(§6-" + pet.getPrice() + " Coins§7)",
+                    CosmeticSound.SUCCESS);
+            return true;
+        }
+        return false;
+    }
+
+    public void equipPet(ServerPlayer player, String petId) {
+        if (petId == null || petId.isEmpty()) {
+            unequipPet(player);
+            return;
+        }
+
+        PetDefinition pet = PetDefinition.fromId(petId);
+        if (pet == null) return;
+
+        PlayerCosmeticsData data = getPlayerData(player);
+        if (!data.isPetUnlocked(pet.getId())) {
+            // Server rejects equipping pets the player hasn't unlocked
+            syncToPlayer(player);
+            return;
+        }
+
+        data.setEquippedPetId(pet.getId());
+        markDirty(player);
+
+        syncToPlayer(player);
+        broadcastPet(player);
+        notify(player, "§6§l[Alyrion SMP] §aEquipped " + pet.getDisplayName() + ".", CosmeticSound.CLICK);
+    }
+
+    public void unequipPet(ServerPlayer player) {
+        PlayerCosmeticsData data = getPlayerData(player);
+        data.setEquippedPetId(null);
+        markDirty(player);
+
+        syncToPlayer(player);
+        broadcastPet(player);
+        notify(player, "§6§l[Alyrion SMP] §7Pet unequipped.", CosmeticSound.CLICK);
+    }
+
     // --- Progression ---
 
     /** Called once per second of server time per online player. */
@@ -143,6 +224,15 @@ public class ServerCosmeticsManager {
             // Periodic save every minute
             markDirty(player);
         }
+    }
+
+    /** Called when this player kills another player; feeds kill-count based tasks. */
+    public void onPlayerKill(ServerPlayer killer) {
+        PlayerCosmeticsData data = getPlayerData(killer);
+        data.incrementPvpKills();
+        markDirty(killer);
+        syncToPlayer(killer);
+        checkTasks(killer);
     }
 
     public void checkTasks(ServerPlayer player) {
@@ -225,6 +315,7 @@ public class ServerCosmeticsManager {
         markDirty(target);
         syncToPlayer(target);
         broadcastCape(target);
+        broadcastPet(target);
         notify(target, "§d[DEV] §cAll cosmetic unlocks have been reset.", CosmeticSound.CLICK);
     }
 

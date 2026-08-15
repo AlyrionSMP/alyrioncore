@@ -35,7 +35,7 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
     public static final ModelResourceLocation LED_GREEN = model("block/airlock_led_green");
     public static final ModelResourceLocation LED_RED = model("block/airlock_led_red");
 
-    private static final float OPEN_ANGLE = 100.0F;
+    private static final float OPEN_ANGLE = 90.0F;
 
     public AirlockBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -64,7 +64,9 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
         };
 
         float eased = blockEntity.getEasedProgress(partialTick);
-        float swing = OPEN_ANGLE * eased * (hinge == DoorHingeSide.LEFT ? 1.0F : -1.0F);
+        // Fold the leaf into the doorway against the jamb (left hinge -> north wall, right -> south),
+        // staying inside the block cell rather than swinging out into the room.
+        float swing = OPEN_ANGLE * eased * (hinge == DoorHingeSide.LEFT ? -1.0F : 1.0F);
         // Hinge pivot, in the authored (facing=east) frame: front face, on the leaf's hinged edge.
         float pivotZ = hinge == DoorHingeSide.LEFT ? 2.0F / 16.0F : 14.0F / 16.0F;
 

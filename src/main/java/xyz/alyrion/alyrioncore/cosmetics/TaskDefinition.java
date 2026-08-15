@@ -3,6 +3,7 @@ package xyz.alyrion.alyrioncore.cosmetics;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -131,6 +132,17 @@ public enum TaskDefinition {
                     if (!stack.isEmpty() && stack.is(Items.DRAGON_EGG)) return true;
                 }
                 return false;
+            }
+    ),
+    SLAYING_PLAYERS(
+            "task_kills",
+            "Grim Reaper",
+            "Slay 10 players in Survival.",
+            5,
+            CapeDefinition.GRIM,
+            player -> {
+                if (!(player instanceof ServerPlayer serverPlayer)) return false;
+                return ServerCosmeticsManager.get().getPlayerData(serverPlayer).getPvpKills() >= 10;
             }
     );
 

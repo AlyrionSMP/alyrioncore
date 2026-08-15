@@ -2,12 +2,14 @@ package xyz.alyrion.alyrioncore.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -57,9 +59,26 @@ public class AirlockBlock extends DoorBlock implements EntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        // Closed: the armored leaf + frame seal the whole doorway. Open: walkable (leaf has swung aside).
-        return state.getValue(OPEN) ? Shapes.empty() : Shapes.block();
+        // Closed: the armored leaf + frame seal the whole doorway. Open: only the bulkhead
+        // frame remains solid, leaving a walkable doorway opening (the leaf has folded against
+        // the jamb inside the block cell).
+        if (!state.getValue(OPEN)) {
+            return Shapes.block();
+        }
+        boolean alongX = state.getValue(FACING).getAxis() == Direction.Axis.X;
+        return Shapes.or(
+                alongX ? JAMB_X_NORTH : JAMB_Z_WEST,
+                alongX ? JAMB_X_SOUTH : JAMB_Z_EAST
+        );
     }
+
+    // Frame jambs (2 px thick), authored for facing=east (y=0). For east/west facings the
+    // doorway runs along X and the jambs are the north/south walls; for north/south facings
+    // the doorway runs along Z and the jambs are the west/east walls.
+    private static final VoxelShape JAMB_X_NORTH = Block.box(0, 0, 0, 16, 16, 2);
+    private static final VoxelShape JAMB_X_SOUTH = Block.box(0, 0, 14, 16, 16, 16);
+    private static final VoxelShape JAMB_Z_WEST = Block.box(0, 0, 0, 2, 16, 16);
+    private static final VoxelShape JAMB_Z_EAST = Block.box(14, 0, 0, 16, 16, 16);
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {

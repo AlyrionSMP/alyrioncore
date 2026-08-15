@@ -342,9 +342,57 @@ def create_cape_marsian():
     img.save("src/main/resources/assets/alyrioncore/textures/capes/marsian.png")
     print("Saved marsian.png")
 
+def create_cape_grim():
+    img = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
+    pixels = img.load()
+
+    bg = hex_to_rgb("#0A0A0D")
+    bg_alt = hex_to_rgb("#0D0D11")
+    bg_deep = hex_to_rgb("#050507")
+    bone = hex_to_rgb("#E5E1D8")
+    bone_dark = hex_to_rgb("#B5B0A2")
+    bone_shadow = hex_to_rgb("#6E6A5E")
+    socket = hex_to_rgb("#07070A")
+
+    grid = [[bg for _ in range(10)] for _ in range(16)]
+
+    # Subtle shading: the hem of the cape is a touch lighter
+    for yr in range(13, 16):
+        for xr in range(10):
+            grid[yr][xr] = bg_alt
+
+    # Skeleton head (xr=2..7, yr=3..12)
+    grid[3][3] = bone; grid[3][4] = bone; grid[3][5] = bone; grid[3][6] = bone
+    grid[4][2] = bone_dark; grid[4][3] = bone; grid[4][4] = bone; grid[4][5] = bone; grid[4][6] = bone; grid[4][7] = bone_dark
+    grid[5][2] = bone; grid[5][3] = socket; grid[5][4] = bone_dark; grid[5][5] = bone_dark; grid[5][6] = socket; grid[5][7] = bone
+    grid[6][2] = bone_dark; grid[6][3] = socket; grid[6][4] = socket; grid[6][5] = socket; grid[6][6] = socket; grid[6][7] = bone_dark
+    grid[7][2] = bone; grid[7][3] = bone_dark; grid[7][4] = socket; grid[7][5] = socket; grid[7][6] = bone_dark; grid[7][7] = bone
+    grid[8][2] = bone; grid[8][3] = bone; grid[8][4] = socket; grid[8][5] = socket; grid[8][6] = bone; grid[8][7] = bone
+    grid[9][2] = bone; grid[9][3] = bone; grid[9][4] = bone_dark; grid[9][5] = bone_dark; grid[9][6] = bone; grid[9][7] = bone
+    grid[10][2] = bone; grid[10][3] = bone; grid[10][4] = bone; grid[10][5] = bone; grid[10][6] = bone; grid[10][7] = bone
+    grid[11][2] = bone_dark; grid[11][3] = bone; grid[11][4] = bone_shadow; grid[11][5] = bone_shadow; grid[11][6] = bone; grid[11][7] = bone_dark
+    grid[12][3] = bone_shadow; grid[12][4] = bone_dark; grid[12][5] = bone_dark; grid[12][6] = bone_shadow
+
+    # Apply to OUTSIDE face (UV 1..10):
+    for yr in range(16):
+        y = 1 + yr
+        for xr in range(10):
+            u = 10 - xr
+            pixels[u, y] = (*grid[yr][xr], 255)
+            pixels[12 + xr, y] = (*grid[yr][xr], 255)
+
+    for x in range(1, 21): pixels[x, 0] = (*bg_deep, 255)
+    for y in range(1, 17):
+        pixels[0, y] = (*bg_deep, 255)
+        pixels[11, y] = (*bg_deep, 255)
+
+    img.save("src/main/resources/assets/alyrioncore/textures/capes/grim.png")
+    print("Saved grim.png")
+
 if __name__ == "__main__":
     create_cape_2_year()
     create_cape_season_8()
     create_cape_stars()
     create_cape_moon()
     create_cape_marsian()
+    create_cape_grim()

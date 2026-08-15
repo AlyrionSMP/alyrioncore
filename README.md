@@ -74,9 +74,10 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 |---|---|---|
 | **Cosmetic Store & Wardrobe** | Built-in GUI for browsing, purchasing, and equipping custom 3D capes. | Accessible via `/store`, `/cosmetics`, or `K` keybind |
 | **Survival Playtime Economy** | Earn 1 Coin for every 1 hour (3600s) spent in survival/adventure mode. | Server-authoritative tracker persisted in the world save with live progress bar |
-| **5 Hand-Crafted Capes** | Custom 64x32 cape textures celebrating server milestones, spaceflight, and Mars. | Dedicated `AlyrionCapeLayer` with real-time motion physics |
-| **Milestone Tasks** | Unlock coins and exclusive capes by reaching Space, the Moon, Mars, or claiming the Dragon Egg. | Real-time event & player state evaluation |
+| **6 Hand-Crafted Capes** | Custom 64x32 cape textures celebrating server milestones, spaceflight, and Mars. | Dedicated `AlyrionCapeLayer` with real-time motion physics |
+| **Milestone Tasks** | Unlock coins and exclusive capes by reaching Space, the Moon, Mars, claiming the Dragon Egg, or slaying 10 players. | Real-time event & player state evaluation |
 | **Multiplayer Cape Sync** | Network synchronization packets broadcast equipped capes to all nearby players. | Custom C2S / S2C payload network pipeline |
+| **Cosmetic Pets** | Buy and equip 3D pets that orbit your character — currently the **Satellite Pet**, a gold research satellite circling your head. | `SatellitePetModel` + `SatellitePetLayer` orbit renderer, dedicated **Pets** tab in the store with spinning 3D preview |
 | **Mars Dimension** | Full extraterrestrial dimension with 384-block world height ($Y = -64$ to $Y = 320$). | `alyrioncore:mars`, multi-noise terrain generator |
 | **0.38g Planetary Gravity** | Living entities experience 38% of Earth gravity while on Mars. | NeoForge Attribute Modifier (`Attributes.GRAVITY`, $-62\%$) |
 | **Authentic Blue Sunsets** | Forward Mie scattering calculations simulate true blue Martian twilights. | Custom `DimensionSpecialEffects` pipeline |
@@ -87,7 +88,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Dust Devils** | Towering conical dust columns spawn near players during midday or storm activity. | Server-tracked `DustDevilInstance`s rendered with swirling particle vortices |
 | **Storm-Aware Atmosphere** | Fog ramps into a dense ochre dust blackout and blue sunsets are suppressed during severe storms. | `MarsClientWeatherHandler` fog/color events + `MarsDimensionEffects` intensity blending |
 | **Pressurized Habitats** | Build airtight habitats and greenhouses that provide breathable air on the vacuum surface. | `HabitatSealManager` flood-fill seal detection with pressurized-room breathing events |
-| **Animated Pressurized Airlock** | Two-block airtight door with a swinging armored hatch, viewport window and status LED. | `AirlockBlockEntity` + `AirlockBlockEntityRenderer` with smoothstep pneumatic swing |
+| **Animated Pressurized Airlock** | Two-block airtight door with a folding armored hatch, viewport window and status LED. | `AirlockBlockEntity` + `AirlockBlockEntityRenderer` with smoothstep pneumatic swing |
 | **Mars Sleeping Pod** | Two-block tech bed that lets players sleep on Mars — even through raging dust storms. | Custom `SleepingPodBlock` with NeoForge bed hooks & dimension-aware sleep logic |
 | **Greenhouse Farming** | Till Martian regolith into farmland and grow Martian Potatoes — but only inside sealed, lit greenhouses. | `RegolithFarmlandBlock`, `MartianPotatoCropBlock` + `HabitatSealManager` integration |
 | **Meteoric Iron Tier** | Full tool & weapon set (sword, pickaxe, axe, shovel, hoe) forged from meteoric nickel-iron. | `ModToolTiers.METEORIC_IRON` — diamond harvest level, 650 durability |
@@ -102,13 +103,13 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 
 ## 🎨 Cosmetic Store & Reward Progression System
 
-AlyrionCore features an integrated cosmetic wardrobe and progression reward economy. The **server is fully authoritative**: coins, cape unlocks, playtime and task progress are stored per-server inside the world save (keyed by player UUID) and only ever mutated by the server. The client renders a synchronized mirror of the state the server sends it.
+AlyrionCore features an integrated cosmetic wardrobe and progression reward economy. The **server is fully authoritative**: coins, cape & pet unlocks, playtime and task progress are stored per-server inside the world save (keyed by player UUID) and only ever mutated by the server. The client renders a synchronized mirror of the state the server sends it.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                     ✦ ALYRION COSMETIC STORE & REWARDS ✦            Coins: ⛃ 15 │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│ [ Store & Wardrobe ]       [ Tasks & Playtime ]                                 │
+│ [ Store & Wardrobe ]  [ Pets ]     [ Tasks & Playtime ]                        │
 ├────────────────────────────────────────┬────────────────────────────────────────┤
 │ ┌────────────────────────────────────┐ │ ┌────────────────────────────────────┐ │
 │ │ 2 Year Celebration Cape   [★ FREE] │ │ │      The Martian Cape              │ │
@@ -120,6 +121,10 @@ AlyrionCore features an integrated cosmetic wardrobe and progression reward econ
 │ │ Moon Cape              [5 Coins]   │ │ │          Status: Unlocked          │ │
 │ ├────────────────────────────────────┤ │ │         [  Equip Cape  ]           │ │
 │ │ The Martian Cape       [5 Coins]   │ │ └────────────────────────────────────┘ │
+│ ├────────────────────────────────────┤                                          │
+│ │ Grim Cape              [10 Coins]  │                                          │
+│ ├────────────────────────────────────┤                                          │
+│ │ Satellite Pet           [15 Coins] │                                          │
 │ └────────────────────────────────────┘                                          │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -128,7 +133,9 @@ AlyrionCore features an integrated cosmetic wardrobe and progression reward econ
 - **Access**: Open via chat commands (`/store` or `/cosmetics`) or the dedicated hotkey (default: **`K`**).
 - **Playtime Currency**: Players earn **1 Coin** for every **1 hour (3600 seconds)** spent actively in Survival or Adventure mode (creative and spectator modes do not accumulate playtime). Playtime is counted by the **server**, so it works identically for every client and cannot be spoofed.
 - **Progress Tracking**: The "Tasks & Playtime" tab displays total survival playtime down to the second, alongside a live progress bar tracking time toward the next coin reward. The GUI live-refreshes whenever the server syncs new state.
-- **Server-Side Persistent Storage**: All progression (coins, unlocked capes, equipped cape, playtime, completed tasks) is owned by the server and persisted per-world in the `alyrion_cosmetics` saved data (inside the world folder, `data/alyrion_cosmetics.dat`). Each server/world has its **own independent** progression for every player UUID — nothing is stored in `config/` anymore. The client only holds a transient mirror that is re-synced on every login and wiped on logout.
+- **Three-Tab Layout**: The store is organized into **Store & Wardrobe** (capes), **Pets** (3D companion pets with a spinning in-GUI preview), and **Tasks & Playtime** tabs.
+- **Server-Side Persistent Storage**: All progression (coins, unlocked capes, equipped cape, playtime, PvP kills, unlocked pets, equipped pet, completed tasks) is owned by the server and persisted per-world in the `alyrion_cosmetics` saved data (inside the world folder, `data/alyrion_cosmetics.dat`). Each server/world has its **own independent** progression for every player UUID — nothing is stored in `config/` anymore. The client only holds a transient mirror that is re-synced on every login and wiped on logout.
+- **PvP Kill Rewards**: Every direct player kill made in Survival/Adventure counts toward kill-based tasks. The **Grim Reaper** task (`task_kills`) awards **+5 Coins** and the **Grim Cape** after **10 player kills** — or the cape can simply be bought for **10 Coins** in the store.
 
 ---
 
@@ -143,6 +150,25 @@ All capes are authored in 64x32 Minecraft cape format with bespoke pixel art:
 | **Stars Cape** | `stars.png` | **5 Coins** | Buy or complete *"Going to Space"* | Deep space starfield studded with pure-white stars and an orbiting high-tech research satellite. |
 | **Moon Cape** | `moon.png` | **5 Coins** | Buy or complete *"Going to the Moon"* | Detailed lunar cratered surface overlooking the blue marble of planet Earth in deep space. |
 | **The Martian Cape** | `marsian.png` | **5 Coins** | Buy or complete *"Going to Mars"* | Rust-ochre Martian dunes beneath Olympus Mons featuring a friendly green Martian explorer. |
+| **Grim Cape** | `grim.png` | **10 Coins** | Buy or complete *"Grim Reaper"* (10 PvP kills) | Jet-black cape with a bleached skeleton head, earned by forging a grim reputation. |
+
+---
+
+### Custom Pets Collection
+
+The **Pets** tab lets players purchase and equip 3D companion pets that follow them around — server-validated and synced to every nearby player just like capes:
+
+| Pet | Texture Identifier | Price | Unlock Condition | Description |
+|---|---|---|---|---|
+| **Satellite Pet** | `pets/satellite.png` | **15 Coins** | Buy in the Pets tab | A little gold research satellite that orbits above your head — twin blue solar wings, a tilted antenna dish and a blinking beacon light. |
+
+#### How Pets Are Rendered (`SatellitePetModel` + `SatellitePetLayer`)
+- **Box-geometry model**: Authored as vanilla `ModelPart` cubes (gold body, mirrored solar wings, mast + dish, separate beacon light) against a 128x32 texture atlas generated by `generate_satellite_pet.py`.
+- **Orbital motion**: The pet circles the player's head with a gentle vertical bob (orbit radius ~0.94 blocks, ~2.35 blocks above the ground), self-spin, and a lazy sway — the dish always angles toward the player.
+- **Blinking beacon**: The antenna light pulses on a fixed blink cycle, tinted and rendered with full brightness.
+- **Hidden when invisible**: Invisible players don't render their pet.
+- **Store preview**: A **spinning 3D satellite** rendered live inside the Pets tab's preview panel, with the pet's current status (Locked / Unlocked / Equipped), price and description.
+- **Multiplayer**: Pets are only rendered client-side for players whose equipped pet the server has broadcast via `s2c_sync_pet` — the same server-authoritative model used for capes.
 
 ---
 
@@ -173,6 +199,9 @@ Players can earn bonus coins and immediately unlock premium capes by accomplishi
 4. **Obtaining the Dragon Egg** (`task_dragon_egg`):
    - **Trigger**: Slay the Ender Dragon and hold the Dragon Egg in your main inventory or offhand.
    - **Reward**: **+10 Coins**.
+5. **Grim Reaper** (`task_kills`):
+   - **Trigger**: Slay **10 players** in Survival mode.
+   - **Reward**: **+5 Coins** + immediate unlock of the **Grim Cape**.
 
 ---
 
@@ -193,8 +222,10 @@ All cosmetics state is synchronized using NeoForge custom payload networking (`C
 - **Client-to-Server (`c2s_equip_cape`)**: The client requests to equip/unequip a cape. The server validates that the cape is actually unlocked for that player before applying it.
 - **Client-to-Server (`c2s_purchase_cape`)**: The client requests a purchase. The server checks the player's coin balance, deducts coins, unlocks the cape and equips it — all against the world's saved data.
 - **Client-to-Server (`c2s_request_cosmetics`)**: Fallback sync request, used when the store is opened before the login sync arrives.
-- **Server-to-Client (`s2c_sync_cosmetics`)**: The full authoritative state for a player (coins, playtime, unlocked capes, equipped cape, completed tasks) — pushed on login and after every state change.
+- **Client-to-Server (`c2s_equip_pet` / `c2s_purchase_pet`)**: Pet equivalents of the cape requests — the server validates pet ownership and deducts coins from the player's balance.
+- **Server-to-Client (`s2c_sync_cosmetics`)**: The full authoritative state for a player (coins, playtime, PvP kills, unlocked capes, equipped cape, completed tasks, unlocked pets, equipped pet) — pushed on login and after every state change.
 - **Server-to-Client (`s2c_sync_cape`)**: The server broadcasts a player's equipped cape ID to all clients tracking that entity, so everyone sees the correct capes.
+- **Server-to-Client (`s2c_sync_pet`)**: The server broadcasts a player's equipped pet ID to all clients tracking that entity (and on login), so everyone sees the correct orbiting pets.
 - **Server-to-Client (`s2c_play_sound`)**: Reward sounds are triggered by the server (e.g. a coin earned or a task completed) and played locally.
 - **Server Tick Driver**: Playtime accumulation and milestone task detection run on the server tick (`ServerCosmeticsEvents`), so progression is identical for every client and persists in the world save.
 
@@ -331,9 +362,9 @@ Any solid-render / full-collision block seals, plus:
 A **two-block-tall airtight door** (`AirlockBlock`, extends `DoorBlock`) that seals habitats while closed, featuring a fully animated hatch:
 
 - **Static bulkhead frame**: The doorway is framed by a fixed titanium bulkhead model (jambs + sill/header) with hazard-stripe markings — the blockstate only carries `facing` and `half` variants, while the door leaf is drawn at runtime.
-- **Animated hatch leaf**: The heavy armored door leaf is rendered by `AirlockBlockEntityRenderer` (block entity registered in `ModBlockEntities.AIRLOCK`). It swings up to **100° around its hinge** with smoothstep pneumatic easing, and the upper half carries a **translucent viewport window**.
+- **Animated hatch leaf**: The heavy armored door leaf is rendered by `AirlockBlockEntityRenderer` (block entity registered in `ModBlockEntities.AIRLOCK`). It swings **90° around its hinge with smoothstep pneumatic easing**, folding **inward against the jamb inside the block cell** (never swinging out into the room), and the upper half carries a **translucent viewport window**.
 - **Status LED**: A status LED on the header — **green when sealed** (closed), **red when venting** (open), and **blinking while the hatch is mid-swing**.
-- **Collision & sealing**: While closed the airlock is a full solid block (sealing the habitat); while open it is fully walkable.
+- **Collision & sealing**: While closed the airlock is a full solid block (sealing the habitat); while open only the **2-px-thick bulkhead jambs** remain solid, leaving a walkable doorway opening between them.
 - Right-clicking cycles open/closed with a **pneumatic hiss** (iron-door sounds at different pitches); opening an airlock breaks the seal, closing it restores it.
 - Tagged `#minecraft:doors` and `#minecraft:mineable/pickaxe`; beacon base-compatible.
 
@@ -597,6 +628,7 @@ Martian soil is surprisingly fertile in fiction — and in AlyrionCore, *if* you
 ### Martian Potato Crop (`martian_potato_crop`)
 - An 8-stage crop (`stage0`–`stage7`) that grows on Regolith Farmland or vanilla Farmland.
 - **The Martian greenhouse rule**: on Mars, the crop **only grows inside a pressurized sealed habitat** (checked via `HabitatSealManager`) with light level ≥ 9 (artificial greenhouse lighting). Exposed to the freezing vacuum, growth halts and the plant has a chance to wither into a dead bush.
+- **Procedural alien crop visuals**: All 8 stages are procedurally painted by `generate_habitat_greenhouse_assets.py` — layered pinnate compound potato leaves with jittered organic edges, lit/shadow shading, **crimson midrib veins**, tapered stems, white flowers with yellow cores, and at maturity lumpy tubers emerging from a **regolith soil mound** so the plant reads as truly planted. Stage models render with a `cutout` render type for clean transparency.
 - Harvest yields **Martian Potatoes**; on Earth-like dimensions it behaves like a normal crop.
 
 ### Martian Food
@@ -761,14 +793,16 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 
 ### Asset Generation Scripts
 - `generate_enhanced_textures.py`: Regenerates pixel-art textures for all 19 blocks and 8 items with 3-pass shading and specular highlights.
-- `generate_capes.py`: Regenerates all 64x32 custom capes with anti-aliased pixel art.
+- `generate_capes.py`: Regenerates all 64x32 custom capes with anti-aliased pixel art (includes the Grim Cape).
 - `generate_new_textures.py`: Generates the Meteoric Iron equipment tier, resource-block textures and the Martian Potato / Baked Martian Potato item art.
 - `generate_sleeping_pod_assets.py`: Generates the two-block Sleeping Pod blockstates, multi-part models and interior/casing/glass textures.
-- `generate_habitat_greenhouse_assets.py`: Generates the Airlock bulkhead frame models + blockstate (the animated hatch is rendered at runtime) and the Regolith Farmland / crop-stage blockstates, models and textures.
+- `generate_habitat_greenhouse_assets.py`: Generates the Airlock bulkhead frame models + blockstate (the animated hatch is rendered at runtime), the Regolith Farmland / crop-stage blockstates, models and textures, and the procedurally painted 8-stage Martian Potato plant textures.
 - `generate_airlock_assets.py`: Generates the Airlock textures — titanium bulkhead frame, armored hatch leaf, viewport window, status LEDs (green/red) and the item icon.
 - `generate_martian_moons.py`: Generates Phobos & Deimos `universe_planets` JSON and celestial sphere textures (AlyrionCore + Rocketnautics datapacks).
 - `generate_probe_structures.py`: Generates the crashed Soviet/US probe NBT structures, jigsaw pools, structure/structure-set configs and chest loot.
 - `generate_recipes_and_loot.py`: Generates the full recipe catalog and block/chest loot tables.
+- `generate_satellite_pet.py`: Generates the 128x32 texture atlas (gold body, solar wings, dish, beacon) for the Satellite Pet 3D model.
+- `generate_mstexture.py`: Std-lib-only PNG writer toolkit used to author pixel-art item textures (Meteoric Iron pickaxe artwork).
 - `scratch_nbt.py`: Internal helper used for hand-authoring NBT structure payloads.
 
 ### Recipe Catalog (selection)

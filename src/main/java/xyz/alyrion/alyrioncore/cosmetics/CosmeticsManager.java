@@ -33,6 +33,8 @@ public class CosmeticsManager {
         newData.getUnlockedCapes().addAll(payload.unlockedCapes());
         newData.setEquippedCapeId(payload.equippedCapeId());
         newData.getCompletedTasks().addAll(payload.completedTasks());
+        newData.getUnlockedPets().addAll(payload.petState().unlockedPets());
+        newData.setEquippedPetId(payload.petState().equippedPetId());
         newData.sanitize();
 
         this.data = newData;
@@ -124,5 +126,58 @@ public class CosmeticsManager {
         data.setEquippedCapeId(null);
         revision++;
         CosmeticNetworking.sendCapeEquipped("");
+    }
+
+    // --- Pets ---
+
+    public boolean isPetUnlocked(PetDefinition pet) {
+        if (pet == null) return false;
+        return data.isPetUnlocked(pet.getId());
+    }
+
+    public boolean isPetEquipped(PetDefinition pet) {
+        if (pet == null) return false;
+        return pet.getId().equalsIgnoreCase(data.getEquippedPetId());
+    }
+
+    public PetDefinition getEquippedPet() {
+        return PetDefinition.fromId(data.getEquippedPetId());
+    }
+
+    /**
+     * Request a pet purchase. Applies the change optimistically for instant UI
+     * feedback; the server is authoritative and will send back the true state,
+     * which replaces this mirror.
+     */
+    public boolean purchasePet(PetDefinition pet) {
+        if (pet == null) return false;
+        if (isPetUnlocked(pet)) {
+            equipPet(pet);
+            return true;
+        }
+
+        if (data.getCoins() >= pet.getPrice()) {
+            data.setCoins(data.getCoins() - pet.getPrice());
+            data.unlockPet(pet.getId());
+            data.setEquippedPetId(pet.getId());
+            revision++;
+            CosmeticNetworking.sendPurchasePet(pet.getId());
+            return true;
+        }
+        return false;
+    }
+
+    public void equipPet(PetDefinition pet) {
+        if (pet != null && isPetUnlocked(pet)) {
+            data.setEquippedPetId(pet.getId());
+            revision++;
+            CosmeticNetworking.sendPetEquipped(pet.getId());
+        }
+    }
+
+    public void unequipPet() {
+        data.setEquippedPetId(null);
+        revision++;
+        CosmeticNetworking.sendPetEquipped("");
     }
 }

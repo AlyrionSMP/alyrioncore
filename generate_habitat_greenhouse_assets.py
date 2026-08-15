@@ -5,6 +5,7 @@ for the Pressurized Habitats, Airlocks, and Martian Greenhouse System.
 """
 
 import json
+import math
 import os
 import random
 from PIL import Image, ImageDraw
@@ -146,57 +147,287 @@ def create_farmland_textures():
     img_side.save(os.path.join(ASSETS_DIR, "textures/block/regolith_farmland_side.png"))
 
 def create_crop_and_food_textures():
-    # Martian Potato Crop Stages (0 to 7) - 32x32 cross crop textures
-    # Deep alien-adapted dark emerald & crimson-veined potato leaves
-    stem_color = (65, 125, 45, 255)
-    leaf_dark = (38, 90, 32, 255)
-    leaf_light = (85, 165, 55, 255)
-    flower_white = (240, 240, 245, 255)
-    flower_yellow = (245, 210, 45, 255)
-    potato_tuber = (195, 120, 65, 255)
+    # Martian Potato Crop Stages (0 to 7) - 32x32 cross crop textures.
+    # Procedurally painted potato plants instead of flat green plates:
+    # layered pinnate compound leaves with ragged edges, lit/shadow shading
+    # and crimson midrib veins, tapered stems, white flowers, and at maturity
+    # lumpy tubers and a regolith soil mound so the plant reads as planted.
+    import math
+
+    # --- palette ------------------------------------------------------
+    stem_hi = (96, 158, 58, 255)
+    stem_lo = (38, 78, 28, 255)
+    vein_crimson = (172, 54, 62, 255)      # alien crimson-veined leaves
+    vein_dark = (122, 34, 42, 255)
+    greens = [
+        (34, 84, 30, 255),    # 0 deep shadow leaf (back layer)
+        (46, 104, 36, 255),   # 1 shadow leaf
+        (62, 130, 46, 255),   # 2 mid leaf
+        (84, 158, 58, 255),   # 3 lit leaf
+        (108, 184, 72, 255),  # 4 highlight leaf
+    ]
+    flower_white = (243, 243, 249, 255)
+    flower_shade = (198, 202, 216, 255)
+    flower_yellow = (247, 210, 50, 255)
+    flower_core = (216, 152, 32, 255)
+    tuber_hi = (228, 160, 98, 255)
+    tuber_lo = (146, 80, 42, 255)
+    tuber_eye = (102, 52, 26, 255)
+    soil_hi = (130, 74, 42, 255)
+    soil_lo = (64, 32, 17, 255)
+    soil_peb = (152, 98, 58, 255)
+
+    def lerp3(a, b, t):
+        return (int(a[0] + (b[0] - a[0]) * t),
+                int(a[1] + (b[1] - a[1]) * t),
+                int(a[2] + (b[2] - a[2]) * t), 255)
+
+    def draw_leaflet(buf, cx, cy, length, width, angle_deg, col_lit, col_shade, rng, vein=True):
+        """One organic leaflet: pointed oval with a wavy jittered edge, lit/shadow
+        shading, a crimson midrib and faint speckles."""
+        a = math.radians(angle_deg)
+        ca, sa = math.cos(a), math.sin(a)
+        phase = rng.uniform(0.0, 6.283)
+        wob = rng.uniform(0.05, 0.13)
+        half = length * 0.5
+        x0 = max(0, int(cx - half - width)); x1 = min(32, int(cx + half + width) + 1)
+        y0 = max(0, int(cy - half - width)); y1 = min(32, int(cy + half + width) + 1)
+        for x in range(x0, x1):
+            for y in range(y0, y1):
+                dx, dy = x - cx, y - cy
+                u = dx * ca + dy * sa
+                v = -dx * sa + dy * ca
+                t = (u + half) / length
+                if t < -0.05 or t > 1.05:
+                    continue
+                tc = max(0.0, min(1.0, t))
+                prof = width * math.sin(math.pi * tc) * (0.80 + 0.26 * tc)
+                prof *= 1.0 + wob * math.sin(tc * 16.5 + phase)
+                if abs(v) > prof:
+                    continue
+                lite = 0.5 - 0.5 * (v / max(prof, 0.4))
+                lite = max(0.0, min(1.0, lite))
+                lite *= 1.0 - 0.15 * math.sin(math.pi * tc)  # softer at base & tip
+                col = lerp3(col_shade, col_lit, lite)
+                if vein and length >= 4.0 and abs(v) < 0.6 and 0.13 < tc < 0.97:
+                    col = vein_crimson if tc < 0.82 else vein_dark
+                elif rng.random() < 0.05:
+                    f = 1.0 + (0.06 if rng.random() < 0.5 else -0.09)
+                    col = (min(255, int(col[0] * f)), min(255, int(col[1] * f)),
+                           min(255, int(col[2] * f)), 255)
+                buf[y][x] = col
+
+    def draw_stem(buf, x0, y0, x1, y1, r_base, r_tip, rng):
+        """Tapered shaded stem with a ragged organic edge."""
+        sx, sy = x1 - x0, y1 - y0
+        seg = math.hypot(sx, sy)
+        if seg < 0.01:
+            return
+        ux, uy = sx / seg, sy / seg
+        nx, ny = -uy, ux
+        rmax = max(r_base, r_tip) + 1
+        xa = max(0, int(min(x0, x1) - rmax)); xb = min(32, int(max(x0, x1) + rmax) + 1)
+        ya = max(0, int(min(y0, y1) - rmax)); yb = min(32, int(max(y0, y1) + rmax) + 1)
+        for x in range(xa, xb):
+            for y in range(ya, yb):
+                dx, dy = x - x0, y - y0
+                t = max(0.0, min(1.0, (dx * ux + dy * uy) / seg))
+                signed = dx * nx + dy * ny
+                rr = r_base + (r_tip - r_base) * t
+                if abs(signed) > rr:
+                    continue
+                if abs(signed) > rr * 0.72 and rng.random() < 0.45:
+                    continue  # ragged edge
+                shade = 0.5 - 0.5 * (signed / max(rr, 0.3))
+                col = lerp3(stem_lo, stem_hi, max(0.0, min(1.0, shade)))
+                if t > 0.85:  # darker growing tip
+                    col = lerp3(col, stem_lo, (t - 0.85) / 0.15 * 0.4)
+                buf[y][x] = col
+
+    def draw_compound_leaf(buf, x0, y0, x1, y1, col_lit, col_shade, rng, rachis=True):
+        """Pinnate compound potato leaf: leaflet pairs + terminal leaflet
+        arranged along a rachis that doubles as the stem."""
+        seg = math.hypot(x1 - x0, y1 - y0)
+        if seg < 2.5:
+            return
+        ang = math.degrees(math.atan2(y1 - y0, x1 - x0))
+        n_pairs = max(1, min(3, int(seg / 5.0)))
+        for i in range(n_pairs):
+            t = (i + 1) / (n_pairs + 1)
+            lx, ly = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+            llen = seg * rng.uniform(0.36, 0.5) * (1.0 - t * 0.28)
+            for side in (-1, 1):
+                la = ang + side * rng.uniform(44, 62)
+                draw_leaflet(buf, lx, ly, llen, llen * 0.42, la, col_lit, col_shade, rng)
+        tlen = seg * rng.uniform(0.5, 0.6)
+        draw_leaflet(buf, x1, y1, tlen, tlen * 0.4, ang + rng.uniform(-10, 10),
+                     col_lit, col_shade, rng)
+        if rachis:
+            draw_stem(buf, x0, y0, x1, y1, 1.05, 0.45, rng)
+
+    def draw_flower(buf, fx, fy, rng):
+        """Small 5-petal white flower with a golden center."""
+        for k in range(5):
+            ang = k * 2.39996 + rng.uniform(-0.18, 0.18)
+            cx = fx + math.cos(ang) * 2.1
+            cy = fy + math.sin(ang) * 2.1
+            for x in range(max(0, int(cx - 2)), min(32, int(cx + 3))):
+                for y in range(max(0, int(cy - 2)), min(32, int(cy + 3))):
+                    if (x - cx) ** 2 + (y - cy) ** 2 <= 2.7:
+                        buf[y][x] = flower_shade if rng.random() < 0.22 else flower_white
+        for x in range(int(fx) - 1, int(fx) + 2):
+            for y in range(int(fy) - 1, int(fy) + 2):
+                if (x - fx) ** 2 + (y - fy) ** 2 <= 1.6:
+                    buf[y][x] = flower_core if rng.random() < 0.35 else flower_yellow
+
+    def draw_tuber(buf, cx, cy, rx, ry, rng):
+        """Lumpy shaded potato tuber with dimple eyes."""
+        for x in range(max(0, int(cx - rx - 1)), min(32, int(cx + rx + 2))):
+            for y in range(max(0, int(cy - ry - 1)), min(32, int(cy + ry + 2))):
+                dx, dy = (x - cx) / rx, (y - cy) / ry
+                d = dx * dx + dy * dy
+                jit = 0.05 * math.sin(x * 2.9 + y * 1.7)  # lumpy outline
+                if d > 1.0 + jit:
+                    continue
+                s = 0.5 - 0.5 * ((dx + dy) * 0.6)
+                col = lerp3(tuber_lo, tuber_hi, max(0.0, min(1.0, s)))
+                if rng.random() < 0.07:
+                    col = lerp3(col, tuber_hi, 0.35)
+                buf[y][x] = col
+        for _ in range(rng.randint(2, 4)):
+            ex = int(cx + rng.uniform(-rx * 0.55, rx * 0.55))
+            ey = int(cy + rng.uniform(-ry * 0.55, ry * 0.55))
+            if 0 <= ex < 32 and 0 <= ey < 32:
+                buf[ey][ex] = tuber_eye
+                if ey - 1 >= 0:
+                    buf[ey - 1][ex] = lerp3(tuber_eye, tuber_hi, 0.55)
+
+    def draw_soil_mound(buf, cx, cy, w, h, rng):
+        """Low regolith mound with pebbles under the plant base."""
+        for x in range(max(0, int(cx - w)), min(32, int(cx + w) + 1)):
+            for y in range(max(0, int(cy - h)), min(32, int(cy + h) + 1)):
+                dx = (x - cx) / w
+                top = cy - h * (1.0 - dx * dx) * 0.92
+                if y < top:
+                    continue
+                if rng.random() < 0.14:
+                    buf[y][x] = soil_peb if rng.random() < 0.55 else soil_lo
+                else:
+                    s = 0.5 - 0.5 * ((dx + (y - cy) / h) * 0.5)
+                    buf[y][x] = lerp3(soil_lo, soil_hi, max(0.0, min(1.0, s)))
+
+    def draw_root(buf, x0, y0, x1, y1, col):
+        """Thin 1px root tendril."""
+        seg = math.hypot(x1 - x0, y1 - y0)
+        steps = max(2, int(seg * 2))
+        for i in range(steps + 1):
+            t = i / steps
+            x = int(round(x0 + (x1 - x0) * t))
+            y = int(round(y0 + (y1 - y0) * t))
+            if 0 <= x < 32 and 0 <= y < 32:
+                buf[y][x] = col
+
+    BX, BY = 16, 31  # plant base (bottom centre of the cross texture)
 
     for stage in range(8):
-        img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(img)
-        
-        # Growth height and spread increases per stage
-        max_h = 4 + stage * 3.5
-        spread = 2 + stage * 1.6
-        cx = 16
+        buf = [[(0, 0, 0, 0)] * 32 for _ in range(32)]
+        rng = random.Random(500 + stage * 37)  # deterministic detail
 
-        # Central stems
-        for y in range(int(32 - max_h), 32):
-            draw.line([(cx - 1, y), (cx + 1, y)], fill=stem_color)
+        if stage == 0:
+            # Tiny sprout: stalk with two cotyledon leaves
+            draw_stem(buf, BX, BY, 16, 24, 1.1, 0.5, rng)
+            for side in (-1, 1):
+                draw_leaflet(buf, 16, 24, 3.6, 1.7, 60 * side + rng.uniform(-8, 8),
+                             greens[2], greens[1], rng, vein=False)
+            draw_soil_mound(buf, BX, BY - 1, 1.8, 1.2, rng)
+        elif stage == 1:
+            # Small seedling: taller stalk, two tiny compound leaves
+            draw_stem(buf, BX, BY, 16, 21, 1.2, 0.5, rng)
+            draw_compound_leaf(buf, 15.5, 25, 13, 20.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 16.5, 25, 19, 20.5, greens[2], greens[0], rng)
+            draw_leaflet(buf, 16, 20, 3.2, 1.5, -80 + rng.uniform(-6, 6),
+                         greens[3], greens[1], rng, vein=False)
+            draw_soil_mound(buf, BX, BY - 1, 2.4, 1.4, rng)
+        elif stage == 2:
+            # Small bush: three leafy stalks
+            draw_compound_leaf(buf, 15, 31, 12.5, 17.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 17, 31, 19.5, 17.0, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 16, 31, 16, 18.5, greens[4], greens[1], rng)
+            draw_soil_mound(buf, BX, BY - 1, 3.0, 1.5, rng)
+        elif stage == 3:
+            # Growing bush with side branches
+            draw_compound_leaf(buf, 15, 31, 11.5, 15.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 17, 31, 20.5, 15.0, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 16, 31, 16, 15.5, greens[4], greens[1], rng)
+            draw_compound_leaf(buf, 13.5, 20, 11.5, 17.5, greens[3], greens[0], rng)
+            draw_compound_leaf(buf, 18.5, 20, 20.5, 17.5, greens[3], greens[0], rng)
+            draw_soil_mound(buf, BX, BY - 1, 3.6, 1.6, rng)
+        elif stage == 4:
+            # Fuller bush: dark back layer + bright front layer
+            draw_compound_leaf(buf, 15.5, 31, 13.5, 14.0, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 16.5, 31, 18.5, 13.5, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 15, 31, 11.0, 13.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 17, 31, 21.0, 13.0, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 16, 31, 16, 12.5, greens[4], greens[2], rng)
+            draw_compound_leaf(buf, 13.0, 19, 11.0, 16.0, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 19.0, 19, 21.0, 16.0, greens[2], greens[0], rng)
+            draw_soil_mound(buf, BX, BY - 1, 4.2, 1.8, rng)
+        elif stage == 5:
+            # Flowering: denser canopy + first white flowers
+            draw_compound_leaf(buf, 15.5, 31, 13.0, 12.5, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 16.5, 31, 19.0, 12.0, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 15, 31, 10.5, 12.0, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 17, 31, 21.5, 11.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 16, 31, 16, 11.0, greens[4], greens[2], rng)
+            draw_compound_leaf(buf, 12.5, 18, 10.5, 15.0, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 19.5, 18, 21.5, 15.0, greens[2], greens[0], rng)
+            draw_flower(buf, 14.5, 10.5, rng)
+            draw_flower(buf, 17.5, 10.0, rng)
+            draw_soil_mound(buf, BX, BY - 1, 4.6, 1.9, rng)
+        elif stage == 6:
+            # Near mature: tall dense canopy, three flowers
+            draw_compound_leaf(buf, 15.5, 31, 13.0, 11.5, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 16.5, 31, 19.0, 11.0, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 15, 31, 10.0, 11.0, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 17, 31, 22.0, 10.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 16, 31, 16, 9.5, greens[4], greens[2], rng)
+            draw_compound_leaf(buf, 12.0, 17, 10.0, 13.5, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 20.0, 17, 22.0, 13.5, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 13.5, 15, 12.0, 11.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 18.5, 15, 20.0, 11.5, greens[3], greens[1], rng)
+            draw_flower(buf, 14.0, 9.0, rng)
+            draw_flower(buf, 18.0, 8.5, rng)
+            draw_flower(buf, 16.0, 8.0, rng)
+            draw_soil_mound(buf, BX, BY - 1, 5.0, 2.0, rng)
+        else:
+            # Mature: dense canopy, flowers, visible tubers with roots
+            # in a regolith mound - the harvest-ready plant
+            draw_compound_leaf(buf, 15.5, 31, 12.5, 10.5, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 16.5, 31, 19.5, 10.0, greens[1], greens[0], rng)
+            draw_compound_leaf(buf, 15, 31, 9.5, 10.0, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 17, 31, 22.5, 9.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 16, 31, 16, 8.5, greens[4], greens[2], rng)
+            draw_compound_leaf(buf, 11.5, 16, 9.5, 12.5, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 20.5, 16, 22.5, 12.5, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 13.0, 14, 11.5, 10.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 19.0, 14, 20.5, 10.5, greens[3], greens[1], rng)
+            draw_compound_leaf(buf, 14.5, 12, 13.5, 8.5, greens[2], greens[0], rng)
+            draw_compound_leaf(buf, 17.5, 12, 18.5, 8.5, greens[2], greens[0], rng)
+            # regolith mound, then roots and tubers resting on it
+            draw_soil_mound(buf, BX, BY - 1, 6.0, 2.4, rng)
+            draw_root(buf, 12.5, 28.5, 16, 30.5, tuber_lo)
+            draw_root(buf, 20.5, 29.0, 16, 30.5, tuber_lo)
+            draw_tuber(buf, 12.0, 29.0, 3.3, 2.2, rng)
+            draw_tuber(buf, 20.5, 29.5, 2.8, 2.0, rng)
+            draw_tuber(buf, 16.5, 30.0, 2.2, 1.5, rng)   # center, half-buried
+            draw_soil_mound(buf, 16.5, 30.6, 1.8, 1.0, rng)  # embed the center tuber
+            draw_flower(buf, 13.5, 8.0, rng)
+            draw_flower(buf, 18.5, 7.5, rng)
+            draw_flower(buf, 15.5, 6.5, rng)
+            draw_flower(buf, 11.0, 13.0, rng)
 
-        # Foliage clusters
-        if stage >= 1:
-            draw.ellipse([cx - spread, 32 - max_h, cx + spread, 32 - max_h + spread * 1.4], fill=leaf_dark)
-            draw.ellipse([cx - spread * 0.7, 32 - max_h + 2, cx + spread * 0.7, 32 - max_h + spread * 1.2], fill=leaf_light)
-
-        if stage >= 3:
-            # Side foliage branches
-            draw.ellipse([cx - spread * 1.2, 32 - max_h + 6, cx - 1, 32 - max_h + 14], fill=leaf_dark)
-            draw.ellipse([cx + 1, 32 - max_h + 6, cx + spread * 1.2, 32 - max_h + 14], fill=leaf_dark)
-            draw.ellipse([cx - spread * 1.0, 32 - max_h + 7, cx - 2, 32 - max_h + 12], fill=leaf_light)
-            draw.ellipse([cx + 2, 32 - max_h + 7, cx + spread * 1.0, 32 - max_h + 12], fill=leaf_light)
-
-        if stage >= 5:
-            # Lower thick bush layer
-            draw.ellipse([cx - spread * 1.4, 20, cx + spread * 1.4, 30], fill=leaf_dark)
-            draw.ellipse([cx - spread * 1.1, 21, cx + spread * 1.1, 28], fill=leaf_light)
-            # Small white flowers with golden centers
-            draw.rectangle([cx - 4, int(32 - max_h - 1), cx - 2, int(32 - max_h + 1)], fill=flower_white)
-            draw.point((cx - 3, int(32 - max_h)), fill=flower_yellow)
-            draw.rectangle([cx + 2, int(32 - max_h), cx + 4, int(32 - max_h + 2)], fill=flower_white)
-            draw.point((cx + 3, int(32 - max_h + 1)), fill=flower_yellow)
-
-        if stage == 7:
-            # Mature root mounds with visible golden Martian potato tubers near base
-            draw.ellipse([cx - 9, 27, cx - 3, 31], fill=potato_tuber)
-            draw.point((cx - 6, 29), fill=(140, 80, 40, 255))
-            draw.ellipse([cx + 3, 26, cx + 9, 31], fill=potato_tuber)
-            draw.point((cx + 6, 28), fill=(140, 80, 40, 255))
-
+        img = Image.new("RGBA", (32, 32))
+        img.putdata([c for row in buf for c in row])
         img.save(os.path.join(ASSETS_DIR, f"textures/block/martian_potato_stage{stage}.png"))
 
     # Raw Martian Potato Item (32x32)
@@ -357,13 +588,14 @@ def make_crop_and_food_models():
     models_item = os.path.join(ASSETS_DIR, "models/item")
     blockstates = os.path.join(ASSETS_DIR, "blockstates")
 
-    # Crop stage models
+    # Crop stage models (render_type: cutout so transparency is honored in-world)
     for stage in range(8):
         write_json(os.path.join(models_block, f"martian_potato_stage{stage}.json"), {
             "parent": "minecraft:block/crop",
             "textures": {
                 "crop": f"alyrioncore:block/martian_potato_stage{stage}"
-            }
+            },
+            "render_type": "minecraft:cutout"
         })
 
     # Crop blockstate

@@ -16,6 +16,8 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.client.renderer.AirlockBlockEntityRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.AlyrionCapeLayer;
+import xyz.alyrion.alyrioncore.client.renderer.SatellitePetLayer;
+import xyz.alyrion.alyrioncore.client.renderer.SatellitePetModel;
 import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -41,8 +43,14 @@ public class ClientModEvents {
             LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> renderer = event.getSkin(model);
             if (renderer instanceof PlayerRenderer playerRenderer) {
                 playerRenderer.addLayer(new AlyrionCapeLayer(playerRenderer));
+                playerRenderer.addLayer(new SatellitePetLayer(playerRenderer));
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(SatellitePetModel.LAYER, SatellitePetModel::createBodyLayer);
     }
 
     @SubscribeEvent

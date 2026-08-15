@@ -39,6 +39,13 @@ public enum CapeDefinition {
             "Martian rust dunes and Olympus Mons with a green Martian.",
             5,
             false
+    ),
+    GRIM(
+            "grim",
+            "Grim Cape",
+            "A black cape bearing a bleached skull, earned with 10 coins or 10 player kills.",
+            10,
+            false
     );
 
     private final String id;

@@ -3,6 +3,7 @@ package xyz.alyrion.alyrioncore.cosmetics;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
@@ -44,6 +45,17 @@ public class ServerCosmeticsEvents {
     }
 
     @SubscribeEvent
+    public static void onPlayerKill(LivingDeathEvent event) {
+        // Only credit player-vs-player kills made directly in survival
+        if (!(event.getEntity() instanceof ServerPlayer victim)) return;
+        if (!(event.getSource().getEntity() instanceof ServerPlayer killer)) return;
+        if (killer == victim) return;
+        if (killer.isCreative() || killer.isSpectator()) return;
+
+        ServerCosmeticsManager.get().onPlayerKill(killer);
+    }
+
+    @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer serverPlayer)) return;
 
@@ -52,13 +64,15 @@ public class ServerCosmeticsEvents {
         // Push the joining player their own full cosmetics state
         manager.syncToPlayer(serverPlayer);
 
-        // Let everyone already online see the joiner's cape
+        // Let everyone already online see the joiner's cape & pet
         manager.broadcastCape(serverPlayer);
+        manager.broadcastPet(serverPlayer);
 
-        // Let the joiner see the capes of everyone already online
+        // Let the joiner see the capes & pets of everyone already online
         for (ServerPlayer other : serverPlayer.server.getPlayerList().getPlayers()) {
             if (other != serverPlayer) {
                 manager.sendCapeTo(serverPlayer, other);
+                manager.sendPetTo(serverPlayer, other);
             }
         }
     }

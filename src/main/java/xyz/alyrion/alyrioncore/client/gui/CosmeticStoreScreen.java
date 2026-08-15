@@ -1,23 +1,35 @@
 package xyz.alyrion.alyrioncore.client.gui;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import xyz.alyrion.alyrioncore.client.renderer.SatellitePetModel;
 import xyz.alyrion.alyrioncore.cosmetics.CapeDefinition;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
+import xyz.alyrion.alyrioncore.cosmetics.PetDefinition;
 import xyz.alyrion.alyrioncore.cosmetics.TaskDefinition;
 
 public class CosmeticStoreScreen extends Screen {
 
     public enum Tab {
         STORE,
+        PETS,
         TASKS
     }
 
     private Tab currentTab = Tab.STORE;
     private CapeDefinition selectedCape = CapeDefinition.TWO_YEAR_CELEBRATION;
+    private PetDefinition selectedPet = PetDefinition.SATELLITE;
     private int scrollOffset = 0;
     private int lastRevision = -1;
 
@@ -41,7 +53,7 @@ public class CosmeticStoreScreen extends Screen {
         int topY = 30;
         int tabWidth = 95;
         int tabHeight = 20;
-        int tabStartX = (this.width - (tabWidth * 2 + 4)) / 2;
+        int tabStartX = (this.width - (tabWidth * 3 + 8)) / 2;
 
         // Tab Buttons
         this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.STORE ? "§6§lStore & Wardrobe" : "Store & Wardrobe"), btn -> {
@@ -50,16 +62,24 @@ public class CosmeticStoreScreen extends Screen {
             rebuildWidgets();
         }).bounds(tabStartX, topY, tabWidth, tabHeight).build());
 
+        this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.PETS ? "§6§lPets" : "Pets"), btn -> {
+            currentTab = Tab.PETS;
+            scrollOffset = 0;
+            rebuildWidgets();
+        }).bounds(tabStartX + tabWidth + 4, topY, tabWidth, tabHeight).build());
+
         this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.TASKS ? "§e§lTasks & Playtime" : "Tasks & Playtime"), btn -> {
             currentTab = Tab.TASKS;
             scrollOffset = 0;
             rebuildWidgets();
-        }).bounds(tabStartX + tabWidth + 4, topY, tabWidth, tabHeight).build());
+        }).bounds(tabStartX + tabWidth * 2 + 8, topY, tabWidth, tabHeight).build());
 
         int contentY = 56;
 
         if (currentTab == Tab.STORE) {
             initStoreWidgets(manager, contentY);
+        } else if (currentTab == Tab.PETS) {
+            initPetsWidgets(manager, contentY);
         } else if (currentTab == Tab.TASKS) {
             initTasksWidgets(manager, contentY);
         }
@@ -167,12 +187,110 @@ public class CosmeticStoreScreen extends Screen {
         }
     }
 
+    private void initPetsWidgets(CosmeticsManager manager, int contentY) {
+        int listX = 16;
+        int listWidth = this.width / 2 + 15;
+        PetDefinition[] pets = PetDefinition.values();
+        int availableHeight = this.height - contentY - 30;
+        int itemSpacing = 3;
+        int itemHeight = Math.max(26, Math.min(32, (availableHeight - (pets.length - 1) * itemSpacing) / pets.length));
+
+        for (int i = 0; i < pets.length; i++) {
+            PetDefinition pet = pets[i];
+            int itemY = contentY + i * (itemHeight + itemSpacing) - scrollOffset;
+
+            // Only add widgets if in visible viewport
+            if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
+
+            boolean isUnlocked = manager.isPetUnlocked(pet);
+            boolean isEquipped = manager.isPetEquipped(pet);
+
+            // Select Pet card button
+            int btnSelectX = listX;
+            int btnSelectWidth = listWidth - 85;
+            this.addRenderableWidget(Button.builder(Component.literal("§f" + pet.getDisplayName()), btn -> {
+                this.selectedPet = pet;
+            }).bounds(btnSelectX, itemY, btnSelectWidth, itemHeight).build());
+
+            // Action Button (Equip / Unequip / Buy)
+            int actionBtnX = listX + listWidth - 80;
+            int actionBtnWidth = 78;
+            int actionBtnHeight = Math.min(20, itemHeight - 4);
+            int actionBtnY = itemY + (itemHeight - actionBtnHeight) / 2;
+            Button actionBtn;
+
+            if (isEquipped) {
+                actionBtn = Button.builder(Component.literal("§cUnequip"), btn -> {
+                    manager.unequipPet();
+                    rebuildWidgets();
+                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
+            } else if (isUnlocked) {
+                actionBtn = Button.builder(Component.literal("§aEquip"), btn -> {
+                    manager.equipPet(pet);
+                    rebuildWidgets();
+                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
+            } else if (pet.isFree()) {
+                actionBtn = Button.builder(Component.literal("§bClaim Free"), btn -> {
+                    manager.purchasePet(pet);
+                    rebuildWidgets();
+                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
+            } else {
+                boolean canAfford = manager.getCoins() >= pet.getPrice();
+                actionBtn = Button.builder(Component.literal(canAfford ? "§6Buy (" + pet.getPrice() + "⛃)" : "§7" + pet.getPrice() + " ⛃"), btn -> {
+                    if (canAfford) {
+                        manager.purchasePet(pet);
+                        rebuildWidgets();
+                    }
+                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
+                actionBtn.active = canAfford;
+            }
+
+            this.addRenderableWidget(actionBtn);
+        }
+
+        // Preview panel action button
+        int previewX = this.width / 2 + 38;
+        int previewWidth = this.width - previewX - 16;
+        if (selectedPet != null) {
+            boolean isUnlocked = manager.isPetUnlocked(selectedPet);
+            boolean isEquipped = manager.isPetEquipped(selectedPet);
+            int actionBtnY = this.height - 48;
+
+            if (isEquipped) {
+                this.addRenderableWidget(Button.builder(Component.literal("§cUnequip Pet"), btn -> {
+                    manager.unequipPet();
+                    rebuildWidgets();
+                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
+            } else if (isUnlocked) {
+                this.addRenderableWidget(Button.builder(Component.literal("§aEquip Pet"), btn -> {
+                    manager.equipPet(selectedPet);
+                    rebuildWidgets();
+                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
+            } else if (selectedPet.isFree()) {
+                this.addRenderableWidget(Button.builder(Component.literal("§bClaim Free"), btn -> {
+                    manager.purchasePet(selectedPet);
+                    rebuildWidgets();
+                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
+            } else {
+                boolean canAfford = manager.getCoins() >= selectedPet.getPrice();
+                Button buyBtn = Button.builder(Component.literal("§6Buy (" + selectedPet.getPrice() + " Coins)"), btn -> {
+                    if (canAfford) {
+                        manager.purchasePet(selectedPet);
+                        rebuildWidgets();
+                    }
+                }).bounds(previewX + (previewWidth - 120) / 2, actionBtnY, 120, 20).build();
+                buyBtn.active = canAfford;
+                this.addRenderableWidget(buyBtn);
+            }
+        }
+    }
+
     private void initTasksWidgets(CosmeticsManager manager, int contentY) {
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (currentTab == Tab.STORE || currentTab == Tab.TASKS) {
+        if (currentTab == Tab.STORE || currentTab == Tab.PETS || currentTab == Tab.TASKS) {
             if (scrollY != 0) {
                 scrollOffset = Math.max(0, scrollOffset - (int) (scrollY * 16));
                 rebuildWidgets();
@@ -213,6 +331,8 @@ public class CosmeticStoreScreen extends Screen {
 
         if (currentTab == Tab.STORE) {
             renderStoreTab(guiGraphics, manager, contentY);
+        } else if (currentTab == Tab.PETS) {
+            renderPetsTab(guiGraphics, manager, contentY);
         } else if (currentTab == Tab.TASKS) {
             renderTasksTab(guiGraphics, manager, contentY);
         }
@@ -313,6 +433,126 @@ public class CosmeticStoreScreen extends Screen {
             String stateStr = isEquipped ? "§aStatus: Equipped" : (isUnlocked ? "§bStatus: Unlocked" : "§6Status: Locked (" + selectedCape.getPrice() + " Coins)");
             guiGraphics.drawCenteredString(this.font, stateStr, previewX + previewWidth / 2, this.height - 60, 0xFFFFFF);
         }
+    }
+
+    private void renderPetsTab(GuiGraphics guiGraphics, CosmeticsManager manager, int contentY) {
+        int listX = 16;
+        int listWidth = this.width / 2 + 15;
+        PetDefinition[] pets = PetDefinition.values();
+        int availableHeight = this.height - contentY - 30;
+        int itemSpacing = 3;
+        int itemHeight = Math.max(26, Math.min(32, (availableHeight - (pets.length - 1) * itemSpacing) / pets.length));
+
+        // Render pet list items
+        for (int i = 0; i < pets.length; i++) {
+            PetDefinition pet = pets[i];
+            int itemY = contentY + i * (itemHeight + itemSpacing) - scrollOffset;
+
+            if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
+
+            boolean isUnlocked = manager.isPetUnlocked(pet);
+            boolean isEquipped = manager.isPetEquipped(pet);
+            boolean isSelected = pet == selectedPet;
+
+            // Highlight border if selected
+            if (isSelected) {
+                guiGraphics.renderOutline(listX - 1, itemY - 1, listWidth + 2, itemHeight + 2, 0xFFFFD700);
+            }
+
+            // Draw a small procedural satellite icon
+            int iconX = listX + 6;
+            int iconY = itemY + (itemHeight - 12) / 2;
+            drawSatelliteIcon(guiGraphics, iconX, iconY, 12);
+
+            // Subtitle info
+            String statusText;
+            if (isEquipped) {
+                statusText = "§a✔ EQUIPPED";
+            } else if (isUnlocked) {
+                statusText = "§b✔ UNLOCKED";
+            } else if (pet.isFree()) {
+                statusText = "§d★ FREE";
+            } else {
+                statusText = "§6" + pet.getPrice() + " Coins";
+            }
+            if (itemHeight >= 28) {
+                guiGraphics.drawString(this.font, statusText, listX + 24, itemY + itemHeight - 11, 0xAAAAAA, false);
+            }
+        }
+
+        // Right Preview Showcase Panel
+        int previewX = this.width / 2 + 38;
+        int previewY = contentY;
+        int previewWidth = this.width - previewX - 16;
+        int previewHeight = this.height - previewY - 30;
+
+        guiGraphics.fill(previewX, previewY, previewX + previewWidth, previewY + previewHeight, 0xCC111827);
+        guiGraphics.renderOutline(previewX, previewY, previewWidth, previewHeight, 0xFF3B82F6);
+
+        if (selectedPet != null) {
+            guiGraphics.drawCenteredString(this.font, "§e§l" + selectedPet.getDisplayName(), previewX + previewWidth / 2, previewY + 8, 0xFFFFFF);
+
+            // Draw a spinning 3D satellite display
+            int modelCenterX = previewX + previewWidth / 2;
+            int modelCenterY = previewY + Math.min(85, previewHeight - 90) / 2 + 22;
+            int modelScale = Math.max(14, Math.min(30, (int) (previewHeight / 9.0F)));
+            drawSatellite3D(guiGraphics, modelCenterX, modelCenterY, modelScale);
+
+            // Pet Description
+            int descY = modelCenterY + modelScale + 18;
+            guiGraphics.drawWordWrap(this.font, Component.literal("§7" + selectedPet.getDescription()), previewX + 8, descY, previewWidth - 16, 0xCCCCCC);
+
+            // Status label
+            boolean isUnlocked = manager.isPetUnlocked(selectedPet);
+            boolean isEquipped = manager.isPetEquipped(selectedPet);
+            String stateStr = isEquipped ? "§aStatus: Equipped" : (isUnlocked ? "§bStatus: Unlocked" : "§6Status: Locked (" + selectedPet.getPrice() + " Coins)");
+            guiGraphics.drawCenteredString(this.font, stateStr, previewX + previewWidth / 2, this.height - 60, 0xFFFFFF);
+        }
+    }
+
+    /** Small 2D satellite glyph drawn in the pet list rows. */
+    private void drawSatelliteIcon(GuiGraphics guiGraphics, int x, int y, int size) {
+        int s = Math.max(6, size);
+        int half = s / 2;
+        int panelW = Math.max(2, s / 6);
+        int bodyH = Math.max(4, (int) (s * 0.6F));
+
+        // Solar wings
+        guiGraphics.fill(x, y + bodyH / 2 - 1, x + panelW, y + bodyH / 2 + 1, 0xFF2E6FD8);
+        guiGraphics.fill(x + s - panelW, y + bodyH / 2 - 1, x + s, y + bodyH / 2 + 1, 0xFF2E6FD8);
+        // Body
+        guiGraphics.fill(x + panelW, y, x + s - panelW, y + bodyH, 0xFFE8B840);
+        // Dish
+        guiGraphics.fill(x + panelW - 1, y - 2, x + s - panelW + 1, y - 1, 0xFFD4A02C);
+        // Mast
+        guiGraphics.fill(x + half - 1, y - 2, x + half + 1, y + 2, 0xFFC0C8D0);
+        // Beacon light
+        guiGraphics.fill(x + half - 1, y - 5, x + half + 1, y - 3, 0xFFFFF6D8);
+    }
+
+    /** Spinning 3D satellite model render for the preview panel. */
+    private void drawSatellite3D(GuiGraphics guiGraphics, int centerX, int centerY, int scale) {
+        Minecraft mc = Minecraft.getInstance();
+        ModelPart model = mc.getEntityModels().bakeLayer(SatellitePetModel.LAYER);
+        ModelPart satellite = model.getChild("satellite");
+
+        long tick = mc.level != null ? mc.level.getGameTime() : 0L;
+        float spin = (tick % 200L) / 200.0F * 360.0F;
+
+        guiGraphics.drawManaged(() -> {
+            PoseStack pose = guiGraphics.pose();
+            pose.pushPose();
+            pose.translate(centerX, centerY, 120.0F);
+            pose.scale(scale, scale, scale);
+            pose.mulPose(Axis.XP.rotationDegrees(-18.0F));
+            pose.mulPose(Axis.YP.rotationDegrees(spin));
+
+            VertexConsumer consumer = guiGraphics.bufferSource().getBuffer(RenderType.entityCutoutNoCull(selectedPet.getTextureLocation()));
+            satellite.render(pose, consumer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+
+            guiGraphics.flush();
+            pose.popPose();
+        });
     }
 
     private void renderTasksTab(GuiGraphics guiGraphics, CosmeticsManager manager, int contentY) {
