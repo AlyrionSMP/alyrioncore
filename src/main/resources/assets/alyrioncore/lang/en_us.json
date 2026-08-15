@@ -1,0 +1,45 @@
+{
+  "itemGroup.alyrioncore.mars": "AlyrionCore: Mars & Planetary Geology",
+
+  "block.alyrioncore.martian_sand": "Martian Sand",
+  "block.alyrioncore.martian_regolith": "Martian Regolith",
+  "block.alyrioncore.coarse_martian_regolith": "Coarse Martian Regolith",
+  "block.alyrioncore.frost_dusted_regolith": "Frost-Dusted Martian Regolith",
+  "block.alyrioncore.martian_permafrost": "Martian Permafrost",
+
+  "block.alyrioncore.martian_basalt": "Martian Basalt",
+  "block.alyrioncore.polished_martian_basalt": "Polished Martian Basalt",
+  "block.alyrioncore.martian_basalt_bricks": "Martian Basalt Bricks",
+  "block.alyrioncore.martian_basalt_tiles": "Martian Basalt Tiles",
+  "block.alyrioncore.stratified_martian_stone": "Stratified Martian Stone",
+  "block.alyrioncore.martian_volcanic_scoria": "Martian Volcanic Scoria",
+  "block.alyrioncore.martian_impact_breccia": "Martian Impact Breccia",
+
+  "block.alyrioncore.hematite_ore": "Martian Hematite Ore",
+  "block.alyrioncore.meteoric_iron_ore": "Meteoric Nickel-Iron Ore",
+  "block.alyrioncore.martian_copper_ore": "Martian Copper Ore",
+  "block.alyrioncore.martian_sulfur_ore": "Martian Sulfur Ore",
+  "block.alyrioncore.martian_olivine_ore": "Martian Olivine Ore",
+
+  "block.alyrioncore.martian_ice": "Martian Glacial Ice",
+  "block.alyrioncore.dry_ice_block": "Martian Dry Ice (Solid CO₂)",
+
+  "item.alyrioncore.hematite_nodule": "Hematite Nodule (Martian Blueberry)",
+  "item.alyrioncore.raw_meteoric_iron": "Raw Meteoric Iron",
+  "item.alyrioncore.meteoric_iron_ingot": "Meteoric Iron Ingot",
+  "item.alyrioncore.raw_martian_copper": "Raw Martian Copper",
+  "item.alyrioncore.sulfur_dust": "Martian Sulfur Dust",
+  "item.alyrioncore.olivine_gem": "Olivine Crystal",
+  "item.alyrioncore.dry_ice_shard": "Dry Ice Shard",
+  "item.alyrioncore.martian_rock_sample": "Martian Rock Sample",
+
+  "biome.alyrioncore.vastitas_borealis": "Vastitas Borealis (Martian Lowland Plains)",
+  "biome.alyrioncore.valles_marineris": "Valles Marineris (Martian Rift Valley)",
+  "biome.alyrioncore.tharsis_volcanic_plateau": "Tharsis Volcanic Highlands",
+  "biome.alyrioncore.planum_boreum": "Planum Boreum (Northern Polar Ice Cap)",
+  "biome.alyrioncore.noachis_terra": "Noachis Terra (Ancient Cratered Highlands)",
+
+  "key.categories.alyrioncore": "AlyrionCore",
+  "key.alyrioncore.escape": "Escape (Pause / Close Screen)"
+}
+

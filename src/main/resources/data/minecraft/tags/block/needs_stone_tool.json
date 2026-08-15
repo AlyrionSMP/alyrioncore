@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "alyrioncore:hematite_ore",
+    "alyrioncore:martian_copper_ore",
+    "alyrioncore:martian_sulfur_ore",
+    "alyrioncore:martian_basalt",
+    "alyrioncore:polished_martian_basalt",
+    "alyrioncore:martian_basalt_bricks",
+    "alyrioncore:martian_basalt_tiles",
+    "alyrioncore:stratified_martian_stone",
+    "alyrioncore:martian_volcanic_scoria"
+  ]
+}

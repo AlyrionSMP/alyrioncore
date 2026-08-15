@@ -1,0 +1,72 @@
+{
+  "type": "alyrioncore:mars_type",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "alyrioncore:mars_noise_settings",
+    "biome_source": {
+      "type": "minecraft:multi_noise",
+      "biomes": [
+        {
+          "biome": "alyrioncore:vastitas_borealis",
+          "parameters": {
+            "temperature": 0.0,
+            "humidity": -0.5,
+            "continentalness": -0.2,
+            "erosion": 0.3,
+            "weirdness": 0.0,
+            "depth": 0.0,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "alyrioncore:valles_marineris",
+          "parameters": {
+            "temperature": 0.2,
+            "humidity": -0.2,
+            "continentalness": 0.4,
+            "erosion": -0.7,
+            "weirdness": 0.5,
+            "depth": 0.6,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "alyrioncore:tharsis_volcanic_plateau",
+          "parameters": {
+            "temperature": 0.7,
+            "humidity": -0.8,
+            "continentalness": 0.8,
+            "erosion": 0.5,
+            "weirdness": -0.3,
+            "depth": 0.0,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "alyrioncore:planum_boreum",
+          "parameters": {
+            "temperature": -0.9,
+            "humidity": 0.4,
+            "continentalness": -0.6,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": 0.0,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "alyrioncore:noachis_terra",
+          "parameters": {
+            "temperature": -0.2,
+            "humidity": -0.6,
+            "continentalness": 0.2,
+            "erosion": 0.8,
+            "weirdness": -0.6,
+            "depth": 0.0,
+            "offset": 0.0
+          }
+        }
+      ]
+    }
+  }
+}

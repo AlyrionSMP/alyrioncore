@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "alyrioncore:martian_sand",
+    "alyrioncore:martian_regolith",
+    "alyrioncore:coarse_martian_regolith",
+    "alyrioncore:frost_dusted_regolith"
+  ]
+}

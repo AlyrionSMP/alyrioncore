@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "alyrioncore:martian_basalt",
+    "alyrioncore:polished_martian_basalt",
+    "alyrioncore:martian_basalt_bricks",
+    "alyrioncore:martian_basalt_tiles",
+    "alyrioncore:stratified_martian_stone",
+    "alyrioncore:martian_volcanic_scoria",
+    "alyrioncore:martian_impact_breccia",
+    "alyrioncore:hematite_ore",
+    "alyrioncore:meteoric_iron_ore",
+    "alyrioncore:martian_copper_ore",
+    "alyrioncore:martian_sulfur_ore",
+    "alyrioncore:martian_olivine_ore",
+    "alyrioncore:martian_ice",
+    "alyrioncore:dry_ice_block",
+    "alyrioncore:martian_permafrost"
+  ]
+}

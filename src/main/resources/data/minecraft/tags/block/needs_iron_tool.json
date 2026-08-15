@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "alyrioncore:meteoric_iron_ore",
+    "alyrioncore:martian_olivine_ore",
+    "alyrioncore:martian_impact_breccia"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:disk",
+  "config": {
+    "state_provider": {
+      "fallback": {
+        "type": "minecraft:simple_state_provider",
+        "state": {
+          "Name": "alyrioncore:dry_ice_block"
+        }
+      },
+      "rules": []
+    },
+    "target": {
+      "type": "minecraft:matching_blocks",
+      "blocks": [
+        "alyrioncore:martian_permafrost",
+        "alyrioncore:martian_basalt",
+        "alyrioncore:frost_dusted_regolith"
+      ]
+    },
+    "radius": {
+      "type": "minecraft:uniform",
+      "min_inclusive": 4,
+      "max_inclusive": 8
+    },
+    "half_height": 2
+  }
+}

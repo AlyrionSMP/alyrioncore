@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:ore",
+  "config": {
+    "size": 7,
+    "discard_chance_on_air_exposure": 0.0,
+    "targets": [
+      {
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "alyrioncore:martian_basalt"
+        },
+        "state": {
+          "Name": "alyrioncore:meteoric_iron_ore"
+        }
+      },
+      {
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "alyrioncore:martian_impact_breccia"
+        },
+        "state": {
+          "Name": "alyrioncore:meteoric_iron_ore"
+        }
+      },
+      {
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "alyrioncore:coarse_martian_regolith"
+        },
+        "state": {
+          "Name": "alyrioncore:meteoric_iron_ore"
+        }
+      }
+    ]
+  }
+}

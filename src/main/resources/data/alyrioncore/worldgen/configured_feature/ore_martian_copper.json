@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:ore",
+  "config": {
+    "size": 9,
+    "discard_chance_on_air_exposure": 0.0,
+    "targets": [
+      {
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "alyrioncore:martian_basalt"
+        },
+        "state": {
+          "Name": "alyrioncore:martian_copper_ore"
+        }
+      },
+      {
+        "target": {
+          "predicate_type": "minecraft:block_match",
+          "block": "alyrioncore:stratified_martian_stone"
+        },
+        "state": {
+          "Name": "alyrioncore:martian_copper_ore"
+        }
+      }
+    ]
+  }
+}

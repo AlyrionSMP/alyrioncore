@@ -1,0 +1,52 @@
+{
+  "has_precipitation": false,
+  "temperature": 0.2,
+  "downfall": 0.0,
+  "effects": {
+    "sky_color": 13345350,
+    "fog_color": 12080440,
+    "water_color": 4159204,
+    "water_fog_color": 329011,
+    "grass_color_override": 12080440,
+    "foliage_color_override": 12080440,
+    "ambient_particle": {
+      "options": {
+        "type": "minecraft:ash"
+      },
+      "probability": 0.006
+    },
+    "mood_sound": {
+      "sound": "minecraft:ambient.cave",
+      "tick_delay": 6000,
+      "block_search_extent": 8,
+      "offset": 2.0
+    }
+  },
+  "spawners": {},
+  "spawn_costs": {},
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:canyon"
+    ]
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [
+      "alyrioncore:ore_hematite_upper",
+      "alyrioncore:ore_hematite_lower",
+      "alyrioncore:ore_sulfur",
+      "alyrioncore:ore_martian_copper"
+    ],
+    [],
+    [],
+    [],
+    [
+      "alyrioncore:boulder_scatter",
+      "alyrioncore:canyon_rock_scatter"
+    ]
+  ]
+}
