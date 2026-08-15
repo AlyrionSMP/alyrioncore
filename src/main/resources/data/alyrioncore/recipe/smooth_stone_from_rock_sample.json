@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "cookingtime": 150,
+  "experience": 0.2,
+  "ingredient": {
+    "item": "alyrioncore:martian_rock_sample"
+  },
+  "result": {
+    "id": "minecraft:smooth_stone"
+  }
+}

@@ -8,8 +8,12 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.block.AirlockBlock;
 import xyz.alyrion.alyrioncore.block.DryIceBlock;
+import xyz.alyrion.alyrioncore.block.MartianPotatoCropBlock;
 import xyz.alyrion.alyrioncore.block.MartianSandBlock;
+import xyz.alyrion.alyrioncore.block.RegolithFarmlandBlock;
+import xyz.alyrion.alyrioncore.block.SleepingPodBlock;
 
 public class ModBlocks {
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(AlyrionCore.MODID);
@@ -185,5 +189,86 @@ public class ModBlocks {
                     .friction(0.985F)
                     .strength(1.0F)
                     .sound(SoundType.GLASS)
+    );
+
+    // --- Mineral & Resource Blocks ---
+    public static final DeferredBlock<Block> METEORIC_IRON_BLOCK = BLOCKS.registerSimpleBlock(
+            "meteoric_iron_block",
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(5.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.NETHERITE_BLOCK)
+    );
+
+    public static final DeferredBlock<Block> RAW_METEORIC_IRON_BLOCK = BLOCKS.registerSimpleBlock(
+            "raw_meteoric_iron_block",
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.RAW_IRON)
+                    .strength(4.5F, 5.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.ANCIENT_DEBRIS)
+    );
+
+    public static final DeferredBlock<Block> OLIVINE_BLOCK = BLOCKS.registerSimpleBlock(
+            "olivine_block",
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GREEN)
+                    .strength(4.0F, 5.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.AMETHYST)
+    );
+
+    public static final DeferredBlock<Block> SULFUR_BLOCK = BLOCKS.registerSimpleBlock(
+            "sulfur_block",
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_YELLOW)
+                    .strength(2.0F, 3.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.STONE)
+    );
+
+    // --- Technology, Life Support & Greenhouse ---
+    public static final DeferredBlock<SleepingPodBlock> SLEEPING_POD = BLOCKS.registerBlock(
+            "sleeping_pod",
+            SleepingPodBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(2.5F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+    );
+
+    public static final DeferredBlock<AirlockBlock> AIRLOCK = BLOCKS.registerBlock(
+            "airlock",
+            AirlockBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(4.0F, 8.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+    );
+
+    public static final DeferredBlock<RegolithFarmlandBlock> REGOLITH_FARMLAND = BLOCKS.registerBlock(
+            "regolith_farmland",
+            RegolithFarmlandBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_ORANGE)
+                    .strength(0.6F)
+                    .sound(SoundType.GRAVEL)
+                    .randomTicks()
+    );
+
+    public static final DeferredBlock<MartianPotatoCropBlock> MARTIAN_POTATO_CROP = BLOCKS.registerBlock(
+            "martian_potato_crop",
+            MartianPotatoCropBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.PLANT)
+                    .noCollission()
+                    .randomTicks()
+                    .instabreak()
+                    .sound(SoundType.CROP)
     );
 }

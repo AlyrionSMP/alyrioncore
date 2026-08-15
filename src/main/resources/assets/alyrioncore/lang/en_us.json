@@ -1,12 +1,10 @@
 {
   "itemGroup.alyrioncore.mars": "AlyrionCore: Mars & Planetary Geology",
-
   "block.alyrioncore.martian_sand": "Martian Sand",
   "block.alyrioncore.martian_regolith": "Martian Regolith",
   "block.alyrioncore.coarse_martian_regolith": "Coarse Martian Regolith",
   "block.alyrioncore.frost_dusted_regolith": "Frost-Dusted Martian Regolith",
   "block.alyrioncore.martian_permafrost": "Martian Permafrost",
-
   "block.alyrioncore.martian_basalt": "Martian Basalt",
   "block.alyrioncore.polished_martian_basalt": "Polished Martian Basalt",
   "block.alyrioncore.martian_basalt_bricks": "Martian Basalt Bricks",
@@ -14,16 +12,17 @@
   "block.alyrioncore.stratified_martian_stone": "Stratified Martian Stone",
   "block.alyrioncore.martian_volcanic_scoria": "Martian Volcanic Scoria",
   "block.alyrioncore.martian_impact_breccia": "Martian Impact Breccia",
-
   "block.alyrioncore.hematite_ore": "Martian Hematite Ore",
   "block.alyrioncore.meteoric_iron_ore": "Meteoric Nickel-Iron Ore",
   "block.alyrioncore.martian_copper_ore": "Martian Copper Ore",
   "block.alyrioncore.martian_sulfur_ore": "Martian Sulfur Ore",
   "block.alyrioncore.martian_olivine_ore": "Martian Olivine Ore",
-
   "block.alyrioncore.martian_ice": "Martian Glacial Ice",
-  "block.alyrioncore.dry_ice_block": "Martian Dry Ice (Solid CO₂)",
-
+  "block.alyrioncore.dry_ice_block": "Martian Dry Ice (Solid CO\u2082)",
+  "block.alyrioncore.meteoric_iron_block": "Block of Meteoric Iron",
+  "block.alyrioncore.raw_meteoric_iron_block": "Block of Raw Meteoric Iron",
+  "block.alyrioncore.olivine_block": "Block of Olivine",
+  "block.alyrioncore.sulfur_block": "Block of Sulfur",
   "item.alyrioncore.hematite_nodule": "Hematite Nodule (Martian Blueberry)",
   "item.alyrioncore.raw_meteoric_iron": "Raw Meteoric Iron",
   "item.alyrioncore.meteoric_iron_ingot": "Meteoric Iron Ingot",
@@ -32,18 +31,20 @@
   "item.alyrioncore.olivine_gem": "Olivine Crystal",
   "item.alyrioncore.dry_ice_shard": "Dry Ice Shard",
   "item.alyrioncore.martian_rock_sample": "Martian Rock Sample",
-
+  "item.alyrioncore.meteoric_iron_sword": "Meteoric Iron Sword",
+  "item.alyrioncore.meteoric_iron_pickaxe": "Meteoric Iron Pickaxe",
+  "item.alyrioncore.meteoric_iron_axe": "Meteoric Iron Axe",
+  "item.alyrioncore.meteoric_iron_shovel": "Meteoric Iron Shovel",
+  "item.alyrioncore.meteoric_iron_hoe": "Meteoric Iron Hoe",
   "biome.alyrioncore.vastitas_borealis": "Vastitas Borealis (Martian Lowland Plains)",
   "biome.alyrioncore.valles_marineris": "Valles Marineris (Martian Rift Valley)",
   "biome.alyrioncore.tharsis_volcanic_plateau": "Tharsis Volcanic Highlands",
   "biome.alyrioncore.planum_boreum": "Planum Boreum (Northern Polar Ice Cap)",
   "biome.alyrioncore.noachis_terra": "Noachis Terra (Ancient Cratered Highlands)",
   "biome.alyrioncore.olympus_mons": "Olympus Mons (Giant Martian Shield Volcano)",
-
   "key.categories.alyrioncore": "AlyrionCore",
   "key.alyrioncore.escape": "Escape (Pause / Close Screen)",
   "key.alyrioncore.open_store": "Open Cosmetic Store",
-
   "cape.alyrioncore.2_year_celebration.name": "2 Year Celebration Cape",
   "cape.alyrioncore.2_year_celebration.desc": "Commemorating 2 years of Alyrion with a festive cake!",
   "cape.alyrioncore.season_8.name": "Season 8 Cape",
@@ -54,7 +55,6 @@
   "cape.alyrioncore.moon.desc": "Lunar surface overlooking planet Earth in deep space.",
   "cape.alyrioncore.marsian.name": "The Martian Cape",
   "cape.alyrioncore.marsian.desc": "Martian rust dunes and Olympus Mons with a green Martian.",
-
   "task.alyrioncore.task_space.title": "Going to Space",
   "task.alyrioncore.task_space.desc": "Launch into Space or Orbit (Cosmonautics / Orbit).",
   "task.alyrioncore.task_moon.title": "Going to the Moon",
@@ -62,6 +62,12 @@
   "task.alyrioncore.task_mars.title": "Going to Mars",
   "task.alyrioncore.task_mars.desc": "Touch down on the red Martian surface.",
   "task.alyrioncore.task_dragon_egg.title": "Obtaining the Dragon Egg",
-  "task.alyrioncore.task_dragon_egg.desc": "Slay the Ender Dragon and hold the Dragon Egg in your inventory."
+  "task.alyrioncore.task_dragon_egg.desc": "Slay the Ender Dragon and hold the Dragon Egg in your inventory.",
+  "block.alyrioncore.sleeping_pod": "Mars Sleeping Pod",
+  "block.alyrioncore.sleeping_pod.occupied": "This sleeping pod is occupied",
+  "block.alyrioncore.airlock": "Pressurized Habitat Airlock",
+  "block.alyrioncore.regolith_farmland": "Martian Regolith Farmland",
+  "block.alyrioncore.martian_potato_crop": "Martian Potato Crop",
+  "item.alyrioncore.martian_potato": "Martian Potato",
+  "item.alyrioncore.baked_martian_potato": "Baked Martian Potato"
 }
-

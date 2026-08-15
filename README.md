@@ -7,7 +7,7 @@
 
 **AlyrionCore** is the flagship core mod for the **Alyrion SMP**, engineered to deliver an authentic, scientifically grounded Mars planetary dimension alongside a server-wide cosmetic reward economy, custom cape rendering engine, space mod interoperability, and extraterrestrial physics simulation.
 
-From realistic 0.38g surface gravity and true-to-life forward Mie scattering blue sunsets to geological stratigraphy, volcanic fumaroles, solid $CO_2$ dry ice sublimation, and milestone-driven custom cosmetic capes, AlyrionCore transforms extraterrestrial exploration in Minecraft into a cohesive, high-polish experience.
+From realistic 0.38g surface gravity and true-to-life forward Mie scattering blue sunsets to geological stratigraphy, volcanic fumaroles, solid $CO_2$ dry ice sublimation, and milestone-driven custom cosmetic capes, AlyrionCore transforms extraterrestrial exploration in Minecraft into a cohesive, high-polish experience. Beyond the raw planetary surface, the mod adds a **dynamic seasonal dust-weather system** (from midday dust devils to planet-encircling storms), **pressurized habitat construction and life support**, a **two-block Mars Sleeping Pod**, **greenhouse farming of Martian Potatoes**, a **full Meteoric Iron equipment tier**, the moons **Phobos & Deimos**, and **crashed probe wreck structures** with salvageable loot.
 
 ---
 
@@ -25,17 +25,26 @@ From realistic 0.38g surface gravity and true-to-life forward Mie scattering blu
 - [The Mars Dimension (`alyrioncore:mars`)](#-the-mars-dimension-alyrioncoremars)
   - [Planetary & Dimension Properties](#planetary--dimension-properties)
   - [Atmospheric Rendering & Celestial Optics](#atmospheric-rendering--celestial-optics)
+  - [Dynamic Mars Weather & Dust Storm System](#-dynamic-mars-weather--dust-storm-system)
+  - [Habitat Construction & Life Support](#-habitat-construction--life-support)
+  - [Sleeping Pods & Rest on Mars](#-sleeping-pods--rest-on-mars)
   - [Space Mod & Celestial Orbit Interoperability](#space-mod--celestial-orbit-interoperability)
+  - [Martian Moons: Phobos & Deimos](#-martian-moons-phobos--deimos)
 - [Planetary Physics: Authentic Gravity Simulation](#-planetary-physics-authentic-gravity-simulation)
 - [Martian Biomes & Regional Geography](#-martian-biomes--regional-geography)
   - [Biome Catalog (6 Distinct Regions)](#biome-catalog-6-distinct-regions)
 - [World Generation & Terrain Features](#-world-generation--terrain-features)
+  - [Crashed Space Probe Structures](#-crashed-space-probe-structures)
 - [Geology, Blocks & Materials](#-geology-blocks--materials)
   - [Martian Regolith & Surface Soils](#martian-regolith--surface-soils)
   - [Stones, Volcanics & Decorative Masonry](#stones-volcanics--decorative-masonry)
   - [Extraterrestrial Ores & Minerals](#extraterrestrial-ores--minerals)
+  - [Resource & Storage Blocks](#resource--storage-blocks)
   - [Polar & Volatile Ices](#polar--volatile-ices)
+- [Greenhouse Farming & Martian Agriculture](#-greenhouse-farming--martian-agriculture)
 - [Items & Resource Economy](#-items--resource-economy)
+  - [Meteoric Iron Equipment Tier](#meteoric-iron-equipment-tier)
+  - [Interactive Items: Dry Ice Shards & Rock Samples](#interactive-items-dry-ice-shards--rock-samples)
 - [Creative Mode Integration](#-creative-mode-integration)
 - [Client & Quality of Life Systems](#-client--quality-of-life-systems)
   - [Universal Rebindable Escape / Close Screen Action](#universal-rebindable-escape--close-screen-action)
@@ -74,8 +83,17 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Butterscotch Day Fog** | Suspended ferric dust creates an amber-ochre haze under the Martian sun. | RGB-weighted fog color transformation |
 | **6 Realistic Biomes** | *Vastitas Borealis*, *Valles Marineris*, *Tharsis*, *Planum Boreum*, *Noachis Terra*, and *Olympus Mons*. | Multi-noise spline generation & biome-specific features |
 | **Volcanic & Crater Formations** | Basalt columns, volcanic fumaroles, scoria boulder clusters, impact craters, and canyon rock scatters. | Placed and configured feature worldgen library |
+| **Dynamic Mars Weather** | Seasonally driven state machine: Clear Skies → Dust Devils → Regional Storm → Global Planet-Encircling Dust Storm. | `MarsWeatherSavedData` + per-tick server simulation, synced via `s2c_mars_weather` payload |
+| **Dust Devils** | Towering conical dust columns spawn near players during midday or storm activity. | Server-tracked `DustDevilInstance`s rendered with swirling particle vortices |
+| **Storm-Aware Atmosphere** | Fog ramps into a dense ochre dust blackout and blue sunsets are suppressed during severe storms. | `MarsClientWeatherHandler` fog/color events + `MarsDimensionEffects` intensity blending |
+| **Pressurized Habitats** | Build airtight habitats and greenhouses that provide breathable air on the vacuum surface. | `HabitatSealManager` flood-fill seal detection with pressurized-room breathing events |
+| **Mars Sleeping Pod** | Two-block tech bed that lets players sleep on Mars — even through raging dust storms. | Custom `SleepingPodBlock` with NeoForge bed hooks & dimension-aware sleep logic |
+| **Greenhouse Farming** | Till Martian regolith into farmland and grow Martian Potatoes — but only inside sealed, lit greenhouses. | `RegolithFarmlandBlock`, `MartianPotatoCropBlock` + `HabitatSealManager` integration |
+| **Meteoric Iron Tier** | Full tool & weapon set (sword, pickaxe, axe, shovel, hoe) forged from meteoric nickel-iron. | `ModToolTiers.METEORIC_IRON` — diamond harvest level, 650 durability |
+| **Crashed Probe Structures** | Two jigsaw crash sites (Soviet & US probe) with salvageable scientific chest loot. | NBT structures + `crashed_probes` structure set |
+| **Martian Moons** | Phobos & Deimos added as tidally locked moons of Mars with bespoke celestial textures. | `universe_planets/phobos.json` & `deimos.json` (Rocketnautics + AlyrionCore datapacks) |
 | **CO₂ Dry Ice Sublimation** | Dry ice blocks dynamically release visible sublimation vapor and frost particles. | Custom `DryIceBlock` with animated particle emission |
-| **Rich Geological Catalog** | 16 unique blocks including volcanics, bricks, ores, breccia, and soils with custom pixel art. | Hand-crafted 16x16 textures, pickaxe/shovel tool tags |
+| **Rich Geological Catalog** | 24 unique blocks including volcanics, bricks, ores, breccia, resource blocks, technology and soils with custom pixel art. | Hand-crafted 16x16 textures, pickaxe/shovel tool tags |
 | **Universal Escape Keybind** | Rebind the standard Escape key action (Pause/Close GUI) to mouse buttons or other keys. | Custom `ModKeyMappings` with screen event routing |
 | **Rocketnautics Interop** | Celestial definitions, orbital parameters, and atmospheric drag integration. | `data/alyrioncore` and `data/rocketnautics` datapacks |
 
@@ -206,7 +224,7 @@ Noise Generator: alyrioncore:mars_noise_settings
   - `monster_spawn_light_level: [0, 7]` – Monsters spawn under darkness conditions.
   - `monster_spawn_block_light_limit: 0` – Controlled hostile mob spawning.
 - **Habitation & Respawns**:
-  - `bed_works: false` – Beds explode in the thin atmosphere / vacuum conditions.
+  - `bed_works: false` – Beds explode on the open Martian surface — *unless* placed inside a **pressurized sealed habitat** (see [Habitat Construction & Life Support](#-habitat-construction--life-support)), or you use a **Mars Sleeping Pod** (see [Sleeping Pods & Rest on Mars](#-sleeping-pods--rest-on-mars)).
   - `respawn_anchor_works: true` – Respawn Anchors function as stable planetary spawn beacons.
   - `has_raids: false` – Illager raids cannot initiate on Mars.
   - `ultrawarm: false`, `natural: false`.
@@ -222,6 +240,8 @@ Because fine iron oxide (ferric dust) is permanently suspended in the thin Marti
 
 $$\vec{C}_{\text{fog}} = \text{brightness} \times \begin{pmatrix} 0.85 \times (0.4 R_0 + 0.6) \\ 0.52 \times (0.4 G_0 + 0.6) \\ 0.32 \times (0.4 B_0 + 0.6) \end{pmatrix}$$
 
+This base tone is now **dynamically modulated by the live dust-storm intensity**: as storms intensify, the ferric-dust channel dims red the least and blue the most, and an overall dimming factor darkens the scene — see [Dynamic Mars Weather](#-dynamic-mars-weather--dust-storm-system).
+
 #### 2. Forward Mie Scattering Blue Sunset & Sunrise
 On Earth, fine gas molecules scatter blue light in all directions (making the sky blue and sunsets red). On Mars, microscopic dust particles are comparable in size to the wavelength of visible light. This creates **forward Mie scattering**, allowing blue wavelengths to pass straight through the dusty horizon directly surrounding the Sun while red wavelengths scatter outward into the wider sky.
 
@@ -230,8 +250,93 @@ The mod computes exact angular solar color transitions:
 - **Green component**: Balanced ($f_1^2 \times 0.55 + 0.35$)
 - **Blue component**: Dominant vivid azure ($f_1^2 \times 0.95 + 0.55$)
 
+During severe dust storms (intensity > 0.65), the Sun is obscured behind the uniform ochre haze and the blue-sunset effect is suppressed entirely, as in a real Martian global dust event.
+
 #### 3. Cloudless Thin Atmosphere
 Water-vapor clouds are disabled (`cloudHeight = Float.NaN`), representing the extremely dry, thin, and desiccated Martian atmosphere.
+
+---
+
+### 🌪️ Dynamic Mars Weather & Dust Storm System
+
+Mars gets a **living, seasonally correct weather system** simulated server-side in `MarsWeatherSavedData` and rendered client-side by `MarsClientWeatherHandler`.
+
+### Weather States
+
+| State | Identifier | Base Intensity | Max Wind | Description |
+|---|---|---|---|---|
+| **Clear Skies** | `clear` | `0.00` | `0.05` | Calm, thin-atmosphere conditions. |
+| **Dust Devil Activity** | `dust_devils` | `0.20` | `0.30` | Midday thermal convection whips up small dust devils. |
+| **Regional Dust Storm** | `regional_storm` | `0.65` | `0.75` | A large regional storm front; heavy airborne dust. |
+| **Global Planet-Encircling Dust Storm** | `global_dust_storm` | `1.00` | `1.00` | A Mars-wide "apocalyptic" storm — near-total dust blackout. |
+
+### Martian Season Simulation (The Sol Cycle)
+- The Mars clock runs on **sols** (`sol` day-time controller), with 668 sols per Martian year.
+- **Perihelion / Southern Summer (Sols 420–580, Ls 200°–300°)** — the *storm season*: elevated probabilities for regional storms (which can cascade into global storms) and a notable chance of planet-encircling dust storms.
+- **Aphelion / Northern Summer** — calm skies dominate; global storms are extremely rare (2% chance) and regional storms decay quickly.
+- Storm intensity and wind speed **interpolate smoothly** toward each state's targets, and wind direction slowly rotates over time.
+
+### Dust Devils
+- During midday (solar 3500–8500 ticks) or `dust_devils` states, the server spawns **towering conical dust columns** (18–30 blocks tall, 2.5–4.5 block radius) that wander with subtle drift and live 30–90 seconds.
+- Client-side, each devil renders a rotating, widening vortex of rust-orange `DustParticleOptions` and Martian-regolith block particles within 100 blocks of the player.
+- Global storms disperse localized convective columns — the whole sky becomes the storm instead.
+
+### Storm-Aware Rendering
+- **Ambient wind & dust particles** scale with smoothed storm intensity (up to 28 particles/tick, blown in the server wind direction).
+- **Fog ramp**: `ViewportEvent.RenderFog` collapses the far plane from a clear view down to ~12–30 blocks during a global storm (dense Martian dust blackout), with regional storms at ~42–82 blocks.
+- **Fog color**: `ComputeFogColor` blends the clear butterscotch tone into a deep, uniform apocalyptic ochre/terracotta as intensity rises.
+- **Sunset suppression** and **fog dimming** inside `MarsDimensionEffects` (see above).
+
+### Weather Command (`/marsweather`)
+| Subcommand | Permission | Description |
+|---|---|---|
+| `/marsweather query` | OP (2) | Reports current state, intensity, sol / 668 and season (Perihelion vs Aphelion). |
+| `/marsweather set <state> [duration]` | OP (2) | Forces a weather state (e.g. `global_dust_storm`) for a given duration in ticks (default 24000). |
+
+Weather is broadcast to Mars players every 20 ticks over the `s2c_mars_weather` custom payload, re-sent on dimension change and login.
+
+---
+
+### 🏠 Habitat Construction & Life Support
+
+The Martian surface is a vacuum: hostile to life without shelter. AlyrionCore adds a **sealed-habitat simulation** (`HabitatSealManager`) that detects airtight enclosed rooms and grants breathable air inside them.
+
+### How Sealing Works
+- A **flood-fill** is run from the player's position. If the fill reaches open sky or the build-height/void boundaries before being stopped by airtight blocks, the position is *unsealed*.
+- Rooms up to **6,144 blocks** of interior volume are supported (larger spaces are considered open-world).
+- Results are cached and invalidated on block breaks (with a **depressurization burst**: `poof`/`cloud`/`snowflake` particles, hissing fire-extinguish audio and a muffled explosion sound when a sealed boundary is breached).
+
+### Airtight Materials
+Any solid-render / full-collision block seals, plus:
+- **Glass** & **tinted glass** and anything in `#minecraft:impermeable`
+- **Iron doors** and **iron trapdoors** (only while closed)
+- **Airlock blocks** (only while closed — see below)
+- **Sleeping pods** (fully pressurized capsules)
+
+### Breathable Air (`LivingBreatheEvent`)
+- On Mars, entities inside a sealed room **can breathe** (air refills, no consumption).
+- Outside a seal — on the open surface — normal vacuum suffocation rules from the dimension/atmosphere apply.
+
+### The Pressurized Airlock (`airlock`)
+- A **two-block-tall airtight door** (`AirlockBlock`, extends `DoorBlock`) that seals habitats while closed.
+- Right-clicking cycles open/closed with a **pneumatic hiss** (iron-door sounds at different pitches); opening an airlock breaks the seal, closing it restores it.
+- Tagged `#minecraft:doors` and `#minecraft:mineable/pickaxe`; beacon base-compatible.
+
+### Beds Inside Sealed Habitats
+Vanilla beds would explode on Mars (`bed_works: false`) — but a bed inside a **pressurized sealed habitat** is safe: the explosion is intercepted and the player sleeps normally (with correct `isDayTime` recomputation and dust-storm night equivalence, see below).
+
+---
+
+### 🛏️ Sleeping Pods & Rest on Mars
+
+The **Mars Sleeping Pod** (`sleeping_pod`) is a two-block technological bed that provides safe rest on the Martian surface:
+
+- **Two-part construction**: foot + head blocks placed in the facing direction (like a bed), with custom models, glass casing and interior screen textures.
+- **Sleeping rules**: usable day or night under the Martian clock — vanilla's cached `skyDarken` is unreliable on custom dimensions, so daylight is recomputed directly from the dimension clock (plus rain/thunder).
+- **Dust storms = thunderstorms**: a regional or global dust storm darkens the sky enough that the pod may be used even during daylight — the local analogue of vanilla's thunderstorm sleeping rule.
+- **Respawn anchoring**: sleeping in a pod sets your respawn point in the current dimension; safe stand-up position is computed like a bed.
+- **Occupancy handling**: occupied pods refuse entry ("This sleeping pod is occupied") and both halves share occupancy state.
+- A **vanilla bed inside a sealed habitat** receives the same treatment via `CanPlayerSleepEvent` / `CanContinueSleepingEvent` overrides.
 
 ---
 
@@ -243,6 +348,22 @@ AlyrionCore includes pre-configured planetary definitions and physical parameter
 - **Atmospheric Composition**: Configured with `low_density` and `drowning` atmospheric hazards above $Y = 5,000$, requiring pressurized life support equipment.
 - **Planetary Surface Rendering**: Built-in 3D celestial sphere texture sampler with accurate RGB palette mapping across all 6 Martian biomes.
 - **Atmospheric Drag**: Multi-tier altitude drag curves ($0.2\times$ drag below $4,000\text{ m}$ tapering to $0.0$ at orbital insertion).
+- **Gravity Ownership**: `apply_gravity_correction_to_entities_in_dimension` is set to `false` in both datapacks — the mod's own `MarsPhysicsHandler` attribute system owns Martian gravity to avoid double-application with the space mod.
+
+---
+
+### 🌑 Martian Moons: Phobos & Deimos
+
+Mars's two tiny, lumpy moons are added as **tidally locked celestial bodies** visible from space, with bespoke high-resolution textures:
+
+| Moon | Radius | Surface Gravity | Orbital Period | Notes |
+|---|---|---|---|---|
+| **Phobos** | 11,000 m | 0.0057 m/s² | 382.3 s | Inner moon; orbits Mars faster than Mars rotates. |
+| **Deimos** | 6,200 m | 0.003 m/s² | 1,516.1 s | Outer moon; tidally locked, rotates once per orbit. |
+
+- Defined as children of Mars (`"parent": "mars"`) in both `data/alyrioncore/universe_planets/` and `data/rocketnautics/universe_planets/`.
+- Custom textures live in `assets/alyrioncore/textures/planet/` (mirrored into `assets/rocketnautics/textures/planet/` for compatibility).
+- Generated by `generate_martian_moons.py`.
 
 ---
 
@@ -363,6 +484,21 @@ Columns              Boulder Clusters     Geothermal Vents     & Boulders       
 
 ---
 
+### 🛰️ Crashed Space Probe Structures
+
+Two hand-built jigsaw crash sites scatter across the Martian surface — relics of failed early exploration:
+
+| Structure | NBT | Loot |
+|---|---|---|
+| **Crashed Soviet Probe** | `structure/crashed_soviet_probe.nbt` | Salvageable science chest |
+| **Crashed US Probe** | `structure/crashed_us_probe.nbt` | Salvageable science chest |
+
+- Registered as a `crashed_probes` structure set (spacing 18, separation 6) valid in **all 6 Martian biomes**.
+- Chest loot includes spyglasses, gold/copper ingots, redstone, quartz, daylight detectors, Martian Rock Samples and Raw Meteoric Iron.
+- NBT structures and jigsaw pools/configs generated by `generate_probe_structures.py`.
+
+---
+
 ## 🧱 Geology, Blocks & Materials
 
 All blocks feature custom 16x16 pixel art textures authored specifically for AlyrionCore:
@@ -405,6 +541,17 @@ All blocks feature custom 16x16 pixel art textures authored specifically for Aly
 
 ---
 
+### Resource & Storage Blocks
+
+| Block | Identifier | Hardness / Resistance | Tool Required | Notes |
+|---|---|---|---|---|
+| **Block of Meteoric Iron** | `meteoric_iron_block` | `5.0` / `6.0` | Pickaxe (Iron+) | Compacted meteoric nickel-iron; beacon base-compatible, `#minecraft:beacon_base_blocks`. |
+| **Block of Raw Meteoric Iron** | `raw_meteoric_iron_block` | `4.5` / `5.0` | Pickaxe (Iron+) | Storage form for unrefined meteoric ore. |
+| **Block of Olivine** | `olivine_block` | `4.0` / `5.0` | Pickaxe (Iron+) | Stored Peridot crystals; beacon base-compatible. |
+| **Block of Sulfur** | `sulfur_block` | `2.0` / `3.0` | Pickaxe (Stone+) | Compacted volcanic sulfur; burns as an **excellent furnace fuel** (800 seconds / 80 items) and converts to Gunpowder. |
+
+---
+
 ### Polar & Volatile Ices
 
 #### 1. Martian Glacial Ice (`martian_ice`)
@@ -422,6 +569,28 @@ All blocks feature custom 16x16 pixel art textures authored specifically for Aly
 
 ---
 
+## 🌱 Greenhouse Farming & Martian Agriculture
+
+Martian soil is surprisingly fertile in fiction — and in AlyrionCore, *if* you build the right infrastructure. Farming on Mars requires **pressurized greenhouses**, mimicking real-world Martian agriculture research.
+
+### Martian Regolith Farmland (`regolith_farmland`)
+- **Tilling**: Use a **Hoe** on `martian_regolith` or `martian_sand` to convert it into Regolith Farmland (`BlockToolModificationEvent`).
+- **Moisture**: A standard 0–7 moisture property. Water within 4 blocks (or a Waterlog ticket) saturates it to level 7; without water it dries out and reverts to plain regolith.
+- **Trampling**: Heavy entities can trample it back into regolith (vanilla farmland rules); crops growing on top keep it maintained.
+
+### Martian Potato Crop (`martian_potato_crop`)
+- An 8-stage crop (`stage0`–`stage7`) that grows on Regolith Farmland or vanilla Farmland.
+- **The Martian greenhouse rule**: on Mars, the crop **only grows inside a pressurized sealed habitat** (checked via `HabitatSealManager`) with light level ≥ 9 (artificial greenhouse lighting). Exposed to the freezing vacuum, growth halts and the plant has a chance to wither into a dead bush.
+- Harvest yields **Martian Potatoes**; on Earth-like dimensions it behaves like a normal crop.
+
+### Martian Food
+| Item | Identifier | Nutrition | Saturation | Notes |
+|---|---|---|---|---|
+| **Martian Potato** | `martian_potato` | 3 | 0.6 | Also the seed for the crop (`ItemNameBlockItem`). |
+| **Baked Martian Potato** | `baked_martian_potato` | 6 | 0.8 | Smelted / smoked / campfire-cooked from raw Martian Potatoes. |
+
+---
+
 ## 💎 Items & Resource Economy
 
 | Item | Identifier | Category | Lore & Scientific Description |
@@ -432,8 +601,43 @@ All blocks feature custom 16x16 pixel art textures authored specifically for Aly
 | **Raw Martian Copper** | `raw_martian_copper` | Metal | Pure native copper extracted from Martian hydrothermal veins. |
 | **Martian Sulfur Dust** | `sulfur_dust` | Chemical | Fine volcanic sulfur powder collected from geothermal vents and sulfur beds in Tharsis. |
 | **Olivine Crystal** | `olivine_gem` | Gemstone | Translucent green magnesium iron silicate crystal ($(\text{Mg, Fe})_2\text{SiO}_4$) found in pristine igneous intrusions. |
-| **Dry Ice Shard** | `dry_ice_shard` | Volatile | Sub-zero crystallized shard of solid $CO_2$ harvested from polar ice caps. |
-| **Martian Rock Sample** | `martian_rock_sample` | Research | Geological sample of Martian rock collected for planetary analysis and scientific cataloging. |
+| **Dry Ice Shard** | `dry_ice_shard` | Volatile | Sub-zero crystallized shard of solid $CO_2$ harvested from polar ice caps. Use it to flash-freeze foes or freeze water into ice. |
+| **Martian Rock Sample** | `martian_rock_sample` | Research | Geological sample of Martian rock. Use it to crush out 1–3 random minerals: Hematite Nodules, Sulfur Dust, Raw Copper, Raw Meteoric Iron or Olivine Crystals. |
+
+---
+
+### Meteoric Iron Equipment Tier
+
+Forged from meteoric nickel-iron alloy, the **Meteoric Iron tier** (`ModToolTiers.METEORIC_IRON`) sits between Diamond and Netherite in utility:
+
+| Stat | Value |
+|---|---|
+| Harvest Level | Diamond (`#minecraft:incorrect_for_diamond_tool`) |
+| Durability | 650 |
+| Mining Speed | 7.5 |
+| Attack Damage Bonus | 2.5 |
+| Enchantability | 16 |
+| Repair Ingredient | `meteoric_iron_ingot` |
+
+| Item | Identifier | Notes |
+|---|---|---|
+| **Meteoric Iron Sword** | `meteoric_iron_sword` | +3 damage, -2.4 speed. |
+| **Meteoric Iron Pickaxe** | `meteoric_iron_pickaxe` | +1 damage, -2.8 speed. |
+| **Meteoric Iron Axe** | `meteoric_iron_axe` | +6 damage, -3.1 speed. |
+| **Meteoric Iron Shovel** | `meteoric_iron_shovel` | +1.5 damage, -3.0 speed. |
+| **Meteoric Iron Hoe** | `meteoric_iron_hoe` | -2 damage, -1.0 speed. |
+
+All five tools are registered in their respective `#minecraft:item` tags (`swords`, `pickaxes`, `axes`, `shovels`, `hoes`), and `meteoric_iron_ingot` / `olivine_gem` are valid **beacon payment items**.
+
+### Interactive Items: Dry Ice Shards & Rock Samples
+
+- **Dry Ice Shard** (`DryIceShardItem.java`):
+  - **Use (right-click)**: a flash-freeze blast in a 5-block radius — freezes targets (+160 freeze ticks), slows them (Slowness II) and deals 3 freeze damage, with a snowflake particle burst.
+  - **Use on water**: instantly freezes a water source block into ice.
+  - Can be recombined into / split from Dry Ice Blocks via recipes.
+- **Martian Rock Sample** (`MartianRockSampleItem.java`):
+  - **Use (right-click)**: crushes the sample, yielding 1–3 minerals with weighted drops (Hematite Nodules 35%, Sulfur Dust 25%, Raw Copper 20%, Raw Meteoric Iron 13%, Olivine Crystal 7%), plus stone-break particles and amethyst chime audio.
+  - Also used in the `smooth_stone_from_rock_sample` recipe.
 
 ---
 
@@ -443,10 +647,13 @@ AlyrionCore adds a dedicated Creative Mode Tab: **`AlyrionCore: Mars & Planetary
 
 The tab icon features the **Martian Rock Sample** (`martian_rock_sample`) and organizes all planetary materials into logical groupings:
 1. **Scientific Samples & Minerals**: Rock Sample, Hematite Nodule, Raw Meteoric Iron, Meteoric Ingot, Raw Copper, Sulfur Dust, Olivine Gem, Dry Ice Shard.
-2. **Soils & Regolith**: Martian Sand, Regolith, Coarse Regolith, Frost-Dusted Regolith, Permafrost.
-3. **Stones & Architectural Blocks**: Basalt, Polished Basalt, Basalt Bricks, Basalt Tiles, Stratified Stone, Scoria, Impact Breccia.
-4. **Planetary Ores**: Hematite Ore, Meteoric Iron Ore, Copper Ore, Sulfur Ore, Olivine Ore.
-5. **Polar Volatiles & Ices**: Glacial Ice, Dry Ice Block.
+2. **Meteoric Equipment**: Sword, Pickaxe, Axe, Shovel, Hoe.
+3. **Resource & Storage Blocks**: Block of Meteoric Iron, Block of Raw Meteoric Iron, Block of Olivine, Block of Sulfur.
+4. **Soils & Regolith**: Martian Sand, Regolith, Coarse Regolith, Frost-Dusted Regolith, Permafrost.
+5. **Stones & Architectural Blocks**: Basalt, Polished Basalt, Basalt Bricks, Basalt Tiles, Stratified Stone, Scoria, Impact Breccia.
+6. **Planetary Ores**: Hematite Ore, Meteoric Iron Ore, Copper Ore, Sulfur Ore, Olivine Ore.
+7. **Polar Volatiles & Ices**: Glacial Ice, Dry Ice Block.
+8. **Technology, Habitat & Greenhouse**: Sleeping Pod, Pressurized Airlock, Regolith Farmland, Martian Potato, Baked Martian Potato.
 
 ---
 
@@ -488,12 +695,15 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 - `martian_regolith`
 - `coarse_martian_regolith`
 - `frost_dusted_regolith`
+- `regolith_farmland`
 
 ### Pickaxe Mineable (`#minecraft:mineable/pickaxe`)
 - `martian_basalt`, `polished_martian_basalt`, `martian_basalt_bricks`, `martian_basalt_tiles`
 - `stratified_martian_stone`, `martian_volcanic_scoria`, `martian_impact_breccia`
 - `hematite_ore`, `meteoric_iron_ore`, `martian_copper_ore`, `martian_sulfur_ore`, `martian_olivine_ore`
 - `martian_ice`, `dry_ice_block`, `martian_permafrost`
+- `meteoric_iron_block`, `raw_meteoric_iron_block`, `olivine_block`, `sulfur_block`
+- `sleeping_pod`, `airlock`
 
 ### Mining Tiers
 - **Stone Tool or Better (`#minecraft:needs_stone_tool`)**:
@@ -504,6 +714,10 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
   - `meteoric_iron_ore`
   - `martian_olivine_ore`
   - `martian_impact_breccia`
+  - `meteoric_iron_block`, `raw_meteoric_iron_block`, `olivine_block`
+- **Any Pickaxe (no tier tag)**: `sulfur_block` drops correctly with any pickaxe.
+
+> The **Meteoric Iron** equipment tier itself mines at the Diamond harvest level, so it can collect every AlyrionCore ore and block.
 
 ---
 
@@ -532,6 +746,19 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 ### Asset Generation Scripts
 - `generate_enhanced_textures.py`: Regenerates pixel-art textures for all 19 blocks and 8 items with 3-pass shading and specular highlights.
 - `generate_capes.py`: Regenerates all 64x32 custom capes with anti-aliased pixel art.
+- `generate_new_textures.py`: Generates the Meteoric Iron equipment tier, resource-block textures and the Martian Potato / Baked Martian Potato item art.
+- `generate_sleeping_pod_assets.py`: Generates the two-block Sleeping Pod blockstates, multi-part models and interior/casing/glass textures.
+- `generate_habitat_greenhouse_assets.py`: Generates Airlock and Regolith Farmland / crop-stage blockstates, models and textures.
+- `generate_martian_moons.py`: Generates Phobos & Deimos `universe_planets` JSON and celestial sphere textures (AlyrionCore + Rocketnautics datapacks).
+- `generate_probe_structures.py`: Generates the crashed Soviet/US probe NBT structures, jigsaw pools, structure/structure-set configs and chest loot.
+- `generate_recipes_and_loot.py`: Generates the full recipe catalog and block/chest loot tables.
+- `scratch_nbt.py`: Internal helper used for hand-authoring NBT structure payloads.
+
+### Recipe Catalog (selection)
+- **Meteoric Iron**: tools, storage blocks, raw-block packing, ingot smelting/blasting from ore and raw, iron nuggets from hematite nodules.
+- **Greenhouse & Habitat**: Sleeping Pod, Airlock, Regolith Farmland (via hoe-tilling), Gunpowder (sulfur + coal/charcoal/bonemeal), Torches from sulfur, Glass from Martian Sand, Terracotta from regolith, Water Bucket from Martian Ice, Packed Ice, Snow Block from dry ice, Spyglass from Olivine, Smooth Stone from Rock Samples.
+- **Food**: Baked Martian Potato (smelting, smoking, campfire).
+- **Masonry**: Polished basalt, bricks and tiles via crafting, smelting/blasting and stonecutting chains.
 
 ### Mod Metadata & Architecture
 - **Mod ID**: `alyrioncore`

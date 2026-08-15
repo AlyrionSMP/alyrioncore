@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "S": {
+      "item": "alyrioncore:martian_sand"
+    },
+    "R": {
+      "item": "alyrioncore:martian_regolith"
+    }
+  },
+  "pattern": [
+    "SR",
+    "RS"
+  ],
+  "result": {
+    "count": 4,
+    "id": "alyrioncore:coarse_martian_regolith"
+  }
+}

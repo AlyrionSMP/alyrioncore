@@ -1,0 +1,15 @@
+{
+  "name": "alyrioncore:crashed_soviet_probe",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "alyrioncore:crashed_soviet_probe",
+        "projection": "rigid",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

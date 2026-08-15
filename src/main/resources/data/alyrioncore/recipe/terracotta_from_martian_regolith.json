@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "cookingtime": 200,
+  "experience": 0.1,
+  "ingredient": {
+    "item": "alyrioncore:martian_regolith"
+  },
+  "result": {
+    "id": "minecraft:terracotta"
+  }
+}

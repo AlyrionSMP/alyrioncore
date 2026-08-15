@@ -3,6 +3,9 @@
   "values": [
     "alyrioncore:meteoric_iron_ore",
     "alyrioncore:martian_olivine_ore",
-    "alyrioncore:martian_impact_breccia"
+    "alyrioncore:martian_impact_breccia",
+    "alyrioncore:meteoric_iron_block",
+    "alyrioncore:raw_meteoric_iron_block",
+    "alyrioncore:olivine_block"
   ]
 }

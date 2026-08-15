@@ -16,7 +16,7 @@ public class ModCreativeTabs {
                     .title(Component.translatable("itemGroup.alyrioncore.mars"))
                     .icon(() -> ModItems.MARTIAN_ROCK_SAMPLE.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
-                        // Minerals & Items
+                        // Minerals & Raw Materials
                         output.accept(ModItems.MARTIAN_ROCK_SAMPLE.get());
                         output.accept(ModItems.HEMATITE_NODULE.get());
                         output.accept(ModItems.RAW_METEORIC_IRON.get());
@@ -25,6 +25,19 @@ public class ModCreativeTabs {
                         output.accept(ModItems.SULFUR_DUST.get());
                         output.accept(ModItems.OLIVINE_GEM.get());
                         output.accept(ModItems.DRY_ICE_SHARD.get());
+
+                        // Meteoric Equipment
+                        output.accept(ModItems.METEORIC_IRON_SWORD.get());
+                        output.accept(ModItems.METEORIC_IRON_PICKAXE.get());
+                        output.accept(ModItems.METEORIC_IRON_AXE.get());
+                        output.accept(ModItems.METEORIC_IRON_SHOVEL.get());
+                        output.accept(ModItems.METEORIC_IRON_HOE.get());
+
+                        // Resource & Storage Blocks
+                        output.accept(ModItems.METEORIC_IRON_BLOCK_ITEM.get());
+                        output.accept(ModItems.RAW_METEORIC_IRON_BLOCK_ITEM.get());
+                        output.accept(ModItems.OLIVINE_BLOCK_ITEM.get());
+                        output.accept(ModItems.SULFUR_BLOCK_ITEM.get());
 
                         // Soils & Regolith
                         output.accept(ModItems.MARTIAN_SAND_ITEM.get());
@@ -52,6 +65,13 @@ public class ModCreativeTabs {
                         // Polar Ices
                         output.accept(ModItems.MARTIAN_ICE_ITEM.get());
                         output.accept(ModItems.DRY_ICE_BLOCK_ITEM.get());
+
+                        // Technology, Habitat & Greenhouse
+                        output.accept(ModItems.SLEEPING_POD_ITEM.get());
+                        output.accept(ModItems.AIRLOCK_ITEM.get());
+                        output.accept(ModItems.REGOLITH_FARMLAND_ITEM.get());
+                        output.accept(ModItems.MARTIAN_POTATO.get());
+                        output.accept(ModItems.BAKED_MARTIAN_POTATO.get());
                     })
                     .build()
             );

@@ -100,6 +100,16 @@ public class CosmeticNetworking {
                     });
                 }
         );
+
+        registrar.playToClient(
+                MarsWeatherPayload.TYPE,
+                MarsWeatherPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    context.enqueueWork(() -> {
+                        xyz.alyrion.alyrioncore.client.weather.MarsClientWeatherHandler.updateFromServer(payload);
+                    });
+                }
+        );
     }
 
     public static void sendCapeEquipped(String capeId) {

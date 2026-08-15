@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "moisture=0": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=1": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=2": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=3": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=4": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=5": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=6": {
+      "model": "alyrioncore:block/regolith_farmland"
+    },
+    "moisture=7": {
+      "model": "alyrioncore:block/regolith_farmland_moist"
+    }
+  }
+}

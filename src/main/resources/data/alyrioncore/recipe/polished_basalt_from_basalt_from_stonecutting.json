@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:stonecutting",
+  "count": 1,
+  "ingredient": {
+    "item": "alyrioncore:martian_basalt"
+  },
+  "result": {
+    "id": "alyrioncore:polished_martian_basalt"
+  }
+}

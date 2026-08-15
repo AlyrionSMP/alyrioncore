@@ -1,0 +1,18 @@
+{
+  "structures": [
+    {
+      "structure": "alyrioncore:crashed_soviet_probe",
+      "weight": 1
+    },
+    {
+      "structure": "alyrioncore:crashed_us_probe",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 18,
+    "separation": 6,
+    "salt": 7842109
+  }
+}

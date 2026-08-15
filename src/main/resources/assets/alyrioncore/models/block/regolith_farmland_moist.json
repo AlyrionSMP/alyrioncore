@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/template_farmland",
+  "textures": {
+    "dirt": "alyrioncore:block/regolith_farmland_side",
+    "top": "alyrioncore:block/regolith_farmland_moist",
+    "particle": "alyrioncore:block/regolith_farmland_moist"
+  }
+}

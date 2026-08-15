@@ -15,6 +15,12 @@
     "alyrioncore:martian_olivine_ore",
     "alyrioncore:martian_ice",
     "alyrioncore:dry_ice_block",
-    "alyrioncore:martian_permafrost"
+    "alyrioncore:martian_permafrost",
+    "alyrioncore:meteoric_iron_block",
+    "alyrioncore:raw_meteoric_iron_block",
+    "alyrioncore:olivine_block",
+    "alyrioncore:sulfur_block",
+    "alyrioncore:sleeping_pod",
+    "alyrioncore:airlock"
   ]
 }

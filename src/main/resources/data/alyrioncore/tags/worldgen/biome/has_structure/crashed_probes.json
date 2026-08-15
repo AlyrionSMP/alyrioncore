@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "alyrioncore:vastitas_borealis",
+    "alyrioncore:valles_marineris",
+    "alyrioncore:tharsis_volcanic_plateau",
+    "alyrioncore:planum_boreum",
+    "alyrioncore:noachis_terra",
+    "alyrioncore:olympus_mons"
+  ]
+}

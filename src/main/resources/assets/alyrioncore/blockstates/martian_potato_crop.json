@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "alyrioncore:block/martian_potato_stage0"
+    },
+    "age=1": {
+      "model": "alyrioncore:block/martian_potato_stage1"
+    },
+    "age=2": {
+      "model": "alyrioncore:block/martian_potato_stage2"
+    },
+    "age=3": {
+      "model": "alyrioncore:block/martian_potato_stage3"
+    },
+    "age=4": {
+      "model": "alyrioncore:block/martian_potato_stage4"
+    },
+    "age=5": {
+      "model": "alyrioncore:block/martian_potato_stage5"
+    },
+    "age=6": {
+      "model": "alyrioncore:block/martian_potato_stage6"
+    },
+    "age=7": {
+      "model": "alyrioncore:block/martian_potato_stage7"
+    }
+  }
+}

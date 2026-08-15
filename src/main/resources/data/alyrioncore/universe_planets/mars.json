@@ -37,7 +37,7 @@
     },
     "render_universe_in_dimension": true,
     "dimension_day_time_controller_name": "sol",
-    "apply_gravity_correction_to_entities_in_dimension": true,
+    "apply_gravity_correction_to_entities_in_dimension": false,
     "entity_drag_multiplier": [
       {
         "altitude": 4000.0,

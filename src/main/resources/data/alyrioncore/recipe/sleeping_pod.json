@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "B": {
+      "tag": "minecraft:beds"
+    }
+  },
+  "pattern": [
+    "GGG",
+    "IBI",
+    "III"
+  ],
+  "result": {
+    "count": 1,
+    "id": "alyrioncore:sleeping_pod"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        },
+        {
+          "block": "alyrioncore:sleeping_pod",
+          "condition": "minecraft:block_state_property",
+          "properties": {
+            "part": "foot"
+          }
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "alyrioncore:sleeping_pod"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ]
+}
