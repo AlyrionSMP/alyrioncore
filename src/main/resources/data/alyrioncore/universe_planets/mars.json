@@ -1,0 +1,123 @@
+{
+  "parent": "sol",
+  "name": "mars",
+  "radius": 6360000.0,
+  "acceleration_at_surface": 3.7,
+  "position": {
+    "type": "circular_orbit_period",
+    "orbit_axis": {
+      "x": 0.0,
+      "y": 1.0,
+      "z": 0.0
+    },
+    "period_seconds": 823200.0
+  },
+  "rotation": {
+    "type": "period",
+    "rotation_axis": {
+      "x": 0.0,
+      "y": -1.0,
+      "z": 0.0
+    },
+    "period_seconds": 1230.0
+  },
+  "dimension_data": {
+    "linked_dimension": "alyrioncore:mars",
+    "allowed_transfer": "all",
+    "dimension_transfer_height": 20000,
+    "atmosphere_composition": {
+      "5000": [
+        "low_density",
+        "drowning"
+      ],
+      "21000": [
+        "low_density",
+        "drowning"
+      ]
+    },
+    "render_universe_in_dimension": true,
+    "dimension_day_time_controller_name": "sol",
+    "apply_gravity_correction_to_entities_in_dimension": true,
+    "entity_drag_multiplier": [
+      {
+        "altitude": 4000.0,
+        "value": 0.2,
+        "slope": 0.0
+      },
+      {
+        "altitude": 7000.0,
+        "value": 0.0,
+        "slope": -0.0001
+      }
+    ]
+  },
+  "planet_extras": {
+    "is_star": false,
+    "has_clouds": false,
+    "light_source_name": "sol"
+  },
+  "planet_texture": {
+    "type": "biome_sampler",
+    "fallback_red": 180,
+    "fallback_green": 85,
+    "fallback_blue": 50,
+    "colors": [
+      {
+        "matching_biomes": [
+          "alyrioncore:planum_boreum"
+        ],
+        "priority": 10,
+        "red": 240,
+        "green": 245,
+        "blue": 250
+      },
+      {
+        "matching_biomes": [
+          "alyrioncore:olympus_mons"
+        ],
+        "priority": 8,
+        "red": 115,
+        "green": 60,
+        "blue": 45
+      },
+      {
+        "matching_biomes": [
+          "alyrioncore:valles_marineris"
+        ],
+        "priority": 6,
+        "red": 135,
+        "green": 60,
+        "blue": 35
+      },
+      {
+        "matching_biomes": [
+          "alyrioncore:tharsis_volcanic_plateau"
+        ],
+        "priority": 5,
+        "red": 100,
+        "green": 50,
+        "blue": 35
+      },
+      {
+        "matching_biomes": [
+          "alyrioncore:noachis_terra"
+        ],
+        "priority": 3,
+        "red": 165,
+        "green": 80,
+        "blue": 50
+      },
+      {
+        "matching_biomes": [
+          "alyrioncore:vastitas_borealis"
+        ],
+        "priority": 1,
+        "red": 195,
+        "green": 95,
+        "blue": 55
+      }
+    ]
+  },
+  "priority": 1000,
+  "disabled": false
+}

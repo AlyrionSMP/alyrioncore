@@ -11,16 +11,27 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 import org.lwjgl.glfw.GLFW;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 
+import xyz.alyrion.alyrioncore.client.gui.CosmeticStoreScreen;
+import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
+
 @EventBusSubscriber(modid = AlyrionCore.MODID, value = Dist.CLIENT)
 public class ClientGameEvents {
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.screen == null) {
-            while (ModKeyMappings.ESCAPE_KEY.consumeClick()) {
-                boolean pauseOnF3 = InputConstants.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_F3);
-                mc.pauseGame(pauseOnF3);
+        if (mc.player != null) {
+            CosmeticsManager.get().onClientTick(mc);
+
+            if (mc.screen == null) {
+                while (ModKeyMappings.ESCAPE_KEY.consumeClick()) {
+                    boolean pauseOnF3 = InputConstants.isKeyDown(mc.getWindow().getWindow(), GLFW.GLFW_KEY_F3);
+                    mc.pauseGame(pauseOnF3);
+                }
+
+                while (ModKeyMappings.OPEN_STORE.consumeClick()) {
+                    mc.setScreen(new CosmeticStoreScreen());
+                }
             }
         }
     }

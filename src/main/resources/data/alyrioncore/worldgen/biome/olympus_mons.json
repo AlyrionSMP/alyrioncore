@@ -1,0 +1,56 @@
+{
+  "has_precipitation": false,
+  "temperature": -0.5,
+  "downfall": 0.0,
+  "effects": {
+    "sky_color": 8016460,
+    "fog_color": 6702670,
+    "water_color": 4159204,
+    "water_fog_color": 329011,
+    "grass_color_override": 6702670,
+    "foliage_color_override": 6702670,
+    "ambient_particle": {
+      "options": {
+        "type": "minecraft:ash"
+      },
+      "probability": 0.008
+    },
+    "mood_sound": {
+      "sound": "minecraft:ambient.basalt_deltas.mood",
+      "tick_delay": 6000,
+      "block_search_extent": 8,
+      "offset": 2.0
+    }
+  },
+  "spawners": {},
+  "spawn_costs": {},
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:canyon"
+    ]
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [
+      "alyrioncore:ore_meteoric_iron_rich",
+      "alyrioncore:ore_martian_copper",
+      "alyrioncore:ore_sulfur",
+      "alyrioncore:ore_olivine"
+    ],
+    [],
+    [],
+    [],
+    [
+      "alyrioncore:volcanic_scoria_patch",
+      "alyrioncore:volcanic_fumarole_patch",
+      "alyrioncore:scoria_boulder_cluster",
+      "alyrioncore:volcanic_basalt_columns",
+      "alyrioncore:boulder_scatter",
+      "alyrioncore:canyon_rock_scatter"
+    ]
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "dimension": "alyrioncore:mars",
+  "priority": 1000,
+  "universal_drag": 0.002,
+  "base_gravity": [
+    0.0,
+    -3.7,
+    0.0
+  ],
+  "base_pressure": 600,
+  "magnetic_north": [
+    0.0,
+    0.0,
+    0.0
+  ]
+}

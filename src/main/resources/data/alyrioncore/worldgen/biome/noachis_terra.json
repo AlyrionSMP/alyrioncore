@@ -36,15 +36,15 @@
     [],
     [],
     [
-      "alyrioncore:ore_meteoric_iron_rich",
-      "alyrioncore:ore_hematite_lower"
+      "alyrioncore:ore_hematite_lower",
+      "alyrioncore:ore_meteoric_iron_rich"
     ],
     [],
     [],
     [],
     [
-      "alyrioncore:large_crater_scatter",
-      "alyrioncore:boulder_scatter"
+      "alyrioncore:boulder_scatter",
+      "alyrioncore:large_crater_scatter"
     ]
   ]
 }

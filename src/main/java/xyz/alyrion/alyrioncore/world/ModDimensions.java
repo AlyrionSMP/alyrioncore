@@ -35,4 +35,7 @@ public class ModDimensions {
 
     public static final ResourceKey<Biome> NOACHIS_TERRA =
             ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "noachis_terra"));
+
+    public static final ResourceKey<Biome> OLYMPUS_MONS =
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "olympus_mons"));
 }

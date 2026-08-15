@@ -15,4 +15,12 @@ public class ModKeyMappings {
             GLFW.GLFW_KEY_ESCAPE,
             CATEGORY_ALYRION
     );
+
+    public static final KeyMapping OPEN_STORE = new KeyMapping(
+            "key.alyrioncore.open_store",
+            KeyConflictContext.IN_GAME,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_K,
+            CATEGORY_ALYRION
+    );
 }
