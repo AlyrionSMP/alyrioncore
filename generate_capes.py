@@ -389,6 +389,30 @@ def create_cape_grim():
     img.save("src/main/resources/assets/alyrioncore/textures/capes/grim.png")
     print("Saved grim.png")
 
+def create_cape_pride():
+    img = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
+    pixels = img.load()
+
+    red = hex_to_rgb("#E40303")
+    orange = hex_to_rgb("#FF8C00")
+    yellow = hex_to_rgb("#FFED00")
+    green = hex_to_rgb("#008026")
+    blue = hex_to_rgb("#24408E")
+    violet = hex_to_rgb("#732982")
+
+    # Classic 6-stripe pride flag stretched over the whole cape (rows 0..16), no white
+    stripes = [red, orange, yellow, green, blue, violet]
+    heights = [3, 3, 3, 3, 2, 3]  # sums to 17
+    y = 0
+    for color, h in zip(stripes, heights):
+        for _ in range(h):
+            for x in range(22):  # cols 0..21: both halves plus seam
+                pixels[x, y] = (*color, 255)
+            y += 1
+
+    img.save("src/main/resources/assets/alyrioncore/textures/capes/pride.png")
+    print("Saved pride.png")
+
 if __name__ == "__main__":
     create_cape_2_year()
     create_cape_season_8()
@@ -396,3 +420,4 @@ if __name__ == "__main__":
     create_cape_moon()
     create_cape_marsian()
     create_cape_grim()
+    create_cape_pride()

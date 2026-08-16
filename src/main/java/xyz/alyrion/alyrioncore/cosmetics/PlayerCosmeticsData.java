@@ -68,6 +68,9 @@ public class PlayerCosmeticsData {
         if (completedTasks.contains(TaskDefinition.SLAYING_PLAYERS.getId())) {
             unlockedCapes.add(CapeDefinition.GRIM.getId());
         }
+        if (completedTasks.contains(TaskDefinition.PARTY_OF_FOUR.getId())) {
+            unlockedCapes.add(CapeDefinition.PRIDE.getId());
+        }
 
         // Never leave an equipped cape that isn't unlocked
         if (equippedCapeId != null && !isCapeUnlocked(equippedCapeId)) {

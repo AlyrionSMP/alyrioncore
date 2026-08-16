@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.compat.OpacCompat;
 import xyz.alyrion.alyrioncore.world.ModDimensions;
 
 import java.util.function.Predicate;
@@ -143,6 +144,17 @@ public enum TaskDefinition {
             player -> {
                 if (!(player instanceof ServerPlayer serverPlayer)) return false;
                 return ServerCosmeticsManager.get().getPlayerData(serverPlayer).getPvpKills() >= 10;
+            }
+    ),
+    PARTY_OF_FOUR(
+            "task_party",
+            "United We Stand",
+            "Be a member of a party with at least 4 players (Open Parties and Claims).",
+            5,
+            CapeDefinition.PRIDE,
+            player -> {
+                if (!(player instanceof ServerPlayer serverPlayer)) return false;
+                return OpacCompat.isPartySizeAtLeast(serverPlayer, 4);
             }
     );
 

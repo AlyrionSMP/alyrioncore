@@ -104,22 +104,28 @@ public class CosmeticStoreScreen extends Screen {
             // Only add widgets if in visible viewport
             if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
 
+            // Clamp the widget into the list viewport so buttons never overlap the tab bar / Close button
+            int cardTop = Math.max(itemY, contentY);
+            int cardH = Math.min(itemY + itemHeight, this.height - 30) - cardTop;
+            if (cardH < 12) continue;
+
             boolean isUnlocked = manager.isCapeUnlocked(cape);
             boolean isEquipped = manager.isCapeEquipped(cape);
 
-            // Select Cape card button
+            // Select Cape card button (empty message; the name is painted left-aligned after the icon in render)
             int btnSelectX = listX;
             int btnSelectWidth = listWidth - 85;
-            this.addRenderableWidget(Button.builder(Component.literal("§f" + cape.getDisplayName()), btn -> {
+            this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
                 this.selectedCape = cape;
-            }).bounds(btnSelectX, itemY, btnSelectWidth, itemHeight).build());
+            }).bounds(btnSelectX, cardTop, btnSelectWidth, cardH).build());
 
             // Action Button (Equip / Unequip / Buy / Claim)
             int actionBtnX = listX + listWidth - 80;
             int actionBtnWidth = 78;
-            int actionBtnHeight = Math.min(20, itemHeight - 4);
-            int actionBtnY = itemY + (itemHeight - actionBtnHeight) / 2;
-            Button actionBtn;
+            int actionBtnHeight = Math.min(20, cardH - 4);
+            if (actionBtnHeight >= 12) {
+                int actionBtnY = cardTop + (cardH - actionBtnHeight) / 2;
+                Button actionBtn;
 
             if (isEquipped) {
                 actionBtn = Button.builder(Component.literal("§cUnequip"), btn -> {
@@ -131,6 +137,11 @@ public class CosmeticStoreScreen extends Screen {
                     manager.equipCape(cape);
                     rebuildWidgets();
                 }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
+            } else if (!cape.isPurchasable()) {
+                // Task-only capes (e.g. the Pride Cape) can't be bought; it can only be earned in the Tasks tab
+                actionBtn = Button.builder(Component.literal("§dTask Reward"), btn -> {
+                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
+                actionBtn.active = false;
             } else if (cape.isFree()) {
                 actionBtn = Button.builder(Component.literal("§bClaim Free"), btn -> {
                     manager.purchaseCape(cape);
@@ -148,6 +159,7 @@ public class CosmeticStoreScreen extends Screen {
             }
 
             this.addRenderableWidget(actionBtn);
+            }
         }
 
         // Preview panel action button
@@ -168,6 +180,11 @@ public class CosmeticStoreScreen extends Screen {
                     manager.equipCape(selectedCape);
                     rebuildWidgets();
                 }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
+            } else if (!selectedCape.isPurchasable()) {
+                Button taskBtn = Button.builder(Component.literal("§dTask Reward"), btn -> {
+                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build();
+                taskBtn.active = false;
+                this.addRenderableWidget(taskBtn);
             } else if (selectedCape.isFree()) {
                 this.addRenderableWidget(Button.builder(Component.literal("§bClaim Free"), btn -> {
                     manager.purchaseCape(selectedCape);
@@ -202,22 +219,28 @@ public class CosmeticStoreScreen extends Screen {
             // Only add widgets if in visible viewport
             if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
 
+            // Clamp the widget into the list viewport so buttons never overlap the tab bar / Close button
+            int cardTop = Math.max(itemY, contentY);
+            int cardH = Math.min(itemY + itemHeight, this.height - 30) - cardTop;
+            if (cardH < 12) continue;
+
             boolean isUnlocked = manager.isPetUnlocked(pet);
             boolean isEquipped = manager.isPetEquipped(pet);
 
-            // Select Pet card button
+            // Select Pet card button (empty message; the name is painted left-aligned after the icon in render)
             int btnSelectX = listX;
             int btnSelectWidth = listWidth - 85;
-            this.addRenderableWidget(Button.builder(Component.literal("§f" + pet.getDisplayName()), btn -> {
+            this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
                 this.selectedPet = pet;
-            }).bounds(btnSelectX, itemY, btnSelectWidth, itemHeight).build());
+            }).bounds(btnSelectX, cardTop, btnSelectWidth, cardH).build());
 
             // Action Button (Equip / Unequip / Buy)
             int actionBtnX = listX + listWidth - 80;
             int actionBtnWidth = 78;
-            int actionBtnHeight = Math.min(20, itemHeight - 4);
-            int actionBtnY = itemY + (itemHeight - actionBtnHeight) / 2;
-            Button actionBtn;
+            int actionBtnHeight = Math.min(20, cardH - 4);
+            if (actionBtnHeight >= 12) {
+                int actionBtnY = cardTop + (cardH - actionBtnHeight) / 2;
+                Button actionBtn;
 
             if (isEquipped) {
                 actionBtn = Button.builder(Component.literal("§cUnequip"), btn -> {
@@ -246,6 +269,7 @@ public class CosmeticStoreScreen extends Screen {
             }
 
             this.addRenderableWidget(actionBtn);
+            }
         }
 
         // Preview panel action button
@@ -346,6 +370,9 @@ public class CosmeticStoreScreen extends Screen {
         int itemSpacing = 3;
         int itemHeight = Math.max(26, Math.min(32, (availableHeight - (capes.length - 1) * itemSpacing) / capes.length));
 
+        // Clip list painting to the viewport so cards never paint over the Close button
+        guiGraphics.enableScissor(listX - 1, contentY, listX + listWidth + 1, this.height - 30);
+
         // Render cape list items
         for (int i = 0; i < capes.length; i++) {
             CapeDefinition cape = capes[i];
@@ -377,12 +404,17 @@ public class CosmeticStoreScreen extends Screen {
                     64, 32
             );
 
+            // Cape name, left-aligned after the icon
+            guiGraphics.drawString(this.font, Component.literal("§f" + cape.getDisplayName()), iconX + iconW + 12, itemY + (itemHeight - 8) / 2, 0xFFFFFF, false);
+
             // Subtitle info
             String statusText;
             if (isEquipped) {
                 statusText = "§a✔ EQUIPPED";
             } else if (isUnlocked) {
                 statusText = "§b✔ UNLOCKED";
+            } else if (!cape.isPurchasable()) {
+                statusText = "§e★ PARTY REWARD";
             } else if (cape.isFree()) {
                 statusText = "§d★ FREE";
             } else {
@@ -392,6 +424,7 @@ public class CosmeticStoreScreen extends Screen {
                 guiGraphics.drawString(this.font, statusText, listX + iconW + 10, itemY + itemHeight - 11, 0xAAAAAA, false);
             }
         }
+        guiGraphics.disableScissor();
 
         // Right Preview Showcase Panel
         int previewX = this.width / 2 + 38;
@@ -430,7 +463,16 @@ public class CosmeticStoreScreen extends Screen {
             // Status label
             boolean isUnlocked = manager.isCapeUnlocked(selectedCape);
             boolean isEquipped = manager.isCapeEquipped(selectedCape);
-            String stateStr = isEquipped ? "§aStatus: Equipped" : (isUnlocked ? "§bStatus: Unlocked" : "§6Status: Locked (" + selectedCape.getPrice() + " Coins)");
+            String stateStr;
+            if (isEquipped) {
+                stateStr = "§aStatus: Equipped";
+            } else if (isUnlocked) {
+                stateStr = "§bStatus: Unlocked";
+            } else if (!selectedCape.isPurchasable()) {
+                stateStr = "§dStatus: Locked (Party Task Reward)";
+            } else {
+                stateStr = "§6Status: Locked (" + selectedCape.getPrice() + " Coins)";
+            }
             guiGraphics.drawCenteredString(this.font, stateStr, previewX + previewWidth / 2, this.height - 60, 0xFFFFFF);
         }
     }
@@ -442,6 +484,9 @@ public class CosmeticStoreScreen extends Screen {
         int availableHeight = this.height - contentY - 30;
         int itemSpacing = 3;
         int itemHeight = Math.max(26, Math.min(32, (availableHeight - (pets.length - 1) * itemSpacing) / pets.length));
+
+        // Clip list painting to the viewport so cards never paint over the Close button
+        guiGraphics.enableScissor(listX - 1, contentY, listX + listWidth + 1, this.height - 30);
 
         // Render pet list items
         for (int i = 0; i < pets.length; i++) {
@@ -464,6 +509,9 @@ public class CosmeticStoreScreen extends Screen {
             int iconY = itemY + (itemHeight - 12) / 2;
             drawSatelliteIcon(guiGraphics, iconX, iconY, 12);
 
+            // Pet name, left-aligned after the icon
+            guiGraphics.drawString(this.font, Component.literal("§f" + pet.getDisplayName()), listX + 24, itemY + (itemHeight - 8) / 2, 0xFFFFFF, false);
+
             // Subtitle info
             String statusText;
             if (isEquipped) {
@@ -479,6 +527,7 @@ public class CosmeticStoreScreen extends Screen {
                 guiGraphics.drawString(this.font, statusText, listX + 24, itemY + itemHeight - 11, 0xAAAAAA, false);
             }
         }
+        guiGraphics.disableScissor();
 
         // Right Preview Showcase Panel
         int previewX = this.width / 2 + 38;

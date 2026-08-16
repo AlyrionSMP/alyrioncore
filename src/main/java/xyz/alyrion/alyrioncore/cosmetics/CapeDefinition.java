@@ -10,6 +10,7 @@ public enum CapeDefinition {
             "2 Year Celebration Cape",
             "Commemorating 2 years of Alyrion with a festive cake!",
             0,
+            true,
             true
     ),
     SEASON_8(
@@ -17,6 +18,7 @@ public enum CapeDefinition {
             "Season 8 Cape",
             "Exclusive crimson & gold cape celebrating Season 8!",
             0,
+            true,
             true
     ),
     STARS(
@@ -24,27 +26,39 @@ public enum CapeDefinition {
             "Stars Cape",
             "Deep space starry sky with an orbiting research satellite.",
             5,
-            false
+            false,
+            true
     ),
     MOON(
             "moon",
             "Moon Cape",
             "Lunar surface overlooking planet Earth in deep space.",
             5,
-            false
+            false,
+            true
     ),
     MARSIAN(
             "marsian",
             "The Martian Cape",
             "Martian rust dunes and Olympus Mons with a green Martian.",
             5,
-            false
+            false,
+            true
     ),
     GRIM(
             "grim",
             "Grim Cape",
             "A black cape bearing a bleached skull, earned with 10 coins or 10 player kills.",
             10,
+            false,
+            true
+    ),
+    PRIDE(
+            "pride",
+            "Pride Cape",
+            "A vibrant rainbow cape earned by partying up with at least 4 players (Open Parties and Claims).",
+            0,
+            false,
             false
     );
 
@@ -53,14 +67,16 @@ public enum CapeDefinition {
     private final String description;
     private final int price;
     private final boolean unlockedByDefault;
+    private final boolean purchasable;
     private final ResourceLocation textureLocation;
 
-    CapeDefinition(String id, String displayName, String description, int price, boolean unlockedByDefault) {
+    CapeDefinition(String id, String displayName, String description, int price, boolean unlockedByDefault, boolean purchasable) {
         this.id = id;
         this.displayName = displayName;
         this.description = description;
         this.price = price;
         this.unlockedByDefault = unlockedByDefault;
+        this.purchasable = purchasable;
         this.textureLocation = ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "textures/capes/" + id + ".png");
     }
 
@@ -88,8 +104,13 @@ public enum CapeDefinition {
         return price;
     }
 
+    /** Whether this cape can be bought with coins in the store (the Pride Cape cannot). */
+    public boolean isPurchasable() {
+        return purchasable;
+    }
+
     public boolean isFree() {
-        return price <= 0;
+        return purchasable && price <= 0;
     }
 
     public boolean isUnlockedByDefault() {

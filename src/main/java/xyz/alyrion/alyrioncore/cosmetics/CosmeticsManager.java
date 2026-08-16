@@ -103,6 +103,12 @@ public class CosmeticsManager {
             return true;
         }
 
+        if (!cape.isPurchasable()) {
+            // Task-only capes (e.g. the Pride Cape) cannot be bought; the server
+            // rejects any such request and will sync back the true state.
+            return false;
+        }
+
         if (data.getCoins() >= cape.getPrice()) {
             data.setCoins(data.getCoins() - cape.getPrice());
             data.unlockCape(cape.getId());

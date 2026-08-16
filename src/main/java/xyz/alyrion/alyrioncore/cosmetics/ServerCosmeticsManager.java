@@ -81,6 +81,11 @@ public class ServerCosmeticsManager {
     public boolean purchaseCape(ServerPlayer player, String capeId) {
         CapeDefinition cape = CapeDefinition.fromId(capeId);
         if (cape == null) return false;
+        if (!cape.isPurchasable()) {
+            // Task-only capes (e.g. the Pride Cape) can never be bought, only earned
+            syncToPlayer(player);
+            return false;
+        }
 
         PlayerCosmeticsData data = getPlayerData(player);
         if (data.isCapeUnlocked(cape.getId())) {
