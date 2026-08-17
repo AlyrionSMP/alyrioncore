@@ -835,13 +835,12 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 
 ### Recipe Catalog (selection)
 
-AlyrionCore is **Create-aware**: where it makes sense, recipes run through Create machines instead of the crafting table (and the crafting-table versions return automatically if Create is not installed; storage-block packing keeps *both* paths):
+AlyrionCore is **Create-aware**: where it makes sense, recipes run through Create machines (storage-block packing keeps *both* the crafting table and the basin+press path):
 
-- **Create — Mechanical Crafter**: Sleeping Pod, Airlock, Oxygen Generator, and the Rocketnautics engine parts (Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor) are assembled in the **Mechanical Crafter** — complex devices are no longer hand-crafted.
 - **Create — Basin + Press (compacting)**: an **additional** packing path for storage blocks (the crafting-table packing stays available) — Block of Meteoric Iron (9 ingots), Raw Meteoric Iron Block, Block of Olivine, Block of Sulfur, Vanilla Raw Copper Block from Martian raw copper, Dry Ice Block, Packed Ice from Martian Ice, and the Hematite→Raw Iron reduction.
 - **Create — Basin + Mixer (mixing)**: Gunpowder (sulfur + coal/charcoal/bonemeal) and cryo-packed ice (dry ice shards + water).
 - **Create — Millstone (milling)**: Red Dye from Hematite nodules.
-- **Still crafting-table**: Meteoric Iron tools, unpacking (block → 9 items), masonry 2×2 (basalt/polished/bricks/tiles, coarse regolith, regolith from sand), Torches from sulfur, Spyglass from Olivine, Water Bucket from Martian Ice, the Space Helmet and the Fluid Hose (no Create machine fits them).
+- **Still crafting-table**: the machines (Sleeping Pod, Airlock, Oxygen Generator), the Rocketnautics engine parts (Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor), Meteoric Iron tools, unpacking (block → 9 items), masonry 2×2 (basalt/polished/bricks/tiles, coarse regolith, regolith from sand), Torches from sulfur, Spyglass from Olivine, Water Bucket from Martian Ice, the Space Helmet and the Fluid Hose.
 - **Furnace / stonecutting as before**: smelting & blasting for all ores, Baked Martian Potato, Glass from Martian Sand, Terracotta, Smooth Stone, stonecutting for the basalt line.
 
 ### Mod Metadata & Architecture

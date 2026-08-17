@@ -4,9 +4,8 @@ Create machine recipes where that makes sense, keeping crafting-table fallbacks
 for when Create is not installed.
 
 Decisions (matching Create's own conventions):
-  * Complex machines        -> create:mechanical_crafting (Create crafts these
-                               in the Mechanical Crafter; Rocketnautics' own
-                               thrusters are mechanical_crafting too)
+  * Complex machines        -> plain crafting-table recipes (no Create machine
+                               for these — they are all simple 3x3 crafts)
   * Block compression       -> create:compacting (basin + press) as an
                                ADDITIONAL path; the crafting-table packing
                                stays available (Create itself keeps crafting
@@ -20,11 +19,11 @@ Decisions (matching Create's own conventions):
                                spyglass, water bucket from ice, furnace and
                                stonecutting recipes.
 
-Converted recipes are gated on `create` being loaded; mechanical/mixing/
-milling keep the originals as `<name>_from_crafting.json` fallbacks gated on
-`create` NOT being loaded, so the mod still works standalone. Compacting
-keeps the crafting recipe unconditionally. Rocketnautics compat parts get no
-fallback (Rocketnautics itself requires Create).
+Converted recipes are gated on `create` being loaded; mixing/milling keep
+the originals as `<name>_from_crafting.json` fallbacks gated on `create` NOT
+being loaded, so the mod still works standalone. Compacting keeps the
+crafting recipe unconditionally. Rocketnautics compat parts are plain
+crafting gated on rocketnautics (which itself requires Create).
 
 Run:  python3 generate_create_recipes.py
 """
@@ -63,20 +62,6 @@ def cond_not_create():
 # ---------------------------------------------------------------------------
 # Create recipe emitters
 # ---------------------------------------------------------------------------
-def mechanical_crafting(name, pattern, key, result_id, count=1, conditions=None):
-    r = {
-        "type": "create:mechanical_crafting",
-        "accept_mirrored": False,
-        "category": "misc",
-        "key": key,
-        "pattern": pattern,
-        "result": {"count": count, "id": result_id},
-    }
-    if conditions:
-        r["neoforge:conditions"] = conditions
-    write_json(os.path.join(RECIPE_DIR, f"{name}.json"), r)
-
-
 def compacting(name, item, amount, results, conditions=None):
     r = {
         "type": "create:compacting",
@@ -153,102 +138,53 @@ def shapeless_fallback(name, ingredients, result_id, count=1, category="misc"):
 
 def main():
     # ------------------------------------------------------------------
-    # 1. Complex machines -> Mechanical Crafter
+    # 1. Machines & rocket parts -> plain crafting-table recipes (all 3x3,
+    #    no Create machine involved). Rocketnautics parts keep the
+    #    mod_loaded condition; native machines are unconditional.
     # ------------------------------------------------------------------
-    mechanical_crafting(
-        "sleeping_pod",
-        ["GGG", "IBI", "III"],
-        {"G": {"item": "minecraft:glass"},
-         "I": {"item": "minecraft:iron_ingot"},
-         "B": {"tag": "minecraft:beds"}},
-        "alyrioncore:sleeping_pod",
-        conditions=cond_create(),
-    )
-    shaped_fallback(
-        "sleeping_pod",
-        ["GGG", "IBI", "III"],
-        {"G": {"item": "minecraft:glass"},
-         "I": {"item": "minecraft:iron_ingot"},
-         "B": {"tag": "minecraft:beds"}},
-        "alyrioncore:sleeping_pod",
-        category="misc",
-    )
+    shaped("sleeping_pod",
+           ["GGG", "IBI", "III"],
+           {"G": {"item": "minecraft:glass"},
+            "I": {"item": "minecraft:iron_ingot"},
+            "B": {"tag": "minecraft:beds"}},
+           "alyrioncore:sleeping_pod", category="misc")
 
-    mechanical_crafting(
-        "airlock",
-        ["MIM", "MGM", "MRM"],
-        {"M": {"item": "alyrioncore:meteoric_iron_ingot"},
-         "I": {"item": "minecraft:iron_ingot"},
-         "G": {"item": "minecraft:glass_pane"},
-         "R": {"item": "minecraft:redstone"}},
-        "alyrioncore:airlock",
-        conditions=cond_create(),
-    )
-    shaped_fallback(
-        "airlock",
-        ["MIM", "MGM", "MRM"],
-        {"M": {"item": "alyrioncore:meteoric_iron_ingot"},
-         "I": {"item": "minecraft:iron_ingot"},
-         "G": {"item": "minecraft:glass_pane"},
-         "R": {"item": "minecraft:redstone"}},
-        "alyrioncore:airlock",
-        category="misc",
-    )
+    shaped("airlock",
+           ["MIM", "MGM", "MRM"],
+           {"M": {"item": "alyrioncore:meteoric_iron_ingot"},
+            "I": {"item": "minecraft:iron_ingot"},
+            "G": {"item": "minecraft:glass_pane"},
+            "R": {"item": "minecraft:redstone"}},
+           "alyrioncore:airlock", category="misc")
 
-    mechanical_crafting(
-        "oxygen_generator",
-        ["MGM", "GMG", "MRM"],
-        {"M": {"item": "alyrioncore:meteoric_iron_ingot"},
-         "G": {"item": "minecraft:glass_pane"},
-         "R": {"item": "minecraft:redstone"}},
-        "alyrioncore:oxygen_generator",
-        conditions=cond_create(),
-    )
-    shaped_fallback(
-        "oxygen_generator",
-        ["MGM", "GMG", "MRM"],
-        {"M": {"item": "alyrioncore:meteoric_iron_ingot"},
-         "G": {"item": "minecraft:glass_pane"},
-         "R": {"item": "minecraft:redstone"}},
-        "alyrioncore:oxygen_generator",
-        category="misc",
-    )
+    shaped("oxygen_generator",
+           ["MGM", "GMG", "MRM"],
+           {"M": {"item": "alyrioncore:meteoric_iron_ingot"},
+            "G": {"item": "minecraft:glass_pane"},
+            "R": {"item": "minecraft:redstone"}},
+           "alyrioncore:oxygen_generator", category="misc")
 
-    # Rocketnautics engine parts — mechanical crafting (no fallback: the space
-    # mod itself requires Create, so a crafting fallback would be dead code).
-    rn = [cond_mod("rocketnautics"), cond_mod("create")]
-    mechanical_crafting(
-        "engine_nozzle",
-        ["III", "ICI", "ICI"],
-        {"I": {"item": "minecraft:iron_ingot"},
-         "C": {"item": "minecraft:copper_ingot"}},
-        "rocketnautics:engine_nozzle",
-        conditions=rn,
-    )
-    mechanical_crafting(
-        "engine_pipes",
-        ["ICI", "ICI", "ICI"],
-        {"I": {"item": "minecraft:iron_ingot"},
-         "C": {"item": "minecraft:copper_ingot"}},
-        "rocketnautics:engine_pipes",
-        conditions=rn,
-    )
-    mechanical_crafting(
-        "thruster_mount",
-        ["III", "O O", "III"],
-        {"I": {"item": "minecraft:iron_ingot"},
-         "O": {"item": "minecraft:obsidian"}},
-        "rocketnautics:thruster_mount",
-        conditions=rn,
-    )
-    mechanical_crafting(
-        "hose_anchor",
-        ["III", "ICI", "III"],
-        {"I": {"item": "minecraft:iron_ingot"},
-         "C": {"item": "minecraft:copper_ingot"}},
-        "rocketnautics:hose_anchor",
-        conditions=rn,
-    )
+    rn = [cond_mod("rocketnautics")]
+    shaped("engine_nozzle",
+           ["III", "ICI", "ICI"],
+           {"I": {"item": "minecraft:iron_ingot"},
+            "C": {"item": "minecraft:copper_ingot"}},
+           "rocketnautics:engine_nozzle", category="misc", conditions=rn)
+    shaped("engine_pipes",
+           ["ICI", "ICI", "ICI"],
+           {"I": {"item": "minecraft:iron_ingot"},
+            "C": {"item": "minecraft:copper_ingot"}},
+           "rocketnautics:engine_pipes", category="misc", conditions=rn)
+    shaped("thruster_mount",
+           ["III", "O O", "III"],
+           {"I": {"item": "minecraft:iron_ingot"},
+            "O": {"item": "minecraft:obsidian"}},
+           "rocketnautics:thruster_mount", category="misc", conditions=rn)
+    shaped("hose_anchor",
+           ["III", "ICI", "III"],
+           {"I": {"item": "minecraft:iron_ingot"},
+            "C": {"item": "minecraft:copper_ingot"}},
+           "rocketnautics:hose_anchor", category="misc", conditions=rn)
 
     # ------------------------------------------------------------------
     # 2. Block compression -> Basin + Press (9 -> 1, 4 -> 1) as an ADDITIONAL
