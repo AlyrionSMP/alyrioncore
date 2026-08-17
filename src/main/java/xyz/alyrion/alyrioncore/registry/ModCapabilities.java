@@ -12,15 +12,16 @@ import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlock;
 
 /**
- * Registers the Oxygen Generator's capabilities, gated by input side. The block
- * entity implements {@link IEnergyStorage} and {@link IFluidHandler} directly,
- * but the capabilities are only exposed on the matching input face of the
- * model, so cables and pipes must connect to the right port:
+ * Registers the Oxygen Generator's capabilities. The block entity implements
+ * {@link IEnergyStorage} and {@link IFluidHandler} directly.
  *
- *  * power input  = the east face of the authored model  (facing CCW)
- *  * water input  = the west face of the authored model (facing CW)
+ *  * Energy is gated to the power-input face (the east face of the authored
+ *    model = facing CCW), so Power Grid cables/connectors attach at the power
+ *    terminal.
+ *  * Water is exposed on EVERY face — Create pipes attach no matter which side
+ *    they touch (the water flange on the model marks the intended input).
  *
- * A {@code null} side (block-level queries, e.g. tooltips) still resolves to
+ * A {@code null} side (block-level queries, e.g. tooltips) also resolves to
  * the machine itself.
  */
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD)
@@ -28,10 +29,6 @@ public class ModCapabilities {
 
     private static Direction powerSide(BlockState state) {
         return state.getValue(OxygenGeneratorBlock.FACING).getCounterClockWise();
-    }
-
-    private static Direction waterSide(BlockState state) {
-        return state.getValue(OxygenGeneratorBlock.FACING).getClockWise();
     }
 
     @SubscribeEvent
@@ -46,15 +43,12 @@ public class ModCapabilities {
                     return null;
                 }
         );
+        // Water on every face: Create pipes must attach reliably regardless of
+        // which side they are placed against.
         event.registerBlockEntity(
                 Capabilities.FluidHandler.BLOCK,
                 ModBlockEntities.OXYGEN_GENERATOR.get(),
-                (be, side) -> {
-                    if (side == null || side == waterSide(be.getBlockState())) {
-                        return (IFluidHandler) be;
-                    }
-                    return null;
-                }
+                (be, side) -> (IFluidHandler) be
         );
     }
 }
