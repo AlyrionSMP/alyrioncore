@@ -387,8 +387,9 @@ The **heart of every habitat**: a purpose-built machine (fully custom model & te
 A **two-block-tall airtight door** (`AirlockBlock`, extends `DoorBlock`) that seals habitats while closed, featuring a fully animated hatch:
 
 - **Static bulkhead frame**: The doorway is framed by a fixed titanium bulkhead model (jambs + sill/header) with hazard-stripe markings — the blockstate only carries `facing` and `half` variants, while the door leaf is drawn at runtime.
-- **Animated hatch leaf**: The heavy armored door leaf is rendered by `AirlockBlockEntityRenderer` (block entity registered in `ModBlockEntities.AIRLOCK`). It swings **90° around its hinge with smoothstep pneumatic easing**, folding **inward against the jamb inside the block cell** (never swinging out into the room), and the upper half carries a **translucent viewport window**.
-- **Status LED**: A status LED on the header — **green when sealed** (closed), **red when venting** (open), and **blinking while the hatch is mid-swing**.
+- **Animated hatch leaf**: The heavy armored door leaf is rendered by `AirlockBlockEntityRenderer` (block entity registered in `ModBlockEntities.AIRLOCK`). It opens **like a real airlock**: first it **pops out of the frame** (clearing the wall so it never intersects neighbouring blocks), then it **glides sideways to the right** with a smooth pneumatic ease; closing reverses the motion. The upper half carries a **translucent viewport window**.
+- **Status LED**: A status LED on the header — **green when sealed** (closed), **red when venting** (open), and **blinking while the hatch is moving**.
+- **Pneumatic audio**: opening/closing plays a mechanical piston slide plus a short pressure hiss.
 - **Collision & sealing**: While closed the airlock is a full solid block (sealing the habitat); while open only the **2-px-thick bulkhead jambs** remain solid, leaving a walkable doorway opening between them.
 - Right-clicking cycles open/closed with a **pneumatic hiss** (iron-door sounds at different pitches) and toggles **both door halves together** (a single click fully seals — no half-open leaks); opening an airlock breaks the seal, closing it restores it.
 - Tagged `#minecraft:doors` and `#minecraft:mineable/pickaxe`; beacon base-compatible.

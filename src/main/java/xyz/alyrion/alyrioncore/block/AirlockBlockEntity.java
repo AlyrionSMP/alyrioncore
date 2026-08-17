@@ -9,12 +9,14 @@ import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 
 /**
  * Drives the client-side open/close animation for the pressurized airlock.
- * The hatch leaf is rendered by {@link xyz.alyrion.alyrioncore.client.renderer.AirlockBlockEntityRenderer}.
+ * The hatch leaf is rendered by {@link xyz.alyrion.alyrioncore.client.renderer.AirlockBlockEntityRenderer}
+ * and opens like a real airlock: it pops out of the frame, then glides sideways.
  */
 public class AirlockBlockEntity extends BlockEntity {
 
-    /** Progress per tick while opening/closing (0.0 = fully closed, 1.0 = fully open). */
-    private static final float ANIM_SPEED = 0.18F;
+    /** Progress per tick while opening/closing (0.0 = fully closed, 1.0 = fully open).
+     *  Deliberately slow — a pressurized airlock glides, it does not swing. */
+    private static final float ANIM_SPEED = 0.08F;
 
     private float animProgress;
 

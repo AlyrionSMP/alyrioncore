@@ -94,8 +94,11 @@ public class AirlockBlock extends DoorBlock implements EntityBlock {
         if (otherState.is(this) && otherState.getValue(OPEN) != open) {
             level.setBlock(other, otherState.setValue(OPEN, open), 10);
         }
-        float pitch = open ? 0.85F : 1.15F;
-        level.playSound(player, pos, open ? SoundEvents.IRON_DOOR_OPEN : SoundEvents.IRON_DOOR_CLOSE, SoundSource.BLOCKS, 1.0F, pitch);
+        // Pneumatic airlock audio: a mechanical slide + a pressure hiss.
+        level.playSound(player, pos, open ? SoundEvents.PISTON_EXTEND : SoundEvents.PISTON_CONTRACT,
+                SoundSource.BLOCKS, 0.7F, 1.1F);
+        level.playSound(player, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS,
+                0.5F, open ? 1.3F : 1.7F);
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 

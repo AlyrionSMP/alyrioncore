@@ -14,18 +14,23 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.block.AirlockBlock;
 import xyz.alyrion.alyrioncore.block.AirlockBlockEntity;
 
 /**
- * Renders the animated pressurized-airlock hatch leaf: a heavy armored door that
- * swings open/closed on its hinge with a smooth pneumatic ease, a translucent
- * viewport window, and a blinking status LED (green = sealed, red = venting).
+ * Renders the animated pressurized-airlock hatch: a heavy armored door that
+ * OPENS LIKE A REAL AIRLOCK — first it pops OUT of the frame (clearing the
+ * wall so it never intersects the blocks beside the doorway), then it glides
+ * sideways to the right with a smooth pneumatic ease. Closing reverses the
+ * motion: slide back left, then seat back into the frame.
+ *
+ * The door carries a translucent viewport window; a status LED on the upper
+ * header (green = sealed, red = venting) blinks while the door is moving.
  */
 public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBlockEntity> {
 
@@ -35,7 +40,12 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
     public static final ModelResourceLocation LED_GREEN = model("block/airlock_led_green");
     public static final ModelResourceLocation LED_RED = model("block/airlock_led_red");
 
-    private static final float OPEN_ANGLE = 90.0F;
+    /** Fraction of the animation spent popping the door out of the frame. */
+    private static final float OUT_FRACTION = 0.30F;
+    /** How far the door lifts out of the frame (block units) before sliding. */
+    private static final float OUT_DISTANCE = 0.65F;
+    /** How far the door slides sideways (block units) to fully clear the doorway. */
+    private static final float SLIDE_DISTANCE = 14.5F;
 
     public AirlockBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -53,7 +63,6 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
 
         boolean upper = state.getValue(DoorBlock.HALF) == DoubleBlockHalf.UPPER;
         boolean open = state.getValue(DoorBlock.OPEN);
-        DoorHingeSide hinge = state.getValue(DoorBlock.HINGE);
         Direction facing = state.getValue(DoorBlock.FACING);
 
         float yaw = switch (facing) {
@@ -62,13 +71,17 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
             case NORTH -> 270.0F;
             default -> 0.0F; // EAST
         };
+        // Slide to the viewer's right: the door's own +z (authored) is the right-hand
+        // side for facings along Z, the left-hand side for facings along X.
+        float slideSign = facing.getAxis() == Direction.Axis.Z ? 1.0F : -1.0F;
 
         float eased = blockEntity.getEasedProgress(partialTick);
-        // Fold the leaf into the doorway against the jamb (left hinge -> north wall, right -> south),
-        // staying inside the block cell rather than swinging out into the room.
-        float swing = OPEN_ANGLE * eased * (hinge == DoorHingeSide.LEFT ? -1.0F : 1.0F);
-        // Hinge pivot, in the authored (facing=east) frame: front face, on the leaf's hinged edge.
-        float pivotZ = hinge == DoorHingeSide.LEFT ? 2.0F / 16.0F : 14.0F / 16.0F;
+        float progress = blockEntity.getAnimProgress(partialTick);
+        // Two-phase airlock motion: pop OUT to clear the wall, then glide RIGHT.
+        float outT = Mth.clamp(progress / OUT_FRACTION, 0.0F, 1.0F);
+        float slideT = Mth.clamp((progress - OUT_FRACTION) / (1.0F - OUT_FRACTION), 0.0F, 1.0F);
+        float out = easeOutCubic(outT) * OUT_DISTANCE;
+        float slide = easeInOutCubic(slideT) * SLIDE_DISTANCE * slideSign;
 
         var modelManager = Minecraft.getInstance().getModelManager();
         BakedModel leaf = modelManager.getModel(upper ? LEAF_TOP : LEAF_BOTTOM);
@@ -79,10 +92,8 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
         pose.translate(0.5, 0.5, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(-yaw));
         pose.translate(-0.5, -0.5, -0.5);
-        // Swing the leaf around its vertical hinge.
-        pose.translate(1.0, 0.0, pivotZ);
-        pose.mulPose(Axis.YP.rotationDegrees(swing));
-        pose.translate(-1.0, 0.0, -pivotZ);
+        // Slide the door in the authored frame: out of the frame (+x), then right (+z).
+        pose.translate(out, 0.0F, slide);
 
         VertexConsumer leafBuffer = buffers.getBuffer(RenderType.cutout());
         renderer.renderModel(pose.last(), leafBuffer, state, leaf, 1.0F, 1.0F, 1.0F, light, overlay);
@@ -93,7 +104,7 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
         }
         pose.popPose();
 
-        // Status LED on the upper header (always visible, even while the leaf is moving).
+        // Status LED on the upper header (always visible, even while the door is moving).
         if (upper) {
             float moving = eased > 0.05F && eased < 0.95F ? 1.0F : 0.0F;
             boolean blinkOn = (blockEntity.getLevel().getGameTime() / 3) % 2 == 0;
@@ -108,5 +119,15 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
                 pose.popPose();
             }
         }
+    }
+
+    /** Snappy pneumatic pop: fast out, gentle settle. */
+    private static float easeOutCubic(float t) {
+        return 1.0F - (1.0F - t) * (1.0F - t) * (1.0F - t);
+    }
+
+    /** Smooth symmetric glide for the sideways travel. */
+    private static float easeInOutCubic(float t) {
+        return t < 0.5F ? 4.0F * t * t * t : 1.0F - (float) Math.pow(-2.0F * t + 2.0F, 3.0F) / 2.0F;
     }
 }
