@@ -178,25 +178,10 @@ def ring():
     return img
 
 
-def pipe():
-    """Side feed pipe: cylinder with a teal energy stripe."""
-    img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
-    for y in range(16):
-        for x in range(16):
-            d = abs(x - 7.5) / 6.0
-            c = S4 if d < 0.2 else (S3 if d < 0.5 else S1)
-            img[y][x] = mc.hex2rgb(c) + (255,)
-    # teal energy stripe down the pipe
-    for y in range(16):
-        img[y][6] = mc.hex2rgb(K1) + (255,)
-        img[y][7] = mc.hex2rgb(K2) + (255,)
-    img[2][7] = mc.hex2rgb(KG) + (255,)
-    return img
-
-
 def power_port():
-    """Electrical input terminal (power side): dark plate, four bolt contacts
-    and a central socket with the pack's teal energy glow."""
+    """Large electrical input terminal (power side): a full-face connector
+    plate — corner bolt plates, a big central socket with the pack's teal
+    energy core and status LEDs."""
     img = mc.new_img(16, 16, mc.hex2rgb(S1) + (255,))
     for x in range(16):
         img[0][x] = mc.hex2rgb(S3) + (255,)
@@ -204,34 +189,54 @@ def power_port():
     for y in range(16):
         img[y][0] = mc.hex2rgb(S3) + (255,)
         img[y][15] = mc.hex2rgb(S0) + (255,)
-    for (x, y) in ((3, 3), (12, 3), (3, 12), (12, 12)):
-        _screw(img, x, y)
-    for y in range(5, 11):
-        for x in range(5, 11):
+    # large corner bolt plates
+    for (bx, by) in ((1, 1), (12, 1), (1, 12), (12, 12)):
+        for y in range(by, by + 3):
+            for x in range(bx, bx + 3):
+                img[y][x] = mc.hex2rgb(S4) + (255,)
+        img[by + 2][bx + 2] = mc.hex2rgb(S0) + (255,)
+    # big central socket well
+    for y in range(4, 12):
+        for x in range(4, 12):
             img[y][x] = mc.hex2rgb(O0) + (255,)
-    for (x, y) in ((5, 5), (5, 10), (10, 5), (10, 10)):
+    for (x, y) in ((4, 4), (4, 11), (11, 4), (11, 11)):
         img[y][x] = mc.hex2rgb(S2) + (255,)
-    img[7][7] = mc.hex2rgb(KG) + (255,)
-    img[8][8] = mc.hex2rgb(K2) + (255,)
+    # teal energy core
+    img[6][6] = mc.hex2rgb(KG) + (255,)
+    img[7][7] = mc.hex2rgb(K2) + (255,)
+    img[8][8] = mc.hex2rgb(KG) + (255,)
+    img[9][9] = mc.hex2rgb(K2) + (255,)
+    # status LEDs beside the socket
+    img[12][6] = mc.hex2rgb(K2) + (255,)
+    img[12][9] = mc.hex2rgb(K2) + (255,)
     return img
 
 
 def water_port():
-    """Fluid input flange (water side): circular pipe flange with four bolts,
-    a dark bore and a water-blue accent inside."""
+    """Large fluid input flange (water side): a full-face pipe connector —
+    big bore, gasket ring, flange and corner bolts, water-blue accent inside."""
     img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
     cx, cy = 8.0, 8.0
     for y in range(16):
         for x in range(16):
             d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if d <= 2.4:
-                img[y][x] = mc.hex2rgb(O0) + (255,)
-            elif d <= 5.4:
-                img[y][x] = mc.hex2rgb(S3 if (x + y) < 17 else S1) + (255,)
-            elif d <= 6.2:
-                img[y][x] = mc.hex2rgb(S2) + (255,)
-    for (x, y) in ((8, 2), (8, 13), (2, 8), (13, 8)):
-        _screw(img, x, y)
+            if d <= 4.2:
+                img[y][x] = mc.hex2rgb(O0) + (255,)          # big bore
+            elif d <= 6.4:
+                img[y][x] = mc.hex2rgb(S3 if (x + y) < 17 else S1) + (255,)  # flange
+            elif d <= 7.2:
+                img[y][x] = mc.hex2rgb(S2) + (255,)          # outer lip
+    # gasket ring between bore and flange
+    for y in range(16):
+        for x in range(16):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if 5.0 <= d <= 5.8:
+                img[y][x] = mc.hex2rgb(S0) + (255,)
+    # big corner bolts (Create pipe-connector style)
+    for (x, y) in ((8, 1), (8, 14), (1, 8), (14, 8)):
+        img[y][x] = mc.hex2rgb(S4) + (255,)
+        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
+    # water accent in the bore
     img[7][6] = mc.hex2rgb('#7aa7d9') + (255,)
     img[6][7] = mc.hex2rgb('#7aa7d9') + (255,)
     img[8][8] = mc.hex2rgb('#a8c6e6') + (255,)
@@ -272,7 +277,6 @@ def main():
     write('oxygen_generator_control_lit', control(lit=True))
     write('oxygen_generator_top', top())
     write('oxygen_generator_ring', ring())
-    write('oxygen_generator_pipe', pipe())
     write('oxygen_generator_power_port', power_port())
     write('oxygen_generator_water_port', water_port())
     write('oxygen_generator_fan', fan())

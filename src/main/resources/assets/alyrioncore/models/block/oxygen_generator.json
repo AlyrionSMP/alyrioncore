@@ -4,7 +4,6 @@
     "control": "alyrioncore:block/oxygen_generator_control",
     "top": "alyrioncore:block/oxygen_generator_top",
     "ring": "alyrioncore:block/oxygen_generator_ring",
-    "pipe": "alyrioncore:block/oxygen_generator_pipe",
     "power": "alyrioncore:block/oxygen_generator_power_port",
     "water": "alyrioncore:block/oxygen_generator_water_port",
     "particle": "#side"
@@ -81,8 +80,8 @@
     },
     {
       "name": "power_input",
-      "from": [15.4, 3.5, 8],
-      "to": [16, 8.5, 12.5],
+      "from": [15.4, 1, 1],
+      "to": [16, 15, 15],
       "shade": false,
       "faces": {
         "north": {"uv": [0, 0, 16, 16], "texture": "#power"},
@@ -95,8 +94,8 @@
     },
     {
       "name": "water_input",
-      "from": [0, 3.5, 8],
-      "to": [0.6, 8.5, 12.5],
+      "from": [0, 1, 1],
+      "to": [0.6, 15, 15],
       "shade": false,
       "faces": {
         "north": {"uv": [0, 0, 16, 16], "texture": "#water"},
@@ -105,20 +104,6 @@
         "east":  {"uv": [0, 0, 16, 16], "texture": "#water"},
         "up":    {"uv": [0, 0, 16, 16], "texture": "#water"},
         "down":  {"uv": [0, 0, 16, 16], "texture": "#water"}
-      }
-    },
-    {
-      "name": "feed_pipe",
-      "from": [0, 8.5, 10],
-      "to": [0.6, 15.5, 11.5],
-      "shade": false,
-      "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#pipe"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#pipe"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#pipe"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#pipe"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#pipe"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#pipe"}
       }
     }
   ]
