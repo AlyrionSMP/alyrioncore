@@ -9,48 +9,48 @@
       "name": "leaf_top",
       "from": [
         13,
-        2,
+        0,
         2
       ],
       "to": [
         16,
-        14,
+        16,
         14
       ],
       "faces": {
         "north": {
           "uv": [
             0,
-            2,
+            0,
             3,
-            14
+            16
           ],
           "texture": "#panel"
         },
         "south": {
           "uv": [
             13,
-            2,
+            0,
             16,
-            14
+            16
           ],
           "texture": "#panel"
         },
         "west": {
           "uv": [
             2,
-            2,
+            0,
             14,
-            14
+            16
           ],
           "texture": "#panel"
         },
         "east": {
           "uv": [
             2,
-            2,
+            0,
             14,
-            14
+            16
           ],
           "texture": "#panel"
         },
