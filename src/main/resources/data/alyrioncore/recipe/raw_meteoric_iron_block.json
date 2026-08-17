@@ -1,43 +1,18 @@
 {
-  "type": "create:compacting",
-  "ingredients": [
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
-      "item": "alyrioncore:raw_meteoric_iron"
-    },
-    {
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "#": {
       "item": "alyrioncore:raw_meteoric_iron"
     }
+  },
+  "pattern": [
+    "###",
+    "###",
+    "###"
   ],
-  "results": [
-    {
-      "id": "alyrioncore:raw_meteoric_iron_block"
-    }
-  ],
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "create"
-    }
-  ]
+  "result": {
+    "count": 1,
+    "id": "alyrioncore:raw_meteoric_iron_block"
+  }
 }

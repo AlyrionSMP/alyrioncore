@@ -1,0 +1,43 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    },
+    {
+      "item": "alyrioncore:sulfur_dust"
+    }
+  ],
+  "results": [
+    {
+      "id": "alyrioncore:sulfur_block"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    }
+  ]
+}

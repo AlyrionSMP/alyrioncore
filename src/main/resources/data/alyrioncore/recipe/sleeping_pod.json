@@ -1,6 +1,5 @@
 {
-  "type": "create:mechanical_crafting",
-  "accept_mirrored": false,
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
     "G": {
@@ -24,8 +23,11 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:mod_loaded",
-      "modid": "create"
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "create"
+      }
     }
   ]
 }

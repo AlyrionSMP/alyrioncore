@@ -1,0 +1,43 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    },
+    {
+      "item": "alyrioncore:raw_meteoric_iron"
+    }
+  ],
+  "results": [
+    {
+      "id": "alyrioncore:raw_meteoric_iron_block"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    }
+  ]
+}

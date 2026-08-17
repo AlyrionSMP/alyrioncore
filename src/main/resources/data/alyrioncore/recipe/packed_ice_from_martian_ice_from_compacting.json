@@ -1,0 +1,28 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "alyrioncore:martian_ice"
+    },
+    {
+      "item": "alyrioncore:martian_ice"
+    },
+    {
+      "item": "alyrioncore:martian_ice"
+    },
+    {
+      "item": "alyrioncore:martian_ice"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:packed_ice"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    }
+  ]
+}

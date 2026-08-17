@@ -1,28 +1,17 @@
 {
-  "type": "create:compacting",
-  "ingredients": [
-    {
-      "item": "alyrioncore:martian_ice"
-    },
-    {
-      "item": "alyrioncore:martian_ice"
-    },
-    {
-      "item": "alyrioncore:martian_ice"
-    },
-    {
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "#": {
       "item": "alyrioncore:martian_ice"
     }
+  },
+  "pattern": [
+    "##",
+    "##"
   ],
-  "results": [
-    {
-      "id": "minecraft:packed_ice"
-    }
-  ],
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "create"
-    }
-  ]
+  "result": {
+    "count": 1,
+    "id": "minecraft:packed_ice"
+  }
 }

@@ -1,28 +1,17 @@
 {
-  "type": "create:compacting",
-  "ingredients": [
-    {
-      "item": "alyrioncore:hematite_nodule"
-    },
-    {
-      "item": "alyrioncore:hematite_nodule"
-    },
-    {
-      "item": "alyrioncore:hematite_nodule"
-    },
-    {
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": {
       "item": "alyrioncore:hematite_nodule"
     }
+  },
+  "pattern": [
+    "##",
+    "##"
   ],
-  "results": [
-    {
-      "id": "minecraft:raw_iron"
-    }
-  ],
-  "neoforge:conditions": [
-    {
-      "type": "neoforge:mod_loaded",
-      "modid": "create"
-    }
-  ]
+  "result": {
+    "count": 1,
+    "id": "minecraft:raw_iron"
+  }
 }

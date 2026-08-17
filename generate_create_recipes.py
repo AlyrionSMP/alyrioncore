@@ -7,9 +7,10 @@ Decisions (matching Create's own conventions):
   * Complex machines        -> create:mechanical_crafting (Create crafts these
                                in the Mechanical Crafter; Rocketnautics' own
                                thrusters are mechanical_crafting too)
-  * Block compression       -> create:compacting (basin + press; Create
-                               compacts 9 snow blocks -> ice, so 9 ingots ->
-                               block is the same idiom)
+  * Block compression       -> create:compacting (basin + press) as an
+                               ADDITIONAL path; the crafting-table packing
+                               stays available (Create itself keeps crafting
+                               for its storage blocks and adds machine paths)
   * Chemistry / reactions   -> create:mixing (basin + mixer: gunpowder from
                                sulfur + coal, cryo-packed ice from dry ice)
   * Grinding                -> create:milling (hematite ore -> red dye)
@@ -19,9 +20,10 @@ Decisions (matching Create's own conventions):
                                spyglass, water bucket from ice, furnace and
                                stonecutting recipes.
 
-Every converted recipe is gated on `create` being loaded; the originals are
-kept as `<name>_from_crafting.json` fallbacks gated on `create` NOT being
-loaded, so the mod still works standalone. Rocketnautics compat parts get no
+Converted recipes are gated on `create` being loaded; mechanical/mixing/
+milling keep the originals as `<name>_from_crafting.json` fallbacks gated on
+`create` NOT being loaded, so the mod still works standalone. Compacting
+keeps the crafting recipe unconditionally. Rocketnautics compat parts get no
 fallback (Rocketnautics itself requires Create).
 
 Run:  python3 generate_create_recipes.py
@@ -112,29 +114,41 @@ def milling(name, item, results, processing_time=50, conditions=None):
 
 
 # ---------------------------------------------------------------------------
-# Crafting-table fallback emitter (the original recipe + not-create condition)
+# Crafting-table emitters
 # ---------------------------------------------------------------------------
-def shaped_fallback(name, pattern, key, result_id, count=1, category="misc"):
+def shaped(name, pattern, key, result_id, count=1, category="misc", conditions=None):
     r = {
         "type": "minecraft:crafting_shaped",
         "category": category,
         "key": key,
         "pattern": pattern,
         "result": {"count": count, "id": result_id},
-        "neoforge:conditions": cond_not_create(),
     }
-    write_json(os.path.join(RECIPE_DIR, f"{name}_from_crafting.json"), r)
+    if conditions:
+        r["neoforge:conditions"] = conditions
+    write_json(os.path.join(RECIPE_DIR, f"{name}.json"), r)
 
 
-def shapeless_fallback(name, ingredients, result_id, count=1, category="misc"):
+def shapeless(name, ingredients, result_id, count=1, category="misc", conditions=None):
     r = {
         "type": "minecraft:crafting_shapeless",
         "category": category,
         "ingredients": [{"item": i} for i in ingredients],
         "result": {"count": count, "id": result_id},
-        "neoforge:conditions": cond_not_create(),
     }
-    write_json(os.path.join(RECIPE_DIR, f"{name}_from_crafting.json"), r)
+    if conditions:
+        r["neoforge:conditions"] = conditions
+    write_json(os.path.join(RECIPE_DIR, f"{name}.json"), r)
+
+
+def shaped_fallback(name, pattern, key, result_id, count=1, category="misc"):
+    shaped(name, pattern, key, result_id, count=count, category=category,
+           conditions=cond_not_create())
+
+
+def shapeless_fallback(name, ingredients, result_id, count=1, category="misc"):
+    shapeless(name, ingredients, result_id, count=count, category=category,
+              conditions=cond_not_create())
 
 
 def main():
@@ -237,7 +251,9 @@ def main():
     )
 
     # ------------------------------------------------------------------
-    # 2. Block compression -> Basin + Press (9 -> 1, 4 -> 1)
+    # 2. Block compression -> Basin + Press (9 -> 1, 4 -> 1) as an ADDITIONAL
+    #    path; the crafting-table packing stays available unconditionally
+    #    (Create keeps crafting for its own storage blocks too).
     # ------------------------------------------------------------------
     comp = [
         ("meteoric_iron_block", "alyrioncore:meteoric_iron_ingot", 9,
@@ -258,32 +274,32 @@ def main():
          [{"id": "minecraft:raw_iron"}]),
     ]
     for name, item, amount, results in comp:
-        compacting(name, item, amount, results, conditions=cond_create())
-    # crafting fallbacks (the original 2x2 / 3x3 patterns)
-    shaped_fallback("meteoric_iron_block", ["###", "###", "###"],
-                    {"#": {"item": "alyrioncore:meteoric_iron_ingot"}},
-                    "alyrioncore:meteoric_iron_block", category="building")
-    shaped_fallback("raw_meteoric_iron_block", ["###", "###", "###"],
-                    {"#": {"item": "alyrioncore:raw_meteoric_iron"}},
-                    "alyrioncore:raw_meteoric_iron_block", category="building")
-    shaped_fallback("olivine_block", ["###", "###", "###"],
-                    {"#": {"item": "alyrioncore:olivine_gem"}},
-                    "alyrioncore:olivine_block", category="building")
-    shaped_fallback("sulfur_block", ["###", "###", "###"],
-                    {"#": {"item": "alyrioncore:sulfur_dust"}},
-                    "alyrioncore:sulfur_block", category="building")
-    shaped_fallback("raw_copper_block_from_martian_copper", ["###", "###", "###"],
-                    {"#": {"item": "alyrioncore:raw_martian_copper"}},
-                    "minecraft:raw_copper_block", category="building")
-    shaped_fallback("dry_ice_block_from_shards", ["##", "##"],
-                    {"#": {"item": "alyrioncore:dry_ice_shard"}},
-                    "alyrioncore:dry_ice_block", category="building")
-    shaped_fallback("packed_ice_from_martian_ice", ["##", "##"],
-                    {"#": {"item": "alyrioncore:martian_ice"}},
-                    "minecraft:packed_ice", category="building")
-    shaped_fallback("iron_ingot_from_hematite_reduction", ["##", "##"],
-                    {"#": {"item": "alyrioncore:hematite_nodule"}},
-                    "minecraft:raw_iron", category="misc")
+        compacting(name + "_from_compacting", item, amount, results, conditions=cond_create())
+    # crafting packing (always available)
+    shaped("meteoric_iron_block", ["###", "###", "###"],
+           {"#": {"item": "alyrioncore:meteoric_iron_ingot"}},
+           "alyrioncore:meteoric_iron_block", category="building")
+    shaped("raw_meteoric_iron_block", ["###", "###", "###"],
+           {"#": {"item": "alyrioncore:raw_meteoric_iron"}},
+           "alyrioncore:raw_meteoric_iron_block", category="building")
+    shaped("olivine_block", ["###", "###", "###"],
+           {"#": {"item": "alyrioncore:olivine_gem"}},
+           "alyrioncore:olivine_block", category="building")
+    shaped("sulfur_block", ["###", "###", "###"],
+           {"#": {"item": "alyrioncore:sulfur_dust"}},
+           "alyrioncore:sulfur_block", category="building")
+    shaped("raw_copper_block_from_martian_copper", ["###", "###", "###"],
+           {"#": {"item": "alyrioncore:raw_martian_copper"}},
+           "minecraft:raw_copper_block", category="building")
+    shaped("dry_ice_block_from_shards", ["##", "##"],
+           {"#": {"item": "alyrioncore:dry_ice_shard"}},
+           "alyrioncore:dry_ice_block", category="building")
+    shaped("packed_ice_from_martian_ice", ["##", "##"],
+           {"#": {"item": "alyrioncore:martian_ice"}},
+           "minecraft:packed_ice", category="building")
+    shaped("iron_ingot_from_hematite_reduction", ["##", "##"],
+           {"#": {"item": "alyrioncore:hematite_nodule"}},
+           "minecraft:raw_iron", category="misc")
 
     # ------------------------------------------------------------------
     # 3. Chemistry -> Basin + Mixer
