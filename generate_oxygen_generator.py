@@ -209,27 +209,29 @@ def port_frame():
     return img
 
 
-def _lightning(img):
-    """Teal lightning-bolt symbol for the power port: the classic ⚡-glyph
-    shape — a solid horizontal top bar over a narrow jagged shaft that steps
-    down-left with alternating two/three-px widths and ends in a sharp point.
-    The wide-bar / narrow-shaft contrast is what makes it read as lightning
-    instead of a diagonal line."""
-    bolt = [(8, 3), (9, 3), (10, 3),           # top bar
-            (8, 4), (9, 4), (10, 4),
-            (7, 5), (8, 5),                    # shaft
-            (6, 6), (7, 6), (8, 6),            # flair
-            (6, 7), (7, 7),
-            (5, 8), (6, 8), (7, 8),            # flair
-            (5, 9), (6, 9),
-            (4, 10), (5, 10), (6, 10),         # flair
-            (4, 11), (5, 11),
-            (3, 12)]                           # point
-    for (x, y) in bolt:
-        img[y][x] = mc.hex2rgb(K2) + (255,)
-    img[3][8] = mc.hex2rgb(KG) + (255,)
-    img[3][9] = mc.hex2rgb(KG) + (255,)
-    img[12][3] = mc.hex2rgb(KG) + (255,)
+def _outlet(img):
+    """Power-outlet symbol: a square face plate (10x10, centered in the port
+    well) with two vertical slots and a round ground hole — the classic wall
+    socket. Perfectly symmetric: 3-px margins on all sides, slots mirrored
+    around the center column, ground hole dead center."""
+    for y in range(3, 13):
+        for x in range(3, 13):
+            img[y][x] = mc.hex2rgb(S2) + (255,)
+    # plate bevel: light top/left edges, dark bottom/right edges
+    for x in range(3, 13):
+        img[3][x] = mc.hex2rgb(S3) + (255,)
+        img[12][x] = mc.hex2rgb(S1) + (255,)
+    for y in range(3, 13):
+        img[y][3] = mc.hex2rgb(S3) + (255,)
+        img[y][12] = mc.hex2rgb(S1) + (255,)
+    # two vertical slots (left x5-6, right x9-10, rows 5-9)
+    for y in range(5, 10):
+        for x in (5, 6, 9, 10):
+            img[y][x] = mc.hex2rgb(O0) + (255,)
+    # round ground hole (x7-8, rows 10-11)
+    for y in range(10, 12):
+        for x in (7, 8):
+            img[y][x] = mc.hex2rgb(O0) + (255,)
     return img
 
 
@@ -249,7 +251,7 @@ def port_power():
     """Power input face: the shared connector plate with a lightning-bolt
     symbol in the recessed well."""
     img = port_frame()
-    _lightning(img)
+    _outlet(img)
     return img
 
 
