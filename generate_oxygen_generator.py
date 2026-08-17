@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """generate_oxygen_generator.py — textures for the AlyrionCore Oxygen Generator.
 
-The machine is the heart of every pressurized habitat: a meteoric-iron chassis
-(reusing the block-of-meteoric-iron plate so it matches the pack's metal), a
-teal coolant tank on top, a front dial with a status LED, and a small impeller
-blade for the animated fan (rendered by the block entity renderer).
+The machine is the heart of every pressurized habitat: a single solid
+meteoric-iron chassis (reusing the block-of-meteoric-iron plate so it matches
+the pack's metal) with its own front panel (status dial + LED), a raised vent
+cowl housing the animated impeller, a teal coolant tank + exhaust stack on
+top, and TWO directional input ports:
+  * power port on the east face (electrical terminal, teal energy glow)
+  * water port on the west face (pipe flange, water-blue accent)
 
-Palette = the pack's meteoric nickel-iron ramp (S0..SP) + starfall teal crystal
-(K1/K2/KG) — same identity as the meteoric toolset. All textures are opaque and
-top-left lit. The _lit variants (tank, dial) swap in while the machine runs.
+Palette = the pack's meteoric nickel-iron ramp (S0..SP) + starfall teal
+crystal (K1/K2/KG) — same identity as the meteoric toolset. All textures are
+opaque and top-left lit. The _lit variants (front, tank) swap in while the
+machine runs.
 
 Pure stdlib; imports mcutil from mc-scripts/. Writes PNGs directly into
 src/main/resources/assets/alyrioncore/textures/block/.
@@ -113,29 +117,127 @@ def tank(lit=False):
     return img
 
 
-def dial(lit=False):
-    """Front status dial on a raised bezel: dark instrument face, specular tick
-    marks, a teal needle pointing up-right, and a small LED. Lit: needle and LED
-    glow (KG) and the rim warms up."""
-    img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))  # bezel metal
-    cx, cy, r = 8.0, 8.0, 6.0
+def front(lit=False):
+    """The machine's own front panel: paneled metal with rivets, a status dial
+    and LED (right side). The vent is a separate raised cowl element, so this
+    texture only carries the instrument cluster. Lit: dial + LED glow teal."""
+    img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
+    # subtle panel shading: brighter top-left, darker bottom-right
+    for y in range(16):
+        for x in range(16):
+            t = y / 15.0
+            l = x / 15.0
+            shade = t * 0.5 + l * 0.5
+            c = S3 if shade < 0.35 else (S2 if shade < 0.7 else S1)
+            img[y][x] = mc.hex2rgb(c) + (255,)
+    # panel seams (1px, beveled): horizontal at y=5, vertical at x=9
+    for x in range(16):
+        img[5][x] = mc.hex2rgb(S0) + (255,)
+        img[6][x] = mc.hex2rgb(S3) + (255,)
+    for y in range(16):
+        img[y][9] = mc.hex2rgb(S0) + (255,)
+        img[y][10] = mc.hex2rgb(S3) + (255,)
+    # rivets in the four corners (S4 dot + S0 shadow below-right)
+    for (x, y) in ((2, 2), (13, 2), (2, 13), (13, 13)):
+        img[y][x] = mc.hex2rgb(S4) + (255,)
+        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
+    # status dial (right side): dark face, rim lit top-left
+    cx, cy, r = 12.0, 7.5, 3.4
     for y in range(16):
         for x in range(16):
             d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if d <= r:
-                img[y][x] = mc.hex2rgb(O0) + (255,)          # instrument face
-            elif d <= r + 1.0:
-                rim = S3 if (x + y) < 16 else S1             # lit top-left rim
+            if d <= r - 0.6:
+                img[y][x] = mc.hex2rgb(O0) + (255,)
+            elif d <= r + 0.5:
+                rim = S3 if (x + y) < 20 else S1
                 img[y][x] = mc.hex2rgb(rim) + (255,)
-    # tick marks at the top of the face
-    for (x, y) in ((6, 3), (8, 3), (10, 3)):
+    # tick marks + needle + LED
+    for (x, y) in ((11, 5), (12, 4), (13, 5)):
         img[y][x] = mc.hex2rgb(SP) + (255,)
-    # needle: center -> upper right
-    for (x, y) in ((8, 7), (9, 6), (10, 5), (9, 5)):
+    for (x, y) in ((12, 8), (13, 7), (13, 6)):
         img[y][x] = mc.hex2rgb(KG if lit else K2) + (255,)
-    # status LED, bottom-left of the face
-    for (x, y) in ((5, 12), (6, 12), (5, 13)):
+    for (x, y) in ((13, 10), (13, 11)):
         img[y][x] = mc.hex2rgb(KG if lit else K2) + (255,)
+    if lit:
+        # the dial face warms with teal backlight
+        for (x, y) in ((11, 8), (11, 9), (12, 9)):
+            img[y][x] = mc.hex2rgb(K1) + (255,)
+    return img
+
+
+def vent():
+    """Vent grille for the fan cowl: dark recess with three horizontal slats,
+    lit top-left frame — reads as the machine's air intake/exhaust."""
+    img = mc.new_img(16, 16, mc.hex2rgb(S1) + (255,))
+    # frame bevel
+    for x in range(16):
+        img[0][x] = mc.hex2rgb(S3) + (255,)
+        img[15][x] = mc.hex2rgb(S0) + (255,)
+    for y in range(16):
+        img[y][0] = mc.hex2rgb(S3) + (255,)
+        img[y][15] = mc.hex2rgb(S0) + (255,)
+    # slats (S3 with a bright top edge) over a dark recess
+    for (y0, y1) in ((2, 4), (6, 8), (10, 12)):
+        for y in range(y0, y1):
+            for x in range(2, 14):
+                c = S3 if y == y0 else S2
+                img[y][x] = mc.hex2rgb(c) + (255,)
+    for y in range(16):
+        for x in range(2, 14):
+            if y in (5, 9, 13):
+                img[y][x] = mc.hex2rgb(O0) + (255,)
+    return img
+
+
+def power_port():
+    """Electrical input terminal (power side): dark plate, four bolt contacts
+    and a central socket with the pack's teal energy glow."""
+    img = mc.new_img(16, 16, mc.hex2rgb(S1) + (255,))
+    # bevel frame
+    for x in range(16):
+        img[0][x] = mc.hex2rgb(S3) + (255,)
+        img[15][x] = mc.hex2rgb(S0) + (255,)
+    for y in range(16):
+        img[y][0] = mc.hex2rgb(S3) + (255,)
+        img[y][15] = mc.hex2rgb(S0) + (255,)
+    # bolt contacts (2x2 S4 dots with S0 shadow)
+    for (x, y) in ((3, 3), (12, 3), (3, 12), (12, 12)):
+        img[y][x] = mc.hex2rgb(S4) + (255,)
+        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
+    # central socket: O0 well, S2 lip, teal energy core
+    for y in range(5, 11):
+        for x in range(5, 11):
+            img[y][x] = mc.hex2rgb(O0) + (255,)
+    for (x, y) in ((5, 5), (5, 10), (10, 5), (10, 10)):
+        img[y][x] = mc.hex2rgb(S2) + (255,)
+    for (x, y) in ((7, 7), (8, 8)):
+        img[y][x] = mc.hex2rgb(K2) + (255,)
+    img[7][7] = mc.hex2rgb(KG) + (255,)
+    return img
+
+
+def water_port():
+    """Fluid input flange (water side): circular pipe flange with four bolts,
+    a dark bore and a water-blue accent inside."""
+    img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
+    cx, cy = 8.0, 8.0
+    for y in range(16):
+        for x in range(16):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if d <= 2.4:
+                img[y][x] = mc.hex2rgb(O0) + (255,)          # bore
+            elif d <= 5.4:
+                img[y][x] = mc.hex2rgb(S3 if (x + y) < 17 else S1) + (255,)  # flange ring
+            elif d <= 6.2:
+                img[y][x] = mc.hex2rgb(S2) + (255,)          # outer lip
+    # bolts around the ring
+    for (x, y) in ((8, 2), (8, 13), (2, 8), (13, 8)):
+        img[y][x] = mc.hex2rgb(S4) + (255,)
+        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
+    # water accent (muted blue droplets in the bore)
+    img[7][6] = mc.hex2rgb('#7aa7d9') + (255,)
+    img[6][7] = mc.hex2rgb('#7aa7d9') + (255,)
+    img[8][8] = mc.hex2rgb('#a8c6e6') + (255,)
     return img
 
 
@@ -169,10 +271,13 @@ def write(name, img):
 def main():
     os.makedirs(BLOCK_DIR, exist_ok=True)
     write('oxygen_generator_casing', casing())
+    write('oxygen_generator_front', front(lit=False))
+    write('oxygen_generator_front_lit', front(lit=True))
+    write('oxygen_generator_vent', vent())
+    write('oxygen_generator_power_port', power_port())
+    write('oxygen_generator_water_port', water_port())
     write('oxygen_generator_tank', tank(lit=False))
     write('oxygen_generator_tank_lit', tank(lit=True))
-    write('oxygen_generator_dial', dial(lit=False))
-    write('oxygen_generator_dial_lit', dial(lit=True))
     write('oxygen_generator_fan', fan())
     print('oxygen generator textures regenerated.')
 

@@ -2,6 +2,6 @@
   "parent": "alyrioncore:block/oxygen_generator",
   "textures": {
     "tank": "alyrioncore:block/oxygen_generator_tank_lit",
-    "dial": "alyrioncore:block/oxygen_generator_dial_lit"
+    "front": "alyrioncore:block/oxygen_generator_front_lit"
   }
 }
