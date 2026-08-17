@@ -1,5 +1,6 @@
 {
-  "type": "create:mixing",
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
   "ingredients": [
     {
       "item": "alyrioncore:dry_ice_shard"
@@ -14,21 +15,20 @@
       "item": "alyrioncore:dry_ice_shard"
     },
     {
-      "type": "neoforge:single",
-      "amount": 1000,
-      "fluid": "minecraft:water"
+      "item": "minecraft:water_bucket"
     }
   ],
-  "results": [
-    {
-      "count": 2,
-      "id": "minecraft:packed_ice"
-    }
-  ],
+  "result": {
+    "count": 2,
+    "id": "minecraft:packed_ice"
+  },
   "neoforge:conditions": [
     {
-      "type": "neoforge:mod_loaded",
-      "modid": "create"
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "create"
+      }
     }
   ]
 }

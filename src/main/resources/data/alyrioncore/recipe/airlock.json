@@ -1,10 +1,7 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "MIM",
-    "MGM",
-    "MRM"
-  ],
+  "type": "create:mechanical_crafting",
+  "accept_mirrored": false,
+  "category": "misc",
   "key": {
     "M": {
       "item": "alyrioncore:meteoric_iron_ingot"
@@ -19,8 +16,19 @@
       "item": "minecraft:redstone"
     }
   },
+  "pattern": [
+    "MIM",
+    "MGM",
+    "MRM"
+  ],
   "result": {
     "count": 1,
     "id": "alyrioncore:airlock"
-  }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    }
+  ]
 }

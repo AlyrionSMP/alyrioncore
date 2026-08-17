@@ -834,11 +834,15 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 - `scratch_nbt.py`: Internal helper used for hand-authoring NBT structure payloads.
 
 ### Recipe Catalog (selection)
-- **Meteoric Iron**: tools, storage blocks, raw-block packing, ingot smelting/blasting from ore and raw, iron nuggets from hematite nodules.
-- **Greenhouse & Habitat**: Sleeping Pod, Airlock, Oxygen Generator, Regolith Farmland (via hoe-tilling), Gunpowder (sulfur + coal/charcoal/bonemeal), Torches from sulfur, Glass from Martian Sand, Terracotta from regolith, Water Bucket from Martian Ice, Packed Ice, Snow Block from dry ice, Spyglass from Olivine, Smooth Stone from Rock Samples.
-- **Space Program (Rocketnautics compat)**: Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor, Fluid Hose and the Space Helmet — all from overworld materials (iron, copper, obsidian, glass, string).
-- **Food**: Baked Martian Potato (smelting, smoking, campfire).
-- **Masonry**: Polished basalt, bricks and tiles via crafting, smelting/blasting and stonecutting chains.
+
+AlyrionCore is **Create-aware**: where it makes sense, recipes run through Create machines instead of the crafting table (and the crafting-table versions return automatically if Create is not installed):
+
+- **Create — Mechanical Crafter**: Sleeping Pod, Airlock, Oxygen Generator, and the Rocketnautics engine parts (Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor) are assembled in the **Mechanical Crafter** — complex devices are no longer hand-crafted.
+- **Create — Basin + Press (compacting)**: storage-block packing — Block of Meteoric Iron (9 ingots), Raw Meteoric Iron Block, Block of Olivine, Block of Sulfur, Vanilla Raw Copper Block from Martian raw copper, Dry Ice Block, Packed Ice from Martian Ice, and the Hematite→Raw Iron reduction.
+- **Create — Basin + Mixer (mixing)**: Gunpowder (sulfur + coal/charcoal/bonemeal) and cryo-packed ice (dry ice shards + water).
+- **Create — Millstone (milling)**: Red Dye from Hematite nodules.
+- **Still crafting-table**: Meteoric Iron tools, unpacking (block → 9 items), masonry 2×2 (basalt/polished/bricks/tiles, coarse regolith, regolith from sand), Torches from sulfur, Spyglass from Olivine, Water Bucket from Martian Ice, the Space Helmet and the Fluid Hose (no Create machine fits them).
+- **Furnace / stonecutting as before**: smelting & blasting for all ores, Baked Martian Potato, Glass from Martian Sand, Terracotta, Smooth Stone, stonecutting for the basalt line.
 
 ### Mod Metadata & Architecture
 - **Mod ID**: `alyrioncore`

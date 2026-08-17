@@ -1,18 +1,43 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "building",
-  "key": {
-    "#": {
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
+      "item": "alyrioncore:olivine_gem"
+    },
+    {
       "item": "alyrioncore:olivine_gem"
     }
-  },
-  "pattern": [
-    "###",
-    "###",
-    "###"
   ],
-  "result": {
-    "count": 1,
-    "id": "alyrioncore:olivine_block"
-  }
+  "results": [
+    {
+      "id": "alyrioncore:olivine_block"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    }
+  ]
 }

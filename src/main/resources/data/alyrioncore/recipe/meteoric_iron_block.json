@@ -1,18 +1,43 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "building",
-  "key": {
-    "#": {
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    {
       "item": "alyrioncore:meteoric_iron_ingot"
     }
-  },
-  "pattern": [
-    "###",
-    "###",
-    "###"
   ],
-  "result": {
-    "count": 1,
-    "id": "alyrioncore:meteoric_iron_block"
-  }
+  "results": [
+    {
+      "id": "alyrioncore:meteoric_iron_block"
+    }
+  ],
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    }
+  ]
 }
