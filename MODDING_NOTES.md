@@ -307,3 +307,23 @@ how to implement gradual state without per-tick ticking:
   inside a thin wall escapes through the far side).
 - Clear all room state on `ServerStartedEvent` (game bus) — dimension keys
   repeat across worlds, so stale oxygen would otherwise leak into a new world.
+- **"It repressurized after I broke blocks!" — two separate traps**:
+  1. *The break handler vented too eagerly.* "Adjacent to a sealed cell" is NOT
+     a breach: breaking an interior block (chest, pillar, machine) or a redundant
+     boundary (inner layer of a thick wall, floor over solid terrain, wall
+     between two sealed rooms) leaves the room airtight. Fix: gate on
+     `isAirtight(brokenState)` first (only boundary blocks can breach), then
+     SIMULATE the removal by running the flood fill from the broken cell with a
+     `startIsPassable` flag (the scan treats its start cell as air even though
+     the block is still present during `BreakEvent`). Only if that simulated
+     scan ESCAPES (OPEN_AIR) is the room genuinely open to vacuum → vent +
+     particle burst + cache clear. A sealed result means nothing vents.
+  2. *The room key moved.* The anchor is the min interior cell — breaking a
+     block at the room's min-extreme adds a smaller cell and silently re-keys
+     the room, dropping the fill to 0 even with no leak. Fix: when a scan finds
+     a sealed room whose anchor has no entry, ADOPT oxygen from any known room
+     whose anchor is still inside the current interior (the room grew, or two
+     rooms merged through a hole) — carry the max fill, drop the old entries.
+     Pass the flood fill's visited set to the tracker for the O(1) membership
+     test. Resets then only happen on genuine breaches (vented) or when the
+     room physically shrinks past its old min cell (you rebuilt it).

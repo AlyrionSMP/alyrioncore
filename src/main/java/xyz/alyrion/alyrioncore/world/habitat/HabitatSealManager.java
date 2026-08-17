@@ -104,6 +104,15 @@ public class HabitatSealManager {
     }
 
     private static SealResult runFloodFill(Level level, BlockPos startPos) {
+        return runFloodFill(level, startPos, false);
+    }
+
+    /**
+     * The seal scan. With {@code startIsPassable} the start cell is treated as air
+     * even if it currently holds an airtight block — used to simulate "what happens
+     * to the room if this block is removed" from the broken block's own position.
+     */
+    private static SealResult runFloodFill(Level level, BlockPos startPos, boolean startIsPassable) {
         // Fast pre-checks
         if (level.canSeeSky(startPos)) {
             lastLeakPos = startPos;
@@ -112,7 +121,7 @@ public class HabitatSealManager {
         }
 
         BlockState startState = level.getBlockState(startPos);
-        if (isAirtight(startState, level, startPos)
+        if (!startIsPassable && isAirtight(startState, level, startPos)
                 && !(startState.getBlock() instanceof SleepingPodBlock)) {
             // The queried cell is itself solid (player embedded / standing on a machine).
             // The surrounding room isn't scanned here — a fill from inside a solid cell
@@ -192,9 +201,11 @@ public class HabitatSealManager {
 
         // Cache all interior coordinates in the sealed room (same O2 state as the whole room).
         // The oxygen flag reflects the CURRENT fill level: gradually pressurizing rooms
-        // start unbreathable and flip to breathable once the fill reaches 100%.
+        // start unbreathable and flip to breathable once the fill reaches 100%. The
+        // interior set is passed along so the tracker can carry oxygen over if the
+        // room's anchor moved without the seal ever being broken.
         int volume = visited.size();
-        float fraction = HabitatOxygenManager.fillFraction(level, anchor, volume, generatorCount);
+        float fraction = HabitatOxygenManager.fillFraction(level, anchor, volume, generatorCount, visited);
         SealResult result = new SealResult(true, fraction >= 1f, generatorCount, anchor, volume);
         for (long key : visited) {
             SEAL_CACHE.put(key, result);
@@ -249,39 +260,58 @@ public class HabitatSealManager {
             return;
         }
 
-        // Check if broken block was adjacent to a sealed interior
-        boolean wasSealed = false;
+        // Only an airtight block can be part of a seal's boundary — breaking an interior
+        // (non-airtight) block (a chest, workbench, torch, ...) can never breach a room.
+        if (!isAirtight(brokenState, level, pos)) {
+            return;
+        }
+
+        // Was it actually part of a sealed room's boundary (adjacent to sealed interior)?
         long breachedRoomKey = 0L;
+        boolean hadSealedNeighbor = false;
         for (Direction dir : Direction.values()) {
             BlockPos adj = pos.relative(dir);
             SealResult cached = SEAL_CACHE.get(adj.asLong());
             if (cached != null && cached.sealed()) {
-                wasSealed = true;
+                hadSealedNeighbor = true;
                 breachedRoomKey = cached.roomKey();
                 break;
             }
         }
-
-        if (wasSealed) {
-            // Depressurization Particle Burst & Audio
-            double px = pos.getX() + 0.5;
-            double py = pos.getY() + 0.5;
-            double pz = pos.getZ() + 0.5;
-
-            level.sendParticles(ParticleTypes.POOF, px, py, pz, 18, 0.4, 0.4, 0.4, 0.15);
-            level.sendParticles(ParticleTypes.CLOUD, px, py, pz, 12, 0.3, 0.3, 0.3, 0.12);
-            level.sendParticles(ParticleTypes.SNOWFLAKE, px, py, pz, 15, 0.5, 0.5, 0.5, 0.20);
-
-            level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1.5F, 1.4F);
-            level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 0.8F, 1.8F);
-
-            // The room vents to vacuum: all stored oxygen is lost, refill starts fresh.
-            if (breachedRoomKey != 0L) {
-                HabitatOxygenManager.onBreach(level, breachedRoomKey);
-            }
-
-            // Invalidate cache
-            SEAL_CACHE.clear();
+        if (!hadSealedNeighbor) {
+            return;
         }
+
+        // The block is still present while the break event fires. Simulate its removal
+        // by scanning from the broken cell (which the scan treats as passable): if the
+        // interior still stays contained, the block was redundant boundary (an internal
+        // wall, an extra layer of a thick wall, a machine or pillar inside the room) —
+        // the room is untouched and must NOT vent. Only when the scan actually escapes
+        // to open sky/void is the room genuinely breached. The scan also refreshes the
+        // cached room info (and the tracker carries the oxygen over if the interior grew).
+        SealResult scan = runFloodFill(level, pos, true);
+        if (scan.sealed()) {
+            return; // still airtight: no depressurization
+        }
+
+        // Genuine breach: Depressurization Particle Burst & Audio
+        double px = pos.getX() + 0.5;
+        double py = pos.getY() + 0.5;
+        double pz = pos.getZ() + 0.5;
+
+        level.sendParticles(ParticleTypes.POOF, px, py, pz, 18, 0.4, 0.4, 0.4, 0.15);
+        level.sendParticles(ParticleTypes.CLOUD, px, py, pz, 12, 0.3, 0.3, 0.3, 0.12);
+        level.sendParticles(ParticleTypes.SNOWFLAKE, px, py, pz, 15, 0.5, 0.5, 0.5, 0.20);
+
+        level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 1.5F, 1.4F);
+        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 0.8F, 1.8F);
+
+        // The room vents to vacuum: all stored oxygen is lost, refill starts fresh.
+        if (breachedRoomKey != 0L) {
+            HabitatOxygenManager.onBreach(level, breachedRoomKey);
+        }
+
+        // Invalidate cache
+        SEAL_CACHE.clear();
     }
 }

@@ -1,8 +1,10 @@
 package xyz.alyrion.alyrioncore.world.habitat;
 
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -66,12 +68,43 @@ public final class HabitatOxygenManager {
      * @return the current fill fraction, 0..1
      */
     public static float fillFraction(Level level, long roomKey, int volume, int generators) {
-        RoomState room = ROOMS.computeIfAbsent(new RoomKey(level.dimension(), roomKey), k -> {
-            RoomState s = new RoomState();
-            s.volume = volume;
-            s.lastUpdateTick = level.getGameTime();
-            return s;
-        });
+        return fillFraction(level, roomKey, volume, generators, null);
+    }
+
+    /**
+     * Scan variant of {@link #fillFraction}: pass the room's interior cell set so the
+     * oxygen can be carried over when the room's identity shifts without the seal ever
+     * being broken — e.g. a redundant boundary layer was mined out (the interior grows
+     * and the min-cell anchor moves) or two sealed rooms merged through a hole. Without
+     * this, any such change would silently drop the fill back to zero and the room
+     * would have to repressurize from scratch even though it never opened to vacuum.
+     */
+    public static float fillFraction(Level level, long roomKey, int volume, int generators, LongSet interior) {
+        RoomKey key = new RoomKey(level.dimension(), roomKey);
+        RoomState room = ROOMS.get(key);
+        if (room == null) {
+            float seed = 0f;
+            if (interior != null) {
+                // The anchor is new: if any previously known room's anchor still lies
+                // inside this interior, this room grew / rooms merged — adopt the most
+                // filled one and drop the old entries so they don't linger.
+                for (Map.Entry<RoomKey, RoomState> e : ROOMS.entrySet()) {
+                    RoomKey old = e.getKey();
+                    if (old.dimension().equals(level.dimension()) && interior.contains(old.anchor())) {
+                        seed = Math.max(seed, e.getValue().oxygen);
+                        ROOMS.remove(old, e.getValue());
+                    }
+                }
+            }
+            final float seeded = seed;
+            room = ROOMS.computeIfAbsent(key, k -> {
+                RoomState s = new RoomState();
+                s.volume = volume;
+                s.oxygen = Math.min(volume, seeded);
+                s.lastUpdateTick = level.getGameTime();
+                return s;
+            });
+        }
         // Adopt the latest scan: walls can move while a room stays sealed, changing volume.
         room.volume = volume;
 
