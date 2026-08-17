@@ -852,6 +852,7 @@ AlyrionCore is **Create-aware**: where it makes sense, recipes run through Creat
 - **Mod Version**: `1.0.0`
 - **Group ID**: `xyz.alyrion.alyrioncore`
 - **Supported NeoForge Version**: `21.1.186+`
+- **Developer knowledge base**: [`MODDING_NOTES.md`](MODDING_NOTES.md) — 3D model design (z-fighting, UV conventions, depth layering, animation), cross-mod compat (capabilities, Create/Power Grid integration, recipe conditions) and code gotchas learned while building the mod.
 - **Target Minecraft Version**: `1.21.1`
 - **Optional Dependency — Open Parties and Claims (`openpartiesandclaims` ≥ `0.26.1`)**: declared as an *optional* NeoForge dependency so the mod loads fine without it. When present, `OpacCompat` resolves OPAC's server API reflectively (`OpenPACServerAPI` → `IPartyManagerAPI` → `IServerPartyAPI`) to power the *United We Stand* party task; with OPAC absent every party check simply returns `false`.
 
