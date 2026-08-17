@@ -42,10 +42,12 @@ public class AirlockBlockEntityRenderer implements BlockEntityRenderer<AirlockBl
 
     /** Fraction of the animation spent popping the door out of the frame. */
     private static final float OUT_FRACTION = 0.30F;
-    /** How far the door lifts out of the frame (block units) before sliding. */
-    private static final float OUT_DISTANCE = 0.65F;
-    /** How far the door slides sideways (block units) to fully clear the doorway. */
-    private static final float SLIDE_DISTANCE = 14.5F;
+    /** How far the door lifts out of the frame (block units) before sliding —
+     *  just enough to clear the wall plane so it never intersects it. */
+    private static final float OUT_DISTANCE = 0.10F;
+    /** How far the door slides sideways (block units) — one block, so it comes
+     *  to rest over the block next to the doorway. */
+    private static final float SLIDE_DISTANCE = 1.0F;
 
     public AirlockBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
