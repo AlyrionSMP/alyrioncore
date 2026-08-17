@@ -78,5 +78,9 @@
   "block.alyrioncore.regolith_farmland": "Martian Regolith Farmland",
   "block.alyrioncore.martian_potato_crop": "Martian Potato Crop",
   "item.alyrioncore.martian_potato": "Martian Potato",
-  "item.alyrioncore.baked_martian_potato": "Baked Martian Potato"
+  "item.alyrioncore.baked_martian_potato": "Baked Martian Potato",
+  "item.alyrioncore.iron_reinforcement_plate": "Iron Reinforcement Plate",
+  "item.alyrioncore.diamond_reinforcement_plate": "Diamond Reinforcement Plate",
+  "item.alyrioncore.meteoric_iron_reinforcement_plate": "Meteoric Iron Reinforcement Plate",
+  "item.alyrioncore.netherite_reinforcement_plate": "Netherite Reinforcement Plate"
 }

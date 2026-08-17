@@ -15,9 +15,11 @@ import net.minecraft.world.item.TooltipFlag;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.block.ReinforcementTier;
 import xyz.alyrion.alyrioncore.item.DryIceShardItem;
 import xyz.alyrion.alyrioncore.item.MartianRockSampleItem;
 import xyz.alyrion.alyrioncore.item.ModToolTiers;
+import xyz.alyrion.alyrioncore.item.ReinforcementPlateItem;
 
 import java.util.List;
 
@@ -96,6 +98,31 @@ public class ModItems {
             "meteoric_iron_hoe",
             props -> new HoeItem(ModToolTiers.METEORIC_IRON, props),
             new Item.Properties().attributes(HoeItem.createAttributes(ModToolTiers.METEORIC_IRON, -2.0F, -1.0F))
+    );
+
+    // --- Block Reinforcement Plates ---
+    public static final DeferredItem<ReinforcementPlateItem> IRON_REINFORCEMENT_PLATE = ITEMS.registerItem(
+            "iron_reinforcement_plate",
+            props -> new ReinforcementPlateItem(ReinforcementTier.IRON, props),
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<ReinforcementPlateItem> DIAMOND_REINFORCEMENT_PLATE = ITEMS.registerItem(
+            "diamond_reinforcement_plate",
+            props -> new ReinforcementPlateItem(ReinforcementTier.DIAMOND, props),
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<ReinforcementPlateItem> METEORIC_IRON_REINFORCEMENT_PLATE = ITEMS.registerItem(
+            "meteoric_iron_reinforcement_plate",
+            props -> new ReinforcementPlateItem(ReinforcementTier.METEORIC_IRON, props),
+            new Item.Properties()
+    );
+
+    public static final DeferredItem<ReinforcementPlateItem> NETHERITE_REINFORCEMENT_PLATE = ITEMS.registerItem(
+            "netherite_reinforcement_plate",
+            props -> new ReinforcementPlateItem(ReinforcementTier.NETHERITE, props),
+            new Item.Properties()
     );
 
     // --- Block Items ---

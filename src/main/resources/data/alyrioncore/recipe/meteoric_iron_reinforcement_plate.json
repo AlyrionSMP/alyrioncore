@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    }
+  },
+  "result": {
+    "id": "alyrioncore:meteoric_iron_reinforcement_plate",
+    "count": 8
+  }
+}

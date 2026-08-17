@@ -6,6 +6,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.block.AirlockBlockEntity;
 import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlockEntity;
+import xyz.alyrion.alyrioncore.block.ReinforcedBlockEntity;
 
 import java.util.function.Supplier;
 
@@ -21,4 +22,9 @@ public class ModBlockEntities {
     public static final Supplier<BlockEntityType<OxygenGeneratorBlockEntity>> OXYGEN_GENERATOR =
             BLOCK_ENTITY_TYPES.register("oxygen_generator",
                     () -> BlockEntityType.Builder.of(OxygenGeneratorBlockEntity::new, ModBlocks.OXYGEN_GENERATOR.get()).build(null));
+
+    /** Stores the original block state + remaining hits of a reinforced block. */
+    public static final Supplier<BlockEntityType<ReinforcedBlockEntity>> REINFORCED =
+            BLOCK_ENTITY_TYPES.register("reinforced",
+                    () -> BlockEntityType.Builder.of(ReinforcedBlockEntity::new, ModBlocks.REINFORCED_BLOCK.get()).build(null));
 }

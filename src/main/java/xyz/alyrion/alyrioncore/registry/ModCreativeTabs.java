@@ -33,6 +33,12 @@ public class ModCreativeTabs {
                         output.accept(ModItems.METEORIC_IRON_SHOVEL.get());
                         output.accept(ModItems.METEORIC_IRON_HOE.get());
 
+                        // Block Reinforcement
+                        output.accept(ModItems.IRON_REINFORCEMENT_PLATE.get());
+                        output.accept(ModItems.DIAMOND_REINFORCEMENT_PLATE.get());
+                        output.accept(ModItems.METEORIC_IRON_REINFORCEMENT_PLATE.get());
+                        output.accept(ModItems.NETHERITE_REINFORCEMENT_PLATE.get());
+
                         // Resource & Storage Blocks
                         output.accept(ModItems.METEORIC_IRON_BLOCK_ITEM.get());
                         output.accept(ModItems.RAW_METEORIC_IRON_BLOCK_ITEM.get());

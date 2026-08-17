@@ -192,3 +192,80 @@ Gating `IEnergyStorage` / `IFluidHandler` to one face breaks real mods:
   reproducible.
 - Git hygiene: `git add -A` can sweep extracted third-party jars / scratch
   dirs into history — gitignore them and audit staged files.
+## 6. "Reinforced blocks" (X-hits mechanic) — the pattern that works
+
+Ship-block-reinforcement on top of ANY block without new textures:
+
+- **Wrapper block + BlockEntity**: right-click with a plate replaces the target
+  with one `reinforced_block` (blockstate property = tier) whose BE stores the
+  ORIGINAL `BlockState` (via `NbtUtils.writeBlockState`) + remaining hits.
+  Exclude air/fluids/unbreakable (`getDestroySpeed < 0`) and anything with a BE
+  (chests/machines would lose their data). No BlockItem, no loot table.
+- **Hit absorption** = cancel `BlockEvent.BreakEvent` (fires inside the
+  patched `ServerPlayerGameMode.destroyBlock`, BEFORE removal, for both the
+  STOP_DESTROY_BLOCK and the delayed-tick paths — verified via javap). Cancel →
+  `CommonHooks.fireBlockBreak` sends a block update; ALSO send
+  `ClientboundBlockDestructionPacket(id, pos, -1)` yourself to clear the crack
+  (the delayed path never clears it). The client's local progress resets after
+  each STOP, so holding the button re-cycles → "N hits".
+- **Drops = original block only**: override `playerDestroy` — vanilla passes the
+  PRE-removal BE capture, so read the original state and `Block.getDrops(orig,
+  serverLevel, pos, be, player, tool)` → silk touch/fortune of the ORIGINAL
+  block just work. Don't set `requiresCorrectToolForDrops` on the wrapper (it
+  gates whether `playerDestroy` even runs). **Gotcha**: the correct-tool drop
+  gate lives in `ServerPlayerGameMode.destroyBlock`
+  (`player.hasCorrectToolForDrops(state)` before `playerDestroy`), NOT in the
+  loot table — stone's loot table happily returns stone to a bare fist. So a
+  wrapper that always runs `playerDestroy` and blindly spawns the original's
+  `getDrops` drops stone without a pickaxe. Replicate the gate yourself:
+  `if (player.hasCorrectToolForDrops(original)) { spawn drops }`.
+- **"As hard as the protected block"**: `BlockState.getDestroySpeed` is a per-
+  state FIELD (set from `strength()`), NOT block-dispatched — you can't make a
+  wrapper block's hardness dynamic by overriding it. Override
+  `BlockBehaviour.getDestroyProgress(state, player, level, pos)` (protected,
+  called by both server progress accumulation and the client's local progress)
+  and delegate to `original.getDestroyProgress(player, level, pos)` — the
+  original's hardness, tool multipliers and correct-tool divisor all apply,
+  and client/server crack timing stays in sync because the BE is synced.
+- **Explosions must match the protected block** (TNT breaks reinforcement iff
+  it breaks the original): NeoForge patched `ExplosionDamageCalculator` to call
+  the context-aware `IBlockStateExtension.getExplosionResistance(level, pos,
+  explosion)` → block-side `getExplosionResistance(state, level, pos,
+  explosion)` — override it and delegate to the original (the no-arg
+  `Block.getExplosionResistance()` has NO position context, useless here).
+  And `Block.onExplosionHit(state, level, pos, explosion, BiConsumer)` is the
+  WHOLE per-block explosion handler — drops (explosion loot params), block
+  removal (setBlock air) and `wasExploded` — delegate it to the original so
+  the explosion drops the original's loot and removes the block.
+- **Rendering**: blockstate model = a protruding riveted-plate frame
+  (elements poke 0.1 past 16/-0.1; chunk culling drops the faces next to solid
+  blocks → plates only on air-facing sides). A BESR then draws the ORIGINAL
+  model inside via `BlockRenderDispatcher.renderBatched(state, pos, level,
+  pose, consumer, solid=true, random)` with the pose already at the block pos
+  (quads are 0..16 local; `solid=true` gives world culling + AO). Frame faces
+  never z-fight the original model: the frame's inner faces face INWARD at the
+  same planes the original's faces face OUTWARD, and overlaps are zero-area.
+  `audit_model.py` flags the 0.1 protrusion as out-of-bounds — that flag is the
+  intended design (an inset frame would be hidden behind the block's own face;
+  a flush one would z-fight it).
+- Creative players bypass hits (`player.getAbilities().instabuild` → don't
+  cancel). `inspect_jar.py has-id` gives false "ghost item" warnings for
+  DeferredRegister ids (namespace is split from the id string) — grep the
+  class constant pool for the bare id instead.
+- **Custom crack progression without a mixin**: the vanilla crack overlay
+  (per-mining-cycle, `renderBreakingTexture` → `ModelBakery.DESTROY_TYPES`) is
+  global and can't be swapped per block. Instead keep a server-synced
+  `crackStage` (0..7) on the BE — computed from consumed hits
+  (`consumed*7/(total-1)`) — re-broadcast after each absorbed hit with
+  `ServerLevel.sendBlockUpdated(pos, state, state, 3)` (same state still
+  triggers `ChunkHolder.broadcastChanges` → BE `getUpdatePacket`). The BESR
+  then renders one of 8 registered additional models (a full cube at
+  ±0.12 protrusion so crack lines sit 0.02 in front of the plates and never
+  z-fight the shell at ±0.1 or the original model at 0/16) with
+  `RenderType.translucent`. Crack art: dark fissure core + lit (-1,-1) edge
+  + dark "missing chunk" holes — reads on light AND dark plates.
+
+---
+
+---
+

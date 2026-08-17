@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "tier=iron": {
+      "model": "alyrioncore:block/reinforced_shell_iron"
+    },
+    "tier=diamond": {
+      "model": "alyrioncore:block/reinforced_shell_diamond"
+    },
+    "tier=meteoric_iron": {
+      "model": "alyrioncore:block/reinforced_shell_meteoric_iron"
+    },
+    "tier=netherite": {
+      "model": "alyrioncore:block/reinforced_shell_netherite"
+    }
+  }
+}

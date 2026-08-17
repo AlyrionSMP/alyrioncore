@@ -14,6 +14,7 @@ import xyz.alyrion.alyrioncore.block.MartianPotatoCropBlock;
 import xyz.alyrion.alyrioncore.block.MartianSandBlock;
 import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlock;
 import xyz.alyrion.alyrioncore.block.RegolithFarmlandBlock;
+import xyz.alyrion.alyrioncore.block.ReinforcedBlock;
 import xyz.alyrion.alyrioncore.block.SleepingPodBlock;
 
 public class ModBlocks {
@@ -277,5 +278,18 @@ public class ModBlocks {
                     .randomTicks()
                     .instabreak()
                     .sound(SoundType.CROP)
+    );
+
+    /**
+     * The wrapper block that replaces any reinforced block. Deliberately has NO
+     * block item and NO loot table: it is never obtainable as an item, and
+     * breaking it (after the tier's worth of absorbed hits) drops only the
+     * original block's loot. The plate frame is its blockstate model; the
+     * original block's look is drawn by {@code ReinforcedBlockEntityRenderer}.
+     */
+    public static final DeferredBlock<ReinforcedBlock> REINFORCED_BLOCK = BLOCKS.registerBlock(
+            "reinforced_block",
+            ReinforcedBlock::new,
+            ReinforcedBlock.reinforcedProperties()
     );
 }

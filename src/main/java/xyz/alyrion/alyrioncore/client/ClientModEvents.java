@@ -17,6 +17,7 @@ import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.client.renderer.AirlockBlockEntityRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.AlyrionCapeLayer;
 import xyz.alyrion.alyrioncore.client.renderer.OxygenGeneratorBlockEntityRenderer;
+import xyz.alyrion.alyrioncore.client.renderer.ReinforcedBlockEntityRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.SatellitePetLayer;
 import xyz.alyrion.alyrioncore.client.renderer.SatellitePetModel;
 import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
@@ -58,6 +59,7 @@ public class ClientModEvents {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlockEntities.AIRLOCK.get(), AirlockBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GENERATOR.get(), OxygenGeneratorBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.REINFORCED.get(), ReinforcedBlockEntityRenderer::new);
     }
 
     @SubscribeEvent
@@ -68,6 +70,9 @@ public class ClientModEvents {
         event.register(AirlockBlockEntityRenderer.LED_GREEN);
         event.register(AirlockBlockEntityRenderer.LED_RED);
         event.register(OxygenGeneratorBlockEntityRenderer.FAN);
+        for (int stage = 0; stage < 8; stage++) {
+            event.register(ReinforcedBlockEntityRenderer.crackModel(stage));
+        }
     }
 }
 
