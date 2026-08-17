@@ -7,15 +7,71 @@
   "elements": [
     {
       "name": "status_led_red",
-      "from": [15.4, 14.4, 6.5],
-      "to": [16.4, 15.4, 9.5],
+      "from": [
+        15.4,
+        14.4,
+        6.5
+      ],
+      "to": [
+        15.99,
+        15.4,
+        9.5
+      ],
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#led"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#led"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#led"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#led"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#led"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#led"}
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#led"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#led"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#led"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#led"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#led"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#led"
+        }
       }
     }
   ]
