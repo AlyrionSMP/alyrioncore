@@ -7,10 +7,12 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 
 /**
- * Registers the Oxygen Generator's Forge Energy capability. The block entity
- * implements {@link net.neoforged.neoforge.energy.IEnergyStorage} directly, so
- * any standard FE source can charge it — Power Grid's Device Connector / FE
- * Inverter, its cables and batteries, or FE producers from other mods.
+ * Registers the Oxygen Generator's capabilities. The block entity implements
+ * {@link net.neoforged.neoforge.energy.IEnergyStorage} and
+ * {@link net.neoforged.neoforge.fluids.capability.IFluidHandler} directly, so
+ * any standard FE source can charge it (Power Grid's Device Connector / FE
+ * Inverter, its cables and batteries, or FE producers from other mods) and any
+ * standard fluid transport can feed it water (Create pumps/pipes/valves).
  */
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ModCapabilities {
@@ -21,6 +23,11 @@ public class ModCapabilities {
                 Capabilities.EnergyStorage.BLOCK,
                 ModBlockEntities.OXYGEN_GENERATOR.get(),
                 (blockEntity, side) -> (net.neoforged.neoforge.energy.IEnergyStorage) blockEntity
+        );
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                ModBlockEntities.OXYGEN_GENERATOR.get(),
+                (blockEntity, side) -> (net.neoforged.neoforge.fluids.capability.IFluidHandler) blockEntity
         );
     }
 }

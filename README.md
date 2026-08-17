@@ -375,10 +375,11 @@ Any solid-render / full-collision block seals, plus:
 The **heart of every habitat**: a meteoric-iron machine with a teal coolant tank, front dial and an animated spinning impeller (rendered by `OxygenGeneratorBlockEntityRenderer`). It is what makes a sealed room breathable.
 
 - **Requires FE (Forge Energy)**: the block entity exposes a standard receive-only `IEnergyStorage` capability (16,000 FE buffer, up to 1,024 FE/t input). Any FE source can charge it — in the reference pack, **Create: Power Grid** supplies it through its **Device Connector / FE Inverter** (solar panel → battery → connector → generator). Jade shows the stored charge.
-- **Always-on drain**: while it has stored FE the machine runs and consumes **4 FE/t** (~80 FE/s); a full buffer lasts ~3.3 minutes. Keep the grid charged or the habitat depressurizes.
-- **Active state**: while running the block emits light level 8, the dial and tank glow (model switches to the `active` variant) and the vent fan spins; when the buffer runs dry it goes dark and still.
+- **Requires water**: the machine also has an internal **8,000 mB water tank** exposed through the standard `IFluidHandler` capability, so **Create pipes/pumps/valves feed it directly** (hose pulley from a lake, or a Create fluid tank filled with water buckets from Martian Ice). No Create machine fits inside the block — the plumbing must come to it.
+- **Dual-consumption drain**: while it has *both* FE and water the machine runs, consuming **4 FE/t** and **2 mB/t of water** (~80 FE/s + ~40 mB/s; both buffers last ~3.3 minutes). Let either run dry and the habitat depressurizes.
+- **Active state**: while running the block emits light level 8, the dial and tank glow (model switches to the `active` variant) and the vent fan spins; when either buffer runs dry it goes dark and still.
 - **Airtight**: a full solid cube, so it can be built into walls and roofs and still seal — the seal scan finds it even when it's part of the boundary.
-- Crafted from meteoric iron ingots + glass panes + redstone; drops itself (charge is lost on break).
+- Crafted from meteoric iron ingots + glass panes + redstone; drops itself (charge and water are lost on break).
 
 ### The Pressurized Airlock (`airlock`)
 

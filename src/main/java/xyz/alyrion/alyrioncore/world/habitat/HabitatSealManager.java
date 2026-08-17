@@ -172,13 +172,14 @@ public class HabitatSealManager {
         return result;
     }
 
-    /** True if the oxygen generator at this position currently has stored FE.
+    /** True if the oxygen generator at this position currently has both stored
+     *  FE and water (i.e. it is actually running and producing oxygen).
      *  On the server this reads the block entity exactly; on the client the BE
-     *  energy may lag behind the server, so the synced ACTIVE blockstate (which
-     *  mirrors {@code energy > 0}) is used as a fallback. */
+     *  state may lag behind the server, so the synced ACTIVE blockstate (which
+     *  mirrors {@code energy > 0 && water > 0}) is used as a fallback. */
     private static boolean generatorPowered(Level level, BlockPos pos, BlockState state) {
         if (level.getBlockEntity(pos) instanceof OxygenGeneratorBlockEntity gen) {
-            return gen.hasPower();
+            return gen.isRunning();
         }
         return state.getValue(OxygenGeneratorBlock.ACTIVE);
     }

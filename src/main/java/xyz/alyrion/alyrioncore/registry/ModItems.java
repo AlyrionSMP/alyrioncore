@@ -146,8 +146,8 @@ public class ModItems {
                                             List<Component> tooltipComponents, TooltipFlag flag) {
                     tooltipComponents.add(Component.literal("§7Pressurizes sealed habitats"));
                     tooltipComponents.add(Component.literal("§7and keeps them breathable."));
-                    tooltipComponents.add(Component.literal("§bConsumes FE while running"));
-                    tooltipComponents.add(Component.literal("§b— keep the grid charged!"));
+                    tooltipComponents.add(Component.literal("§bNeeds FE and water"));
+                    tooltipComponents.add(Component.literal("§b— pipe in Create water!"));
                 }
             },
             new Item.Properties()
