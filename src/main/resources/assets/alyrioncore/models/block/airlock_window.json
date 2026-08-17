@@ -7,15 +7,71 @@
   "elements": [
     {
       "name": "viewport_glass",
-      "from": [15.6, 6.5, 4.5],
-      "to": [16.1, 9.5, 11.5],
+      "from": [
+        15.6,
+        6.5,
+        4.5
+      ],
+      "to": [
+        16.1,
+        9.5,
+        11.5
+      ],
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#glass"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#glass"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#glass"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#glass"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#glass"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#glass"}
+        "north": {
+          "uv": [
+            0,
+            6.5,
+            0.5,
+            9.5
+          ],
+          "texture": "#glass"
+        },
+        "south": {
+          "uv": [
+            15.5,
+            6.5,
+            16,
+            9.5
+          ],
+          "texture": "#glass"
+        },
+        "west": {
+          "uv": [
+            4.5,
+            6.5,
+            11.5,
+            9.5
+          ],
+          "texture": "#glass"
+        },
+        "east": {
+          "uv": [
+            4.5,
+            6.5,
+            11.5,
+            9.5
+          ],
+          "texture": "#glass"
+        },
+        "up": {
+          "uv": [
+            15.5,
+            4.5,
+            16,
+            11.5
+          ],
+          "texture": "#glass"
+        },
+        "down": {
+          "uv": [
+            15.5,
+            4.5,
+            16,
+            11.5
+          ],
+          "texture": "#glass"
+        }
       }
     }
   ]

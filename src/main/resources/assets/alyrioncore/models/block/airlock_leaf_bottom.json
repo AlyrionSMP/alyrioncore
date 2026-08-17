@@ -7,54 +7,278 @@
   "elements": [
     {
       "name": "leaf_bottom",
-      "from": [13, 2, 2],
-      "to": [16, 14, 14],
+      "from": [
+        13,
+        2,
+        2
+      ],
+      "to": [
+        16,
+        14,
+        14
+      ],
       "faces": {
-        "north": {"uv": [2, 2, 14, 14], "texture": "#panel"},
-        "south": {"uv": [2, 2, 14, 14], "texture": "#panel"},
-        "west":  {"uv": [2, 2, 14, 14], "texture": "#panel"},
-        "east":  {"uv": [2, 2, 14, 14], "texture": "#panel"},
-        "up":    {"uv": [2, 2, 14, 5], "texture": "#panel"},
-        "down":  {"uv": [2, 2, 14, 5], "texture": "#panel"}
+        "north": {
+          "uv": [
+            0,
+            2,
+            3,
+            14
+          ],
+          "texture": "#panel"
+        },
+        "south": {
+          "uv": [
+            13,
+            2,
+            16,
+            14
+          ],
+          "texture": "#panel"
+        },
+        "west": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#panel"
+        },
+        "east": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#panel"
+        },
+        "up": {
+          "uv": [
+            13,
+            2,
+            16,
+            14
+          ],
+          "texture": "#panel"
+        },
+        "down": {
+          "uv": [
+            13,
+            2,
+            16,
+            14
+          ],
+          "texture": "#panel"
+        }
       }
     },
     {
       "name": "locking_bar_upper",
-      "from": [14.5, 9.5, 3.5],
-      "to": [16.4, 10.5, 12.5],
+      "from": [
+        14.5,
+        9.5,
+        3.5
+      ],
+      "to": [
+        16.4,
+        10.5,
+        12.5
+      ],
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#panel"}
+        "north": {
+          "uv": [
+            0,
+            5.5,
+            1.5,
+            6.5
+          ],
+          "texture": "#panel"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            5.5,
+            16,
+            6.5
+          ],
+          "texture": "#panel"
+        },
+        "west": {
+          "uv": [
+            3.5,
+            5.5,
+            12.5,
+            6.5
+          ],
+          "texture": "#panel"
+        },
+        "east": {
+          "uv": [
+            3.5,
+            5.5,
+            12.5,
+            6.5
+          ],
+          "texture": "#panel"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            3.5,
+            16,
+            12.5
+          ],
+          "texture": "#panel"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            3.5,
+            16,
+            12.5
+          ],
+          "texture": "#panel"
+        }
       }
     },
     {
       "name": "locking_bar_lower",
-      "from": [14.5, 7, 3.5],
-      "to": [16.4, 8, 12.5],
+      "from": [
+        14.5,
+        7,
+        3.5
+      ],
+      "to": [
+        16.4,
+        8,
+        12.5
+      ],
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#panel"}
+        "north": {
+          "uv": [
+            0,
+            8,
+            1.5,
+            9
+          ],
+          "texture": "#panel"
+        },
+        "south": {
+          "uv": [
+            14.5,
+            8,
+            16,
+            9
+          ],
+          "texture": "#panel"
+        },
+        "west": {
+          "uv": [
+            3.5,
+            8,
+            12.5,
+            9
+          ],
+          "texture": "#panel"
+        },
+        "east": {
+          "uv": [
+            3.5,
+            8,
+            12.5,
+            9
+          ],
+          "texture": "#panel"
+        },
+        "up": {
+          "uv": [
+            14.5,
+            3.5,
+            16,
+            12.5
+          ],
+          "texture": "#panel"
+        },
+        "down": {
+          "uv": [
+            14.5,
+            3.5,
+            16,
+            12.5
+          ],
+          "texture": "#panel"
+        }
       }
     },
     {
       "name": "handle",
-      "from": [14.5, 4.5, 7],
-      "to": [16.6, 6.5, 9],
+      "from": [
+        14.5,
+        4.5,
+        7
+      ],
+      "to": [
+        16.6,
+        6.5,
+        9
+      ],
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#panel"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#panel"}
+        "north": {
+          "uv": [
+            0,
+            9.5,
+            2.1,
+            11.5
+          ],
+          "texture": "#panel"
+        },
+        "south": {
+          "uv": [
+            13.9,
+            9.5,
+            16,
+            11.5
+          ],
+          "texture": "#panel"
+        },
+        "west": {
+          "uv": [
+            7,
+            9.5,
+            9,
+            11.5
+          ],
+          "texture": "#panel"
+        },
+        "east": {
+          "uv": [
+            7,
+            9.5,
+            9,
+            11.5
+          ],
+          "texture": "#panel"
+        },
+        "up": {
+          "uv": [
+            0,
+            7,
+            2.1,
+            9
+          ],
+          "texture": "#panel"
+        },
+        "down": {
+          "uv": [
+            0,
+            7,
+            2.1,
+            9
+          ],
+          "texture": "#panel"
+        }
       }
     }
   ]
