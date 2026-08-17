@@ -1,7 +1,7 @@
 package xyz.alyrion.alyrioncore.world.habitat;
 
-import it.unimi.dsi.fastutil.longs.Long2BooleanMap;
-import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
@@ -15,11 +15,12 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.alyrion.alyrioncore.block.AirlockBlock;
 import xyz.alyrion.alyrioncore.block.SleepingPodBlock;
+import xyz.alyrion.alyrioncore.compat.VacuumAtmosphere;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
-import xyz.alyrion.alyrioncore.world.ModDimensions;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -27,12 +28,26 @@ import java.util.Queue;
 public class HabitatSealManager {
 
     private static final int MAX_ROOM_VOLUME = 6144; // Up to 6,144 blocks volume for habitats & greenhouses
-    private static final Long2BooleanMap SEAL_CACHE = new Long2BooleanOpenHashMap();
+    private static final ConcurrentMap<Long, Boolean> SEAL_CACHE = new ConcurrentHashMap<>();
     private static long lastCacheClearTick = 0;
 
-    public static boolean isPositionSealed(ServerLevel level, BlockPos pos) {
-        if (!level.dimension().equals(ModDimensions.MARS_LEVEL)) {
-            return true; // Overworld and non-vacuum dimensions are naturally pressurized
+    // Where the last failed flood fill escaped (diagnostics: tells players where the leak is).
+    private static BlockPos lastLeakPos = null;
+    private static Direction lastLeakDir = null;
+
+    /** Block the most recent failed seal check escaped through, if any. */
+    public static BlockPos getLastLeakPos() {
+        return lastLeakPos;
+    }
+
+    /** Direction the most recent failed seal check escaped in. */
+    public static Direction getLastLeakDir() {
+        return lastLeakDir;
+    }
+
+    public static boolean isPositionSealed(Level level, BlockPos pos) {
+        if (!VacuumAtmosphere.isVacuum(level, pos.getY())) {
+            return true; // Overworld and other non-vacuum dimensions are naturally pressurized
         }
 
         long gameTime = level.getGameTime();
@@ -51,9 +66,11 @@ public class HabitatSealManager {
         return sealed;
     }
 
-    private static boolean runFloodFill(ServerLevel level, BlockPos startPos) {
+    private static boolean runFloodFill(Level level, BlockPos startPos) {
         // Fast pre-checks
         if (level.canSeeSky(startPos)) {
+            lastLeakPos = startPos;
+            lastLeakDir = Direction.UP; // open to the sky directly above
             return false;
         }
 
@@ -80,23 +97,31 @@ public class HabitatSealManager {
                 }
 
                 if (neighbor.getY() >= level.getMaxBuildHeight() || neighbor.getY() <= level.getMinBuildHeight()) {
-                    return false; // Escaped into the Martian exosphere or void
-                }
-
-                if (level.canSeeSky(neighbor)) {
-                    return false; // Directly exposed to open vacuum sky
+                    lastLeakPos = current;
+                    lastLeakDir = dir; // escaped into the exosphere or void
+                    return false;
                 }
 
                 BlockState state = level.getBlockState(neighbor);
                 if (isAirtight(state, level, neighbor)) {
-                    // Reached airtight boundary block (wall/window/closed airlock). Do not expand through it.
+                    // Reached airtight boundary block (wall/window/closed airlock).
+                    // Checked BEFORE sky exposure: a roof or wall that happens to be
+                    // the topmost block in its column ("can see sky") still seals.
                     continue;
+                }
+
+                if (level.canSeeSky(neighbor)) {
+                    lastLeakPos = neighbor;
+                    lastLeakDir = dir; // hole: a non-airtight cell exposed to open vacuum sky
+                    return false;
                 }
 
                 visited.add(neighborKey);
                 queue.add(neighbor);
 
                 if (visited.size() > MAX_ROOM_VOLUME) {
+                    lastLeakPos = current;
+                    lastLeakDir = dir;
                     return false; // Room volume exceeds maximum limit; considered unsealed/open world
                 }
             }
@@ -140,7 +165,7 @@ public class HabitatSealManager {
     }
 
     public static void onBlockBreak(ServerLevel level, BlockPos pos, BlockState brokenState) {
-        if (!level.dimension().equals(ModDimensions.MARS_LEVEL)) {
+        if (!VacuumAtmosphere.isVacuum(level, pos.getY())) {
             return;
         }
 

@@ -1,0 +1,66 @@
+source: assets mirror 1.21.9 (block/red_sand) (true 16x16 master)
+master 16x16
+wrote ref2/red_sand.png
+
+== analyze red_sand.png ==
+size 16x16 | opaque 256/256 (100%) | colors 6
+palette: #ac5712 #b2601f #bf6721 #cb6e24 #d2752b #d97b30
+bbox: (0,0)-(15,15)
+light TL=121 TR=120 BL=122 BR=121 -> consistent with top-left / bevel lighting
+banding: row 0[2:15] up; row 1[2:5] down; row 1[6:15] up; row 2[0:3] down; row 2[10:13] down; row 3[2:8] down; row 3[9:14] down; row 4[0:10] up; row 5[6:12] down; row 6[0:3] down; row 6[4:8] down; row 6[12:15] down
+FLAT PATCHES: 12px #bf6721, 10px #bf6721
+tile edges L/R=8.2 T/B=7.8 -> tiles well
+
+luma map:
++++++=++++=+++=+
+=++=+==+==++*=++
+++===++++++=+==+
++++=+=+=++=++=++
+=+*+=+++++++=+++
++=++++++=++=++=+
+=++==*=+===++=+=
++=++=++=+===+++=
+=+++++===+=+++=+
+++=+++==+=+=+++=
++=+++=++++++==++
+==++++=+++===+=+
+=+=+=++=+*++==++
++++++=++++++++=+
+++++*+++++++=+++
++++++++++=++++++
+
+alpha map:
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+
+exact hex grid:
+ 0 #d2752b #bf6721 #bf6721 #cb6e24 #bf6721 #b2601f #cb6e24 #bf6721 #cb6e24 #bf6721 #b2601f #cb6e24 #bf6721 #cb6e24 #b2601f #cb6e24
+ 1 #b2601f #bf6721 #bf6721 #b2601f #bf6721 #b2601f #b2601f #cb6e24 #ac5712 #b2601f #d2752b #bf6721 #d97b30 #ac5712 #bf6721 #d2752b
+ 2 #cb6e24 #bf6721 #ac5712 #b2601f #b2601f #d2752b #bf6721 #bf6721 #bf6721 #bf6721 #bf6721 #b2601f #bf6721 #b2601f #b2601f #bf6721
+ 3 #bf6721 #cb6e24 #cb6e24 #b2601f #bf6721 #b2601f #cb6e24 #b2601f #cb6e24 #cb6e24 #b2601f #cb6e24 #bf6721 #b2601f #bf6721 #bf6721
+ 4 #b2601f #bf6721 #d97b30 #bf6721 #b2601f #cb6e24 #bf6721 #cb6e24 #bf6721 #cb6e24 #bf6721 #bf6721 #b2601f #bf6721 #bf6721 #cb6e24
+ 5 #bf6721 #b2601f #bf6721 #bf6721 #cb6e24 #cb6e24 #cb6e24 #bf6721 #b2601f #bf6721 #cb6e24 #b2601f #bf6721 #bf6721 #b2601f #bf6721
+ 6 #b2601f #d2752b #bf6721 #b2601f #b2601f #d97b30 #b2601f #bf6721 #b2601f #b2601f #ac5712 #bf6721 #bf6721 #b2601f #bf6721 #b2601f
+ 7 #bf6721 #b2601f #bf6721 #bf6721 #b2601f #bf6721 #bf6721 #b2601f #bf6721 #b2601f #b2601f #b2601f #bf6721 #d2752b #bf6721 #b2601f
+ 8 #b2601f #bf6721 #cb6e24 #bf6721 #bf6721 #cb6e24 #b2601f #ac5712 #b2601f #cb6e24 #b2601f #bf6721 #cb6e24 #bf6721 #b2601f #bf6721
+ 9 #d2752b #bf6721 #b2601f #bf6721 #bf6721 #bf6721 #b2601f #b2601f #bf6721 #ac5712 #bf6721 #b2601f #bf6721 #bf6721 #cb6e24 #b2601f
+10 #bf6721 #ac5712 #bf6721 #cb6e24 #bf6721 #b2601f #bf6721 #cb6e24 #bf6721 #bf6721 #cb6e24 #bf6721 #ac5712 #b2601f #bf6721 #cb6e24
+11 #b2601f #b2601f #bf6721 #bf6721 #cb6e24 #bf6721 #b2601f #bf6721 #cb6e24 #cb6e24 #b2601f #b2601f #b2601f #bf6721 #b2601f #bf6721
+12 #b2601f #bf6721 #b2601f #cb6e24 #b2601f #cb6e24 #bf6721 #b2601f #d2752b #d97b30 #cb6e24 #bf6721 #b2601f #b2601f #bf6721 #cb6e24
+13 #cb6e24 #bf6721 #cb6e24 #bf6721 #cb6e24 #ac5712 #bf6721 #cb6e24 #bf6721 #cb6e24 #bf6721 #cb6e24 #bf6721 #bf6721 #b2601f #bf6721
+14 #bf6721 #cb6e24 #bf6721 #cb6e24 #d97b30 #cb6e24 #cb6e24 #bf6721 #cb6e24 #bf6721 #cb6e24 #bf6721 #ac5712 #cb6e24 #bf6721 #bf6721
+15 #cb6e24 #bf6721 #cb6e24 #bf6721 #cb6e24 #cb6e24 #bf6721 #cb6e24 #bf6721 #b2601f #bf6721 #bf6721 #cb6e24 #bf6721 #cb6e24 #bf6721

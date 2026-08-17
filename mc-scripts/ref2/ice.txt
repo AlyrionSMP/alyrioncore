@@ -1,0 +1,66 @@
+source: assets mirror 1.21.9 (block/ice) (true 16x16 master)
+master 16x16
+wrote ref2/ice.png
+
+== analyze ice.png ==
+size 16x16 | opaque 256/256 (100%) | colors 6
+palette: #86aefd #8cb3fe #92b9fe #a1c3ff #bcd4ff #c8dcff
+bbox: (0,0)-(15,15)
+light TL=179 TR=180 BL=180 BR=183 -> consistent with top-left / bevel lighting
+banding: row 0[4:7] down; row 7[10:14] down; row 8[9:13] up; row 9[8:12] up; row 10[2:5] down; row 10[7:10] up; row 11[6:9] up; row 15[5:8] down; row 15[12:15] down; col 0[11:15] down; col 8[9:12] up; col 10[7:10] down
+FLAT PATCHES: 28px #92b9fe, 26px #92b9fe, 20px #86aefd
+tile edges L/R=7.1 T/B=6.2 -> tiles well
+
+luma map:
+#####%##########
+################
+################
+################
+################
+################
+################
+############%###
+###########%####
+##########%#####
+################
+################
+################
+%###############
+###############%
+######%#######%#
+
+alpha map:
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+
+exact hex grid:
+ 0 #86aefd #86aefd #86aefd #92b9fe #92b9fe #bcd4ff #a1c3ff #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #a1c3ff #a1c3ff #a1c3ff #92b9fe
+ 1 #86aefd #86aefd #92b9fe #92b9fe #a1c3ff #a1c3ff #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #92b9fe #a1c3ff #92b9fe #8cb3fe #86aefd
+ 2 #86aefd #8cb3fe #92b9fe #92b9fe #92b9fe #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #92b9fe #a1c3ff #92b9fe #8cb3fe #86aefd #86aefd
+ 3 #92b9fe #92b9fe #8cb3fe #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #8cb3fe #92b9fe #8cb3fe #92b9fe #8cb3fe #8cb3fe #86aefd #8cb3fe
+ 4 #92b9fe #8cb3fe #8cb3fe #92b9fe #92b9fe #8cb3fe #92b9fe #8cb3fe #86aefd #86aefd #86aefd #8cb3fe #8cb3fe #8cb3fe #92b9fe #92b9fe
+ 5 #8cb3fe #8cb3fe #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #86aefd #86aefd #86aefd #8cb3fe #92b9fe #92b9fe #92b9fe #a1c3ff #a1c3ff
+ 6 #86aefd #8cb3fe #92b9fe #92b9fe #8cb3fe #8cb3fe #92b9fe #86aefd #8cb3fe #8cb3fe #92b9fe #92b9fe #a1c3ff #a1c3ff #92b9fe #92b9fe
+ 7 #86aefd #86aefd #8cb3fe #8cb3fe #8cb3fe #92b9fe #92b9fe #92b9fe #8cb3fe #92b9fe #92b9fe #a1c3ff #bcd4ff #a1c3ff #92b9fe #8cb3fe
+ 8 #86aefd #8cb3fe #8cb3fe #92b9fe #92b9fe #92b9fe #92b9fe #86aefd #8cb3fe #8cb3fe #a1c3ff #bcd4ff #a1c3ff #92b9fe #92b9fe #86aefd
+ 9 #8cb3fe #92b9fe #92b9fe #92b9fe #92b9fe #92b9fe #86aefd #86aefd #86aefd #a1c3ff #c8dcff #a1c3ff #92b9fe #92b9fe #86aefd #86aefd
+10 #92b9fe #92b9fe #92b9fe #a1c3ff #92b9fe #86aefd #86aefd #86aefd #92b9fe #a1c3ff #92b9fe #92b9fe #92b9fe #86aefd #86aefd #8cb3fe
+11 #92b9fe #a1c3ff #a1c3ff #92b9fe #8cb3fe #86aefd #86aefd #92b9fe #a1c3ff #92b9fe #92b9fe #92b9fe #92b9fe #8cb3fe #86aefd #92b9fe
+12 #a1c3ff #a1c3ff #92b9fe #92b9fe #86aefd #86aefd #86aefd #8cb3fe #92b9fe #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #92b9fe #92b9fe
+13 #c8dcff #a1c3ff #92b9fe #8cb3fe #86aefd #86aefd #8cb3fe #92b9fe #92b9fe #92b9fe #92b9fe #8cb3fe #8cb3fe #92b9fe #92b9fe #92b9fe
+14 #a1c3ff #92b9fe #8cb3fe #86aefd #86aefd #86aefd #92b9fe #92b9fe #a1c3ff #92b9fe #92b9fe #8cb3fe #8cb3fe #92b9fe #a1c3ff #c8dcff
+15 #92b9fe #86aefd #86aefd #86aefd #92b9fe #92b9fe #bcd4ff #a1c3ff #92b9fe #92b9fe #8cb3fe #8cb3fe #8cb3fe #a1c3ff #bcd4ff #a1c3ff

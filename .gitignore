@@ -1,8 +1,12 @@
 # Gradle build and cache
 .gradle/
+.gradle-home/
 build/
 bin/
 out/
+
+# Local build tooling (JDK copy used to bootstrap Gradle on this machine)
+.tools/
 
 # IDE files
 .idea/
@@ -23,3 +27,8 @@ crash-reports/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Local previews, references and Python bytecode
+previews/
+ref_iron_pickaxe.png
+__pycache__/

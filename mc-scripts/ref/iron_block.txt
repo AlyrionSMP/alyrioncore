@@ -1,0 +1,66 @@
+source: assets mirror 1.21.9 (block/iron_block) (true 16x16 master)
+master 16x16
+wrote ref/iron_block.png
+
+== analyze iron_block.png ==
+size 16x16 | opaque 256/256 (100%) | colors 11
+palette: #b1b0b0 #b9b9b9 #c1c1c1 #d1cfcf #d6d6d6 #dcdcdc #e0e0e0 #e6e6e6 #eaeaea #ececec #f2f2f2
+bbox: (0,0)-(15,15)
+light TL=223 TR=219 BL=221 BR=217 -> consistent with top-left / bevel lighting
+banding: col 1[0:15] down; col 2[0:15] down; col 3[0:15] down; col 4[0:15] down; col 5[0:15] down; col 6[0:5] up; col 6[6:15] down; col 7[0:5] up; col 7[6:11] up; col 7[12:15] down; col 8[8:11] down; col 8[12:15] down
+FLAT PATCHES: 21px #e6e6e6, 20px #e6e6e6, 19px #e6e6e6
+tile edges L/R=5.0 T/B=13.2 -> WARNING: visible seam
+
+luma map:
+%##%%%%%%%%####%
+#@@@@@@@@@@@@@@#
+#@@@@@@@@@@@@@@#
+#%%%%%%%%%%%%%%#
+#@@@@@@@@@@@@@@#
+#@@@@@@@@@@@@@@#
+#%%%%%%%%%%%%%%#
+#@@@@@@@@@@@@@@#
+#@@@@@@@@@@@@@@#
+#%%%%%%%%%%%%%%#
+#@@@@@@@@@@@@@@#
+#@@@@@@@@@@@@@@#
+#%%%%%%%%%%%%%%#
+#@@@@@@@@@@@@@@#
+#@@@@@@@@@@@@@@#
+################
+
+alpha map:
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+
+exact hex grid:
+ 0 #d1cfcf #c1c1c1 #c1c1c1 #d1cfcf #d1cfcf #d1cfcf #d1cfcf #d1cfcf #d1cfcf #d1cfcf #d1cfcf #c1c1c1 #c1c1c1 #c1c1c1 #c1c1c1 #d1cfcf
+ 1 #c1c1c1 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #ececec #ececec #ececec #eaeaea #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #c1c1c1
+ 2 #c1c1c1 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+ 3 #b1b0b0 #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #e0e0e0 #e0e0e0 #e0e0e0 #d6d6d6 #d6d6d6 #d6d6d6 #d6d6d6 #b1b0b0
+ 4 #c1c1c1 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #ececec #ececec #ececec #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+ 5 #c1c1c1 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+ 6 #b1b0b0 #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #e0e0e0 #e0e0e0 #e0e0e0 #e0e0e0 #d6d6d6 #d6d6d6 #d6d6d6 #d6d6d6 #d6d6d6 #b1b0b0
+ 7 #c1c1c1 #f2f2f2 #f2f2f2 #ececec #ececec #ececec #ececec #ececec #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+ 8 #c1c1c1 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+ 9 #b1b0b0 #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #e0e0e0 #e0e0e0 #e0e0e0 #d6d6d6 #d6d6d6 #d6d6d6 #b1b0b0
+10 #c1c1c1 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #ececec #ececec #ececec #ececec #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+11 #c1c1c1 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+12 #b1b0b0 #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #dcdcdc #e0e0e0 #e0e0e0 #e0e0e0 #e0e0e0 #d6d6d6 #d6d6d6 #d6d6d6 #d6d6d6 #b1b0b0
+13 #c1c1c1 #f2f2f2 #f2f2f2 #f2f2f2 #f2f2f2 #ececec #ececec #ececec #ececec #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+14 #c1c1c1 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #e6e6e6 #b9b9b9
+15 #c1c1c1 #c1c1c1 #c1c1c1 #c1c1c1 #c1c1c1 #c1c1c1 #c1c1c1 #b9b9b9 #b9b9b9 #c1c1c1 #b9b9b9 #b9b9b9 #b9b9b9 #b9b9b9 #b9b9b9 #b9b9b9

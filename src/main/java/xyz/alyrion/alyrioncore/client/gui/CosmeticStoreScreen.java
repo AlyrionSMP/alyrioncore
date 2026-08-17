@@ -167,39 +167,32 @@ public class CosmeticStoreScreen extends Screen {
         int previewWidth = this.width - previewX - 16;
         if (selectedCape != null) {
             boolean isUnlocked = manager.isCapeUnlocked(selectedCape);
-            boolean isEquipped = manager.isCapeEquipped(selectedCape);
             int actionBtnY = this.height - 48;
 
-            if (isEquipped) {
-                this.addRenderableWidget(Button.builder(Component.literal("§cUnequip Cape"), btn -> {
-                    manager.unequipCape();
-                    rebuildWidgets();
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-            } else if (isUnlocked) {
-                this.addRenderableWidget(Button.builder(Component.literal("§aEquip Cape"), btn -> {
-                    manager.equipCape(selectedCape);
-                    rebuildWidgets();
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-            } else if (!selectedCape.isPurchasable()) {
-                Button taskBtn = Button.builder(Component.literal("§dTask Reward"), btn -> {
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build();
-                taskBtn.active = false;
-                this.addRenderableWidget(taskBtn);
-            } else if (selectedCape.isFree()) {
-                this.addRenderableWidget(Button.builder(Component.literal("§bClaim Free"), btn -> {
-                    manager.purchaseCape(selectedCape);
-                    rebuildWidgets();
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-            } else {
-                boolean canAfford = manager.getCoins() >= selectedCape.getPrice();
-                Button buyBtn = Button.builder(Component.literal("§6Buy (" + selectedCape.getPrice() + " Coins)"), btn -> {
-                    if (canAfford) {
+            // Equip / Unequip is handled on the cape cards in the store list only —
+            // the preview panel is for looking at the cape, not equipping it.
+            if (!isUnlocked) {
+                if (!selectedCape.isPurchasable()) {
+                    Button taskBtn = Button.builder(Component.literal("§dTask Reward"), btn -> {
+                    }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build();
+                    taskBtn.active = false;
+                    this.addRenderableWidget(taskBtn);
+                } else if (selectedCape.isFree()) {
+                    this.addRenderableWidget(Button.builder(Component.literal("§bClaim Free"), btn -> {
                         manager.purchaseCape(selectedCape);
                         rebuildWidgets();
-                    }
-                }).bounds(previewX + (previewWidth - 120) / 2, actionBtnY, 120, 20).build();
-                buyBtn.active = canAfford;
-                this.addRenderableWidget(buyBtn);
+                    }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
+                } else {
+                    boolean canAfford = manager.getCoins() >= selectedCape.getPrice();
+                    Button buyBtn = Button.builder(Component.literal("§6Buy (" + selectedCape.getPrice() + " Coins)"), btn -> {
+                        if (canAfford) {
+                            manager.purchaseCape(selectedCape);
+                            rebuildWidgets();
+                        }
+                    }).bounds(previewX + (previewWidth - 120) / 2, actionBtnY, 120, 20).build();
+                    buyBtn.active = canAfford;
+                    this.addRenderableWidget(buyBtn);
+                }
             }
         }
     }

@@ -10,9 +10,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import xyz.alyrion.alyrioncore.compat.VacuumAtmosphere;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
 import xyz.alyrion.alyrioncore.registry.ModItems;
-import xyz.alyrion.alyrioncore.world.ModDimensions;
 import xyz.alyrion.alyrioncore.world.habitat.HabitatSealManager;
 
 public class MartianPotatoCropBlock extends CropBlock {
@@ -41,7 +41,7 @@ public class MartianPotatoCropBlock extends CropBlock {
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         // On Mars, crops strictly require a pressurized sealed greenhouse and heating!
-        if (level.dimension().equals(ModDimensions.MARS_LEVEL)) {
+        if (VacuumAtmosphere.isVacuum(level, pos.getY())) {
             boolean isSealed = HabitatSealManager.isPositionSealed(level, pos);
             int lightLevel = level.getRawBrightness(pos, 0);
 

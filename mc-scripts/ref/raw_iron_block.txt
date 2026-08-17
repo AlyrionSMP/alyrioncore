@@ -1,0 +1,66 @@
+source: assets mirror 1.21.9 (block/raw_iron_block) (true 16x16 master)
+master 16x16
+wrote ref/raw_iron_block.png
+
+== analyze raw_iron_block.png ==
+size 16x16 | opaque 256/256 (100%) | colors 7
+palette: #665237 #7c623f #8e7454 #af8e77 #d8af93 #e9c8b1 #fedec8
+bbox: (0,0)-(15,15)
+light TL=138 TR=145 BL=139 BR=145 -> consistent with top-left / bevel lighting
+banding: row 0[5:11] down; row 0[12:15] down; row 1[5:11] down; row 1[12:15] down; row 2[1:7] down; row 2[9:13] up; row 3[0:3] down; row 3[4:10] down; row 4[0:7] up; row 4[8:12] down; row 5[0:13] up; row 6[2:5] up
+flat patches: largest 9px #af8e77 (ok)
+tile edges L/R=28.8 T/B=38.0 -> WARNING: visible seam
+
+luma map:
++==#**+*#%#**+=-
+%*++++=+*#*++#@%
+##*=+=-+++=+*%%*
+=+-==*#%*-==**#+
++=-*%@%##+-=##**
+=-+*#%#*+=+#%##*
+-==+#**++-*##**+
+*#*+**+==-***+=+
+#%##*++=-=++---=
+*#%**==+%#%*#+-=
+++**++=%@%#***==
+=--=++*%##*+*++=
+#+--=+*##**++=##
+*#+=-==***+*@%%#
+=*+*##*+=++#%#*+
+++=%%##===*#***=
+
+alpha map:
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+################
+
+exact hex grid:
+ 0 #8e7454 #7c623f #7c623f #d8af93 #af8e77 #af8e77 #8e7454 #af8e77 #d8af93 #e9c8b1 #d8af93 #af8e77 #af8e77 #8e7454 #7c623f #665237
+ 1 #e9c8b1 #af8e77 #8e7454 #8e7454 #8e7454 #8e7454 #7c623f #8e7454 #af8e77 #d8af93 #af8e77 #8e7454 #8e7454 #d8af93 #fedec8 #e9c8b1
+ 2 #d8af93 #d8af93 #af8e77 #7c623f #8e7454 #7c623f #665237 #8e7454 #8e7454 #8e7454 #7c623f #8e7454 #af8e77 #e9c8b1 #e9c8b1 #af8e77
+ 3 #7c623f #8e7454 #665237 #7c623f #7c623f #af8e77 #d8af93 #e9c8b1 #af8e77 #665237 #7c623f #7c623f #af8e77 #af8e77 #d8af93 #8e7454
+ 4 #8e7454 #7c623f #665237 #af8e77 #e9c8b1 #fedec8 #e9c8b1 #d8af93 #d8af93 #8e7454 #665237 #7c623f #d8af93 #d8af93 #af8e77 #af8e77
+ 5 #7c623f #665237 #8e7454 #af8e77 #d8af93 #e9c8b1 #d8af93 #af8e77 #8e7454 #7c623f #8e7454 #d8af93 #e9c8b1 #d8af93 #d8af93 #af8e77
+ 6 #665237 #7c623f #7c623f #8e7454 #d8af93 #af8e77 #af8e77 #8e7454 #8e7454 #665237 #af8e77 #d8af93 #d8af93 #af8e77 #af8e77 #8e7454
+ 7 #af8e77 #d8af93 #af8e77 #8e7454 #af8e77 #af8e77 #8e7454 #7c623f #7c623f #665237 #af8e77 #af8e77 #af8e77 #8e7454 #7c623f #8e7454
+ 8 #d8af93 #e9c8b1 #d8af93 #d8af93 #af8e77 #8e7454 #8e7454 #7c623f #665237 #7c623f #8e7454 #8e7454 #665237 #665237 #665237 #7c623f
+ 9 #af8e77 #d8af93 #e9c8b1 #af8e77 #af8e77 #7c623f #7c623f #8e7454 #e9c8b1 #d8af93 #e9c8b1 #af8e77 #d8af93 #8e7454 #665237 #7c623f
+10 #8e7454 #8e7454 #af8e77 #af8e77 #8e7454 #8e7454 #7c623f #e9c8b1 #fedec8 #e9c8b1 #d8af93 #af8e77 #af8e77 #af8e77 #7c623f #7c623f
+11 #7c623f #665237 #665237 #7c623f #8e7454 #8e7454 #af8e77 #e9c8b1 #d8af93 #d8af93 #af8e77 #8e7454 #af8e77 #8e7454 #8e7454 #7c623f
+12 #d8af93 #8e7454 #665237 #665237 #7c623f #8e7454 #af8e77 #d8af93 #d8af93 #af8e77 #af8e77 #8e7454 #8e7454 #7c623f #d8af93 #d8af93
+13 #af8e77 #d8af93 #8e7454 #7c623f #665237 #7c623f #7c623f #af8e77 #af8e77 #af8e77 #8e7454 #af8e77 #fedec8 #e9c8b1 #e9c8b1 #d8af93
+14 #7c623f #af8e77 #8e7454 #af8e77 #d8af93 #d8af93 #af8e77 #8e7454 #7c623f #8e7454 #8e7454 #d8af93 #e9c8b1 #d8af93 #af8e77 #8e7454
+15 #8e7454 #8e7454 #7c623f #e9c8b1 #e9c8b1 #d8af93 #d8af93 #7c623f #7c623f #7c623f #af8e77 #d8af93 #af8e77 #af8e77 #af8e77 #7c623f

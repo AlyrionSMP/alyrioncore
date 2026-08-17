@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -82,11 +83,19 @@ public class AirlockBlock extends DoorBlock implements EntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        // Toggle open/closed state on right click with pneumatic airlock sound
-        state = state.cycle(OPEN);
-        level.setBlock(pos, state, 10);
-        float pitch = state.getValue(OPEN) ? 0.85F : 1.15F;
-        level.playSound(player, pos, state.getValue(OPEN) ? SoundEvents.IRON_DOOR_OPEN : SoundEvents.IRON_DOOR_CLOSE, SoundSource.BLOCKS, 1.0F, pitch);
+        // Toggle open/closed state on right click with pneumatic airlock sound.
+        // Toggle BOTH halves (like a vanilla door) so the leaf always closes as a
+        // single airtight unit — a half-open airlock would leak the habitat.
+        boolean open = !state.getValue(OPEN);
+        level.setBlock(pos, state.setValue(OPEN, open), 10);
+        // Flip the other half to match (door halves share the OPEN property).
+        BlockPos other = pos.relative(state.getValue(HALF) == DoubleBlockHalf.UPPER ? Direction.DOWN : Direction.UP);
+        BlockState otherState = level.getBlockState(other);
+        if (otherState.is(this) && otherState.getValue(OPEN) != open) {
+            level.setBlock(other, otherState.setValue(OPEN, open), 10);
+        }
+        float pitch = open ? 0.85F : 1.15F;
+        level.playSound(player, pos, open ? SoundEvents.IRON_DOOR_OPEN : SoundEvents.IRON_DOOR_CLOSE, SoundSource.BLOCKS, 1.0F, pitch);
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 

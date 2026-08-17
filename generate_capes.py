@@ -1,4 +1,7 @@
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 def hex_to_rgb(h):
     h = h.lstrip('#')
@@ -282,64 +285,88 @@ def create_cape_moon():
     print("Saved moon.png")
 
 def create_cape_marsian():
-    img = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
-    pixels = img.load()
+    """Martian cape v2: green alien waving on the Martian surface under a dusty
+    rust sky with Phobos & Deimos, Olympus Mons silhouette and dune terrain.
+    The design is symmetric so the cape texture's mirrored half reads the same.
+    Pure stdlib (uses mcutil) so it regenerates without Pillow."""
+    import os
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mc-scripts'))
+    import mcutil as mc
 
-    sky_mars = hex_to_rgb("#A84F2B")
-    sky_dark = hex_to_rgb("#7A3114")
-    mons_peak = hex_to_rgb("#5E210D")
-    soil_light = hex_to_rgb("#D96434")
-    soil_mid = hex_to_rgb("#BA4B1F")
-    soil_dark = hex_to_rgb("#852A0B")
+    C = {
+        '0': "#4A1705",  # deep sky top
+        '1': "#7A3114",  # sky
+        '2': "#A84F2B",  # sky mid
+        '3': "#C2501F",  # sky near horizon
+        '4': "#D96434",  # horizon glow
+        'm': "#EAD9B4",  # moon (Phobos / Deimos)
+        'p': "#471808",  # mountain shadow
+        'P': "#5E210D",  # mountain (Olympus Mons)
+        'l': "#E07340",  # soil light
+        'M': "#BA4B1F",  # soil mid
+        'd': "#852A0B",  # soil dark
+        'x': "#4E1603",  # soil deep
+        'a': "#6EE787",  # alien light
+        'A': "#34D353",  # alien skin
+        'D': "#15803D",  # alien dark
+        'e': "#061A0C",  # alien eye
+        'g': "#DCFCE7",  # eye gleam
+    }
 
-    alien_skin = hex_to_rgb("#34D353")
-    alien_light = hex_to_rgb("#6EE787")
-    alien_dark = hex_to_rgb("#15803D")
-    alien_eye = hex_to_rgb("#061A0C")
-    eye_gleam = hex_to_rgb("#DCFCE7")
+    scene = [
+        "1111111111",
+        "112m2222m2",
+        "2222222222",
+        "2222222222",
+        "2222222222",
+        "222pppp222",
+        "22ppppp222",
+        "2ppppppp22",
+        "2ppppppp22",
+        "3444444443",
+        "lMMllMMddd",
+        "MlMMllMMdd",
+        "MMlMMlMMdd",
+        "lMMllMMddd",
+        "dMMdddMMdx",
+        "dddddddddx",
+    ]
 
-    grid = [[sky_mars for _ in range(10)] for _ in range(16)]
+    # Green alien overlaying the scene: big head with 2x2 gleaming eyes, small
+    # body, arms out — no outline/antenna so nothing reads as hat or hair.
+    alien = {
+        (3, 7): 'a', (4, 7): 'A', (5, 7): 'A', (6, 7): 'A', (7, 7): 'a',                # head top
+        (2, 8): 'A', (3, 8): 'g', (4, 8): 'e', (5, 8): 'A', (6, 8): 'g', (7, 8): 'e', (8, 8): 'A',  # eyes (gleam + black)
+        (2, 9): 'A', (3, 9): 'e', (4, 9): 'e', (5, 9): 'A', (6, 9): 'e', (7, 9): 'e', (8, 9): 'A',  # eyes (black)
+        (2, 10): 'A', (3, 10): 'A', (4, 10): 'A', (5, 10): 'A', (6, 10): 'A', (7, 10): 'A', (8, 10): 'A',  # chin
+        (3, 11): 'A', (4, 11): 'A', (5, 11): 'A', (6, 11): 'A',                         # chin taper
+        (4, 12): 'D', (5, 12): 'D',                                                     # neck
+        (2, 13): 'a', (3, 13): 'D', (4, 13): 'D', (5, 13): 'D', (6, 13): 'D', (7, 13): 'D', (8, 13): 'a',  # shoulders
+        (1, 14): 'a', (2, 14): 'D', (3, 14): 'A', (4, 14): 'A', (5, 14): 'A', (6, 14): 'A', (7, 14): 'D', (8, 14): 'D', (9, 14): 'a',  # arms + hands
+        (3, 15): 'D', (4, 15): 'A', (5, 15): 'A', (6, 15): 'D',                         # feet
+    }
 
-    # Olympus Mons Peak (yr=2..5)
-    grid[2][4] = mons_peak; grid[2][5] = mons_peak
-    grid[3][3] = mons_peak; grid[3][4] = sky_dark; grid[3][5] = sky_dark; grid[3][6] = mons_peak
-    grid[4][2] = mons_peak; grid[4][3] = sky_dark; grid[4][6] = sky_dark; grid[4][7] = mons_peak
+    grid = [list(row) for row in scene]
+    for (xr, yr), ch in alien.items():
+        grid[yr][xr] = ch
 
-    # Martian Soil & Dunes (yr=7..15)
-    for yr in range(7, 16):
-        for xr in range(10):
-            c = soil_light if (xr + yr) % 2 == 0 else soil_mid
-            if yr >= 13: c = soil_dark if xr % 3 == 0 else soil_mid
-            grid[yr][xr] = c
-
-    # Alien Character in foreground (xr=3..6, yr=6..13)
-    # Antenna (yr=6)
-    grid[6][4] = alien_light; grid[6][5] = alien_light
-    # Head (yr=7..9)
-    grid[7][3] = alien_light; grid[7][4] = alien_skin;  grid[7][5] = alien_skin;  grid[7][6] = alien_light
-    # Eyes
-    grid[8][2] = alien_light; grid[8][3] = eye_gleam;   grid[8][4] = alien_skin;  grid[8][5] = eye_gleam; grid[8][6] = alien_eye; grid[8][7] = alien_dark
-    grid[9][3] = alien_eye;   grid[9][4] = alien_skin;  grid[9][5] = alien_eye;   grid[9][6] = alien_dark
-    # Chin
-    grid[10][4] = alien_skin; grid[10][5] = alien_dark
-    # Body & Waving Hand
-    grid[11][2] = alien_light # Hand
-    grid[11][4] = alien_dark; grid[11][5] = alien_dark # Torso
-    grid[12][3] = alien_skin; grid[12][4] = alien_dark; grid[12][5] = alien_dark; grid[12][6] = alien_skin
-
+    img = [[(0, 0, 0, 0)] * 64 for _ in range(32)]
     for yr in range(16):
         y = 1 + yr
         for xr in range(10):
-            u = 10 - xr
-            pixels[u, y] = (*grid[yr][xr], 255)
-            pixels[12 + xr, y] = (*grid[yr][xr], 255)
+            rgb = mc.hex2rgb(C[grid[yr][xr]])
+            img[y][10 - xr] = rgb + (255,)   # mirrored left copy (visible cape back)
+            img[y][12 + xr] = rgb + (255,)   # right copy (inner faces)
 
-    for x in range(1, 21): pixels[x, 0] = (*sky_dark, 255)
+    # Cape frame: top edge + the two 1px side seams (cape box edges)
+    for x in range(1, 21):
+        img[0][x] = mc.hex2rgb(C['0']) + (255,)
     for y in range(1, 17):
-        pixels[0, y] = (*soil_dark, 255)
-        pixels[11, y] = (*soil_dark, 255)
+        img[y][0] = mc.hex2rgb(C['x']) + (255,)
+        img[y][11] = mc.hex2rgb(C['x']) + (255,)
 
-    img.save("src/main/resources/assets/alyrioncore/textures/capes/marsian.png")
+    mc.write_png("src/main/resources/assets/alyrioncore/textures/capes/marsian.png", img)
     print("Saved marsian.png")
 
 def create_cape_grim():
@@ -390,27 +417,24 @@ def create_cape_grim():
     print("Saved grim.png")
 
 def create_cape_pride():
-    img = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
-    pixels = img.load()
+    """Classic 6-stripe pride flag, all stripes EQUAL height (3px each),
+    filling the full 18-row cape design area. Pure stdlib (uses mcutil)."""
+    import os
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mc-scripts'))
+    import mcutil as mc
 
-    red = hex_to_rgb("#E40303")
-    orange = hex_to_rgb("#FF8C00")
-    yellow = hex_to_rgb("#FFED00")
-    green = hex_to_rgb("#008026")
-    blue = hex_to_rgb("#24408E")
-    violet = hex_to_rgb("#732982")
+    stripes = ["#E40303", "#FF8C00", "#FFED00", "#008026", "#24408E", "#732982"]
 
-    # Classic 6-stripe pride flag stretched over the whole cape (rows 0..16), no white
-    stripes = [red, orange, yellow, green, blue, violet]
-    heights = [3, 3, 3, 3, 2, 3]  # sums to 17
+    img = [[(0, 0, 0, 0)] * 64 for _ in range(32)]
     y = 0
-    for color, h in zip(stripes, heights):
-        for _ in range(h):
-            for x in range(22):  # cols 0..21: both halves plus seam
-                pixels[x, y] = (*color, 255)
+    for color in stripes:
+        for _ in range(3):                      # every stripe is 3 rows
+            for x in range(22):                 # cols 0..21: both halves plus seam
+                img[y][x] = mc.hex2rgb(color) + (255,)
             y += 1
 
-    img.save("src/main/resources/assets/alyrioncore/textures/capes/pride.png")
+    mc.write_png("src/main/resources/assets/alyrioncore/textures/capes/pride.png", img)
     print("Saved pride.png")
 
 if __name__ == "__main__":

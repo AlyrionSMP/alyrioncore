@@ -1,0 +1,66 @@
+source: assets mirror 1.21.9 (item/amethyst_shard) (true 16x16 master)
+master 16x16
+wrote ref2/amethyst_shard.png
+
+== analyze amethyst_shard.png ==
+size 16x16 | opaque 89/256 (34%) | colors 7
+palette: #54398a #6f4fab #8d6acc #b38ef3 #cfa0f3 #fecbe6 #fffdd5
+bbox: (2,2)-(13,14)
+light TL=164 TR=143 BL=111 BR=91 -> consistent with top-left / bevel lighting
+outline: outline present (border ~99 vs interior ~165)
+banding: row 6[8:11] down; col 3[8:11] down
+flat patches: largest 8px #54398a (ok)
+
+luma map:
+                
+                
+         =====  
+        =%%%%-  
+       =*%%@#-  
+      =%**@#+-  
+     =#%*#=++-  
+    =*#%#+=+-   
+   =**#@=+=-    
+  =+++%*=+-     
+  -=+*+*=-      
+  ---=+*-       
+  --=-+-        
+   --+=         
+    ==          
+                
+
+alpha map:
+................
+................
+.........#####..
+........######..
+.......#######..
+......########..
+.....#########..
+....#########...
+...#########....
+..#########.....
+..########......
+..#######.......
+..######........
+...####.........
+....##..........
+................
+
+exact hex grid:
+ 0 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+ 1 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+ 2 .. .. .. .. .. .. .. .. .. #6f4fab #6f4fab #6f4fab #6f4fab #6f4fab .. ..
+ 3 .. .. .. .. .. .. .. .. #6f4fab #fecbe6 #fecbe6 #fecbe6 #fecbe6 #54398a .. ..
+ 4 .. .. .. .. .. .. .. #6f4fab #b38ef3 #fecbe6 #fecbe6 #fffdd5 #cfa0f3 #54398a .. ..
+ 5 .. .. .. .. .. .. #6f4fab #fecbe6 #b38ef3 #b38ef3 #fffdd5 #cfa0f3 #8d6acc #54398a .. ..
+ 6 .. .. .. .. .. #6f4fab #cfa0f3 #fecbe6 #b38ef3 #cfa0f3 #6f4fab #8d6acc #8d6acc #54398a .. ..
+ 7 .. .. .. .. #6f4fab #b38ef3 #cfa0f3 #fecbe6 #cfa0f3 #8d6acc #6f4fab #8d6acc #54398a .. .. ..
+ 8 .. .. .. #6f4fab #b38ef3 #b38ef3 #cfa0f3 #fffdd5 #6f4fab #8d6acc #6f4fab #54398a .. .. .. ..
+ 9 .. .. #6f4fab #8d6acc #8d6acc #8d6acc #fecbe6 #b38ef3 #6f4fab #8d6acc #54398a .. .. .. .. ..
+10 .. .. #54398a #6f4fab #8d6acc #b38ef3 #8d6acc #b38ef3 #6f4fab #54398a .. .. .. .. .. ..
+11 .. .. #54398a #54398a #54398a #6f4fab #8d6acc #b38ef3 #54398a .. .. .. .. .. .. ..
+12 .. .. #54398a #54398a #6f4fab #54398a #8d6acc #54398a .. .. .. .. .. .. .. ..
+13 .. .. .. #54398a #54398a #8d6acc #6f4fab .. .. .. .. .. .. .. .. ..
+14 .. .. .. .. #6f4fab #6f4fab .. .. .. .. .. .. .. .. .. ..
+15 .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
