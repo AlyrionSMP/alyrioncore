@@ -89,7 +89,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Dust Devils** | Towering conical dust columns spawn near players during midday or storm activity. | Server-tracked `DustDevilInstance`s rendered with swirling particle vortices |
 | **Storm-Aware Atmosphere** | Fog ramps into a dense ochre dust blackout and blue sunsets are suppressed during severe storms. | `MarsClientWeatherHandler` fog/color events + `MarsDimensionEffects` intensity blending |
 | **Pressurized Habitats** | Build airtight habitats and greenhouses that provide breathable air on **any vacuum world** — Mars, the Moon, deep space. A sealed room pressurizes gradually — **0.5 s per interior block per Oxygen Generator** (generators stack: two double the speed) — and is breathable only once fully filled. | `HabitatSealManager` flood-fill seal detection + `VacuumAtmosphere` atmosphere-API compat, `HabitatOxygenManager` time-based room fill, bulletproof per-tick air refill, FE-powered `OxygenGeneratorBlock` |
-| **Animated Pressurized Airlock** | Two-block airtight door with a folding armored hatch, viewport window and status LED. | `AirlockBlockEntity` + `AirlockBlockEntityRenderer` with smoothstep pneumatic swing |
+| **Animated Pressurized Airlock** | Two-block airtight door whose armored hatch pops out of the frame, then glides sideways like a real airlock — with a viewport window and status LED. | `AirlockBlockEntity` + `AirlockBlockEntityRenderer` pop-out + slide pneumatic animation |
 | **Mars Sleeping Pod** | Two-block tech bed that lets players sleep on Mars — even through raging dust storms. | Custom `SleepingPodBlock` with NeoForge bed hooks & dimension-aware sleep logic |
 | **Greenhouse Farming** | Till Martian regolith into farmland and grow Martian Potatoes — but only inside sealed, lit greenhouses. | `RegolithFarmlandBlock`, `MartianPotatoCropBlock` + `HabitatSealManager` integration |
 | **Meteoric Iron Tier** | Full tool & weapon set (sword, pickaxe, axe, shovel, hoe) forged from meteoric nickel-iron. | `ModToolTiers.METEORIC_IRON` — diamond harvest level, 650 durability |
@@ -97,7 +97,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Crashed Probe Structures** | Two jigsaw crash sites (Soviet & US probe) with salvageable scientific chest loot. | NBT structures + `crashed_probes` structure set |
 | **Martian Moons** | Phobos & Deimos added as tidally locked moons of Mars with bespoke celestial textures. | `universe_planets/phobos.json` & `deimos.json` (Rocketnautics + AlyrionCore datapacks) |
 | **CO₂ Dry Ice Sublimation** | Dry ice blocks dynamically release visible sublimation vapor and frost particles. | Custom `DryIceBlock` with animated particle emission |
-| **Rich Geological Catalog** | 24 unique blocks including volcanics, bricks, ores, breccia, resource blocks, technology and soils with custom pixel art. | Hand-crafted 16x16 textures (full 2026 vanilla-style redesign), pickaxe/shovel tool tags |
+| **Rich Geological Catalog** | 29 unique blocks including volcanics, bricks, ores, breccia, resource blocks, technology and soils with custom pixel art. | Hand-crafted 16x16 textures (full 2026 vanilla-style redesign), pickaxe/shovel tool tags |
 | **Universal Escape Keybind** | Rebind the standard Escape key action (Pause/Close GUI) to mouse buttons or other keys. | Custom `ModKeyMappings` with screen event routing |
 | **Rocketnautics Interop** | Celestial definitions, orbital parameters, and atmospheric drag integration. | `data/alyrioncore` and `data/rocketnautics` datapacks |
 
@@ -683,6 +683,7 @@ Martian soil is surprisingly fertile in fiction — and in AlyrionCore, *if* you
 | **Olivine Crystal** | `olivine_gem` | Gemstone | Translucent green magnesium iron silicate crystal ($(\text{Mg, Fe})_2\text{SiO}_4$) found in pristine igneous intrusions. |
 | **Dry Ice Shard** | `dry_ice_shard` | Volatile | Sub-zero crystallized shard of solid $CO_2$ harvested from polar ice caps. Use it to flash-freeze foes or freeze water into ice. |
 | **Martian Rock Sample** | `martian_rock_sample` | Research | Geological sample of Martian rock. Use it to crush out 1–3 random minerals: Hematite Nodules, Sulfur Dust, Raw Copper, Raw Meteoric Iron or Olivine Crystals. |
+| **Reinforcement Plates** | `iron_reinforcement_plate` · `diamond_reinforcement_plate` · `meteoric_iron_reinforcement_plate` · `netherite_reinforcement_plate` | Defense | Forged plates that bolt onto any breakable block, multiplying its mining durability 3×–100× (see [Block Reinforcement](#-block-reinforcement)). |
 
 ---
 
@@ -721,6 +722,19 @@ All five tools are registered in their respective `#minecraft:item` tags (`sword
 
 ---
 
+## 🔩 Block Reinforcement
+
+Reinforce any breakable block so it survives repeated mining — the fortress-block mechanic:
+
+- **Plates**: four tiers, each crafted **2×2 → 8 plates** — **Iron (3×)**, **Diamond (10×)**, **Meteoric Iron (30×)** and **Netherite (100×)** hit multipliers.
+- **Applying**: right-click a breakable block with a plate. The block is replaced by a `reinforced_block` wrapper that stores the original state — it keeps its own look (a riveted plate frame on air-facing sides, with the original block drawn inside by a block-entity renderer), so a reinforced wall still looks exactly like the wall you built.
+- **Mining**: the block **mines as hard as the original** (same hardness, tool multipliers, correct-tool requirement — a pickaxe requirement carries over). Each mining cycle consumes one hit; the reinforcement absorbs `tier ×` cycles before the block finally breaks. An **8-stage crack overlay** shows the plating wearing down hit by hit.
+- **Drops**: it always drops **only the original block** — with the original's silk-touch / fortune behavior — never the wrapper. The `reinforced_block` has no item form and can't be picked up.
+- **Explosions**: TNT (and other explosions) behave exactly as on the unprotected block — it breaks *iff* the explosion would have broken the original, and drops the original's loot.
+- **Creative players** bypass the hits and mine reinforced blocks instantly.
+
+---
+
 ## 🎨 Creative Mode Integration
 
 AlyrionCore adds a dedicated Creative Mode Tab: **`AlyrionCore: Mars & Planetary Geology`** (`itemGroup.alyrioncore.mars`).
@@ -728,12 +742,13 @@ AlyrionCore adds a dedicated Creative Mode Tab: **`AlyrionCore: Mars & Planetary
 The tab icon features the **Martian Rock Sample** (`martian_rock_sample`) and organizes all planetary materials into logical groupings:
 1. **Scientific Samples & Minerals**: Rock Sample, Hematite Nodule, Raw Meteoric Iron, Meteoric Ingot, Raw Copper, Sulfur Dust, Olivine Gem, Dry Ice Shard.
 2. **Meteoric Equipment**: Sword, Pickaxe, Axe, Shovel, Hoe.
-3. **Resource & Storage Blocks**: Block of Meteoric Iron, Block of Raw Meteoric Iron, Block of Olivine, Block of Sulfur.
-4. **Soils & Regolith**: Martian Sand, Regolith, Coarse Regolith, Frost-Dusted Regolith, Permafrost.
-5. **Stones & Architectural Blocks**: Basalt, Polished Basalt, Basalt Bricks, Basalt Tiles, Stratified Stone, Scoria, Impact Breccia.
-6. **Planetary Ores**: Hematite Ore, Meteoric Iron Ore, Copper Ore, Sulfur Ore, Olivine Ore.
-7. **Polar Volatiles & Ices**: Glacial Ice, Dry Ice Block.
-8. **Technology, Habitat & Greenhouse**: Sleeping Pod, Pressurized Airlock, Oxygen Generator, Regolith Farmland, Martian Potato, Baked Martian Potato.
+3. **Block Reinforcement**: Iron, Diamond, Meteoric Iron and Netherite Reinforcement Plates.
+4. **Resource & Storage Blocks**: Block of Meteoric Iron, Block of Raw Meteoric Iron, Block of Olivine, Block of Sulfur.
+5. **Soils & Regolith**: Martian Sand, Regolith, Coarse Regolith, Frost-Dusted Regolith, Permafrost.
+6. **Stones & Architectural Blocks**: Basalt, Polished Basalt, Basalt Bricks, Basalt Tiles, Stratified Stone, Scoria, Impact Breccia.
+7. **Planetary Ores**: Hematite Ore, Meteoric Iron Ore, Copper Ore, Sulfur Ore, Olivine Ore.
+8. **Polar Volatiles & Ices**: Glacial Ice, Dry Ice Block.
+9. **Technology, Habitat & Greenhouse**: Sleeping Pod, Pressurized Airlock, Oxygen Generator, Regolith Farmland, Martian Potato, Baked Martian Potato.
 
 ---
 
@@ -831,6 +846,7 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 - `generate_habitat_greenhouse_assets.py`: Generates the Airlock bulkhead frame models + blockstate (the animated hatch is rendered at runtime), the Regolith Farmland / crop-stage blockstates, models and textures, and the procedurally painted 8-stage Martian Potato plant textures.
 - `generate_airlock_assets.py`: Generates the Airlock textures — titanium bulkhead frame, armored hatch leaf, viewport window, status LEDs (green/red) and the item icon.
 - `generate_oxygen_generator.py`: Generates the Oxygen Generator machine textures — meteoric-iron casing plate, teal coolant tank (+ lit variant), front dial (+ lit), status-LED glow and the impeller blade for the animated fan.
+- `generate_reinforcement_assets.py`: Generates the Reinforcement Plate item icons, the riveted plate-frame overlay textures (iron / diamond / meteoric iron / netherite) and the 8-stage crack overlay progression.
 - `generate_martian_moons.py`: Generates Phobos & Deimos `universe_planets` JSON and celestial sphere textures (AlyrionCore + Rocketnautics datapacks).
 - `generate_probe_structures.py`: Generates the crashed Soviet/US probe NBT structures, jigsaw pools, structure/structure-set configs and chest loot.
 - `generate_recipes_and_loot.py`: Generates the full recipe catalog and block/chest loot tables.
@@ -845,7 +861,7 @@ AlyrionCore is **Create-aware**: where it makes sense, recipes run through Creat
 - **Create — Basin + Press (compacting)**: an **additional** packing path for storage blocks (the crafting-table packing stays available) — Block of Meteoric Iron (9 ingots), Raw Meteoric Iron Block, Block of Olivine, Block of Sulfur, Vanilla Raw Copper Block from Martian raw copper, Dry Ice Block, Packed Ice from Martian Ice, and the Hematite→Raw Iron reduction.
 - **Create — Basin + Mixer (mixing)**: Gunpowder (sulfur + coal/charcoal/bonemeal) and cryo-packed ice (dry ice shards + water).
 - **Create — Millstone (milling)**: Red Dye from Hematite nodules.
-- **Still crafting-table**: the machines (Sleeping Pod, Airlock, Oxygen Generator), the Rocketnautics engine parts (Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor), Meteoric Iron tools, unpacking (block → 9 items), masonry 2×2 (basalt/polished/bricks/tiles, coarse regolith, regolith from sand), Torches from sulfur, Spyglass from Olivine, Water Bucket from Martian Ice, and the Space Helmet.
+- **Still crafting-table**: the machines (Sleeping Pod, Airlock, Oxygen Generator), the Rocketnautics engine parts (Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor), Meteoric Iron tools, **Reinforcement Plates (2×2 → 8 per tier)**, unpacking (block → 9 items), masonry 2×2 (basalt/polished/bricks/tiles, coarse regolith, regolith from sand), Torches from sulfur, Spyglass from Olivine, Water Bucket from Martian Ice, and the Space Helmet.
 - **Furnace / stonecutting as before**: smelting & blasting for all ores, Baked Martian Potato, Glass from Martian Sand, Terracotta, Smooth Stone, stonecutting for the basalt line.
 
 ### Mod Metadata & Architecture
