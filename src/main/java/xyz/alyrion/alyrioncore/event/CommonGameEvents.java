@@ -28,6 +28,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
@@ -35,6 +36,7 @@ import xyz.alyrion.alyrioncore.registry.ModBlocks;
 import xyz.alyrion.alyrioncore.registry.ModItems;
 import xyz.alyrion.alyrioncore.world.ModDimensions;
 import xyz.alyrion.alyrioncore.compat.VacuumAtmosphere;
+import xyz.alyrion.alyrioncore.world.habitat.HabitatOxygenManager;
 import xyz.alyrion.alyrioncore.world.habitat.HabitatSealManager;
 import xyz.alyrion.alyrioncore.world.weather.MarsWeatherSavedData;
 import xyz.alyrion.alyrioncore.world.weather.MarsWeatherState;
@@ -50,9 +52,19 @@ public class CommonGameEvents {
 
     /**
      * Last known habitat state per player, for the actionbar feedback.
-     * 0 = unsealed / open vacuum, 1 = sealed + breathing, 2 = sealed but no oxygen generator.
+     * 0 = unsealed / open vacuum, 1 = sealed + breathing, 2 = sealed but no oxygen generator,
+     * 3 = sealed + pressurizing (fill in progress).
      */
     private static final Map<UUID, Integer> LAST_SEAL_STATE = new HashMap<>();
+
+    /** Last 25%-step bucket shown while pressurizing, so the fill % only nudges a few times. */
+    private static final Map<UUID, Integer> LAST_FILL_BUCKET = new HashMap<>();
+
+    @SubscribeEvent
+    public static void onServerStarted(ServerStartedEvent event) {
+        // A new server session: drop oxygen state left over from a previous world.
+        HabitatOxygenManager.onServerStarted();
+    }
 
     @SubscribeEvent
     public static void onFuelBurnTime(FurnaceFuelBurnTimeEvent event) {
@@ -65,11 +77,12 @@ public class CommonGameEvents {
 
     /**
      * Bulletproof air refill for pressurized habitats: after every entity tick on a
-     * vacuum world, any entity inside a sealed room SUPPLIED BY A POWERED OXYGEN
-     * GENERATOR has its air supply restored to maximum. This does not depend on the
-     * LivingBreatheEvent outcome, so it works even if another mod (e.g. Rocketnautics)
-     * denies breathing for the dimension — the powered habitat always wins. A sealed
-     * room without a charged generator is NOT breathable: the air drains and you drown.
+     * vacuum world, any entity inside a sealed room whose oxygen fill has REACHED 100%
+     * (see {@link HabitatOxygenManager}) has its air supply restored to maximum. This
+     * does not depend on the LivingBreatheEvent outcome, so it works even if another
+     * mod (e.g. Rocketnautics) denies breathing for the dimension — the powered habitat
+     * always wins. A sealed room that is still pressurizing, or has no charged generator,
+     * is NOT breathable: the air drains and you drown.
      */
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
@@ -110,8 +123,10 @@ public class CommonGameEvents {
         net.minecraft.world.level.Level level = event.getEntity().level();
         if (VacuumAtmosphere.isVacuum(level, event.getEntity().getY())) {
             // AlyrionCore owns the atmosphere rule on vacuum worlds (Mars, the Moon,
-            // deep space...): a sealed habitat supplied by a powered oxygen generator
-            // grants breathable air; a sealed room WITHOUT a charged generator still
+            // deep space...): a sealed habitat grants breathable air only once its
+            // oxygen fill reaches 100% — pressurization takes 0.5 s per interior block
+            // per running generator (generators stack, so two double the speed). A
+            // sealed room that is still pressurizing, or has no charged generator, still
             // drowns you; the open surface is vacuum. Determined cooperatively from
             // Rocketnautics' atmosphere API, so no hardcoded dimension lists and no
             // priority fight.
@@ -127,12 +142,18 @@ public class CommonGameEvents {
                 event.setCanBreathe(false);
             }
             // Actionbar feedback whenever the habitat state changes: pressurized &
-            // breathing, sealed but starved of power, or an existing habitat breached.
+            // breathing, sealed but starved of power, pressurizing (with fill %), or an
+            // existing habitat breached.
             if (level instanceof ServerLevel serverLevel && event.getEntity() instanceof ServerPlayer player) {
-                int state = sealed && oxygen ? 1 : (sealed ? 2 : 0);
+                int generators = seal.generators();
+                // 3 = sealed with running generator(s) but the fill hasn't reached 100% yet.
+                int state = sealed && oxygen ? 1 : (sealed ? (generators > 0 ? 3 : 2) : 0);
                 Integer last = LAST_SEAL_STATE.get(player.getUUID());
                 if (last == null || last != state) {
                     LAST_SEAL_STATE.put(player.getUUID(), state);
+                    if (state != 3) {
+                        LAST_FILL_BUCKET.remove(player.getUUID());
+                    }
                     if (state == 1) {
                         AlyrionCore.LOGGER.info("[habitat] {} pressurized habitat detected at {}",
                                 player.getName().getString(), player.blockPosition());
@@ -143,6 +164,13 @@ public class CommonGameEvents {
                                 player.getName().getString(), player.blockPosition());
                         player.displayClientMessage(Component.literal(
                                 "§e⚠ Habitat sealed — no oxygen generator running!"), true);
+                    } else if (state == 3) {
+                        int pct = fillPercent(serverLevel, seal);
+                        LAST_FILL_BUCKET.put(player.getUUID(), pct / 25);
+                        AlyrionCore.LOGGER.info("[habitat] {} pressurizing {}% at {}",
+                                player.getName().getString(), pct, player.blockPosition());
+                        player.displayClientMessage(Component.literal(
+                                "§b⚠ Pressurizing — " + pct + "%…"), true);
                     } else if (last != null && last != 0) {
                         BlockPos leak = HabitatSealManager.getLastLeakPos();
                         Direction leakDir = HabitatSealManager.getLastLeakDir();
@@ -152,9 +180,29 @@ public class CommonGameEvents {
                         player.displayClientMessage(Component.literal(
                                 "§c⚠ Habitat breached — depressurizing!"), true);
                     }
+                } else if (state == 3) {
+                    // While pressurizing, nudge the % when it crosses a 25% step (no spam).
+                    int pct = fillPercent(serverLevel, seal);
+                    int bucket = pct / 25;
+                    Integer lastBucket = LAST_FILL_BUCKET.get(player.getUUID());
+                    if (lastBucket == null || lastBucket != bucket) {
+                        LAST_FILL_BUCKET.put(player.getUUID(), bucket);
+                        player.displayClientMessage(Component.literal(
+                                "§b⚠ Pressurizing — " + pct + "%…"), true);
+                    }
                 }
             }
         }
+    }
+
+    /** Current oxygen fill percentage (0..99 while pressurizing) of the seal's room. */
+    private static int fillPercent(ServerLevel level, HabitatSealManager.SealResult seal) {
+        if (seal.roomKey() == 0L || seal.volume() <= 0) {
+            return 0;
+        }
+        float fraction = HabitatOxygenManager.fillFraction(
+                level, seal.roomKey(), seal.volume(), seal.generators());
+        return (int) (fraction * 100f);
     }
 
     @SubscribeEvent

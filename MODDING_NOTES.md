@@ -192,6 +192,9 @@ Gating `IEnergyStorage` / `IFluidHandler` to one face breaks real mods:
   reproducible.
 - Git hygiene: `git add -A` can sweep extracted third-party jars / scratch
   dirs into history — gitignore them and audit staged files.
+
+---
+
 ## 6. "Reinforced blocks" (X-hits mechanic) — the pattern that works
 
 Ship-block-reinforcement on top of ANY block without new textures:
@@ -267,5 +270,40 @@ Ship-block-reinforcement on top of ANY block without new textures:
 
 ---
 
----
+## 7. Time-based game state (the habitat oxygen fill)
 
+"Filling a sealed room takes 0.5 s per block, generators stack linearly" —
+how to implement gradual state without per-tick ticking:
+
+- **Deterministic room identity**: the flood fill already visits every interior
+  cell; the SET is identical for any query position in the same room, so the
+  minimum interior cell (tracked as `min` of the visited `long` keys during the
+  fill) is a stable room key. Map: `dimension × anchor → RoomState`.
+- **Lazy elapsed-time updates instead of ticking**: store `lastUpdateTick`;
+  on every query advance `oxygen += rate * (now - lastUpdateTick)/20`.
+  A room with a running generator fills at the correct speed even while nobody
+  is inside — the math catches up on the next query. Never loop rooms.
+- **Server-only advancement**: in an INTEGRATED server the client shares this
+  JVM (and its statics!). Breathe events fire on BOTH logical sides → the
+  client would advance the same room entry a second time per tick and double
+  the fill speed. Gate the mutation on `!level.isClientSide`; clients read
+  (their air bar sees the last server value, ≤1 tick stale).
+- **Semantics that make decay meaningful**: breathable = fill ≥ 100%. If you
+  used "any oxygen = breathable", the fill time would only delay by the FIRST
+  0.5 s. With full-or-nothing, decay (unpowered room drains at the same 2/s)
+  costs breathability instantly while preserving the partial fill for a faster
+  refill — power blips feel fair, breaches reset everything
+  (`onBreach` removes the entry → refill from scratch).
+- **Cache the seal, refresh the fill**: the seal scan itself is stable for a
+  cache window, but the oxygen flag changes every tick — cache the room info
+  (anchor/volume/generator count) alongside the seal and recompute the flag
+  from the tracker on every hit. Generator counts are scan-time values, so
+  they lag up to one cache window (2 s) after a generator dies — same
+  staleness the old instant-flag had, so no regression.
+- **Don't forget the sleeping pod**: an airtight START cell (player embedded /
+  sleeping) early-returns without scanning — the sleeper's cell IS the pod, so
+  pods must fall through to the flood fill or sleeping in a pod always drowns.
+  Airtight start cells that AREN'T pods keep the early return (flooding from
+  inside a thin wall escapes through the far side).
+- Clear all room state on `ServerStartedEvent` (game bus) — dimension keys
+  repeat across worlds, so stale oxygen would otherwise leak into a new world.
