@@ -1,71 +1,88 @@
 {
   "textures": {
-    "casing": "alyrioncore:block/oxygen_generator_casing",
-    "tank": "alyrioncore:block/oxygen_generator_tank",
-    "front": "alyrioncore:block/oxygen_generator_front",
-    "vent": "alyrioncore:block/oxygen_generator_vent",
+    "side": "alyrioncore:block/oxygen_generator_side",
+    "control": "alyrioncore:block/oxygen_generator_control",
+    "top": "alyrioncore:block/oxygen_generator_top",
+    "ring": "alyrioncore:block/oxygen_generator_ring",
+    "pipe": "alyrioncore:block/oxygen_generator_pipe",
     "power": "alyrioncore:block/oxygen_generator_power_port",
     "water": "alyrioncore:block/oxygen_generator_water_port",
-    "particle": "#casing"
+    "particle": "#side"
   },
   "elements": [
     {
-      "name": "chassis",
-      "from": [0, 0, 0],
-      "to": [16, 12, 16],
+      "name": "body",
+      "from": [0.6, 0, 0],
+      "to": [15.4, 16, 15.6],
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#front"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+        "north": {"uv": [0, 0, 16, 16], "texture": "#side"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#control"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#side"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#side"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#top"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#side"}
       }
     },
     {
-      "name": "coolant_tank",
-      "from": [4.5, 12, 4.5],
-      "to": [11.5, 15.2, 15.2],
-      "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#tank"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#tank"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#tank"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#tank"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#tank"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#tank"}
-      }
-    },
-    {
-      "name": "exhaust_stack",
-      "from": [7, 15.2, 7],
-      "to": [9, 16, 9],
-      "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#vent"}
-      }
-    },
-    {
-      "name": "vent_cowl",
-      "from": [2, 4, 14.9],
-      "to": [7, 9, 15.4],
+      "name": "vent_ring_top",
+      "from": [2, 8, 15.65],
+      "to": [7, 8.6, 16],
       "shade": false,
       "faces": {
-        "north": {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "south": {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "west":  {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "east":  {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "up":    {"uv": [0, 0, 16, 16], "texture": "#vent"},
-        "down":  {"uv": [0, 0, 16, 16], "texture": "#vent"}
+        "north": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#ring"}
+      }
+    },
+    {
+      "name": "vent_ring_bottom",
+      "from": [2, 4.4, 15.65],
+      "to": [7, 5, 16],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#ring"}
+      }
+    },
+    {
+      "name": "vent_ring_left",
+      "from": [2, 5, 15.65],
+      "to": [2.6, 8, 16],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#ring"}
+      }
+    },
+    {
+      "name": "vent_ring_right",
+      "from": [6.4, 5, 15.65],
+      "to": [7, 8, 16],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#ring"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#ring"}
       }
     },
     {
       "name": "power_input",
-      "from": [14.8, 4.5, 11],
-      "to": [16, 8.5, 14],
+      "from": [15.4, 3.5, 8],
+      "to": [16, 8.5, 12.5],
       "shade": false,
       "faces": {
         "north": {"uv": [0, 0, 16, 16], "texture": "#power"},
@@ -78,8 +95,8 @@
     },
     {
       "name": "water_input",
-      "from": [0, 4.5, 11],
-      "to": [1.2, 8.5, 14],
+      "from": [0, 3.5, 8],
+      "to": [0.6, 8.5, 12.5],
       "shade": false,
       "faces": {
         "north": {"uv": [0, 0, 16, 16], "texture": "#water"},
@@ -88,6 +105,20 @@
         "east":  {"uv": [0, 0, 16, 16], "texture": "#water"},
         "up":    {"uv": [0, 0, 16, 16], "texture": "#water"},
         "down":  {"uv": [0, 0, 16, 16], "texture": "#water"}
+      }
+    },
+    {
+      "name": "feed_pipe",
+      "from": [0, 8.5, 10],
+      "to": [0.6, 15.5, 11.5],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#pipe"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#pipe"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#pipe"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#pipe"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#pipe"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#pipe"}
       }
     }
   ]

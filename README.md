@@ -372,7 +372,7 @@ Any solid-render / full-collision block seals, plus:
 
 ### The Oxygen Generator (`oxygen_generator`)
 
-The **heart of every habitat**: a meteoric-iron machine with a teal coolant tank, front dial and an animated spinning impeller (rendered by `OxygenGeneratorBlockEntityRenderer`). It is what makes a sealed room breathable.
+The **heart of every habitat**: a purpose-built machine (fully custom model & textures — nothing reused or stretched from other blocks) with a recessed front instrument cluster (gauge, buttons, status LED), a raised vent ring holding the animated spinning impeller (rendered by `OxygenGeneratorBlockEntityRenderer`), a service-hatch roof, and a feed pipe running up the water side. It is what makes a sealed room breathable.
 
 - **Requires FE (Forge Energy)**: the block entity exposes a standard receive-only `IEnergyStorage` capability (16,000 FE buffer, up to 1,024 FE/t input). Any FE source can charge it — in the reference pack, **Create: Power Grid** supplies it through its **Device Connector / FE Inverter** (solar panel → battery → connector → generator). Jade shows the stored charge.
 - **Requires water**: the machine also has an internal **8,000 mB water tank** exposed through the standard `IFluidHandler` capability, so **Create pipes/pumps/valves feed it directly** (hose pulley from a lake, or a Create fluid tank filled with water buckets from Martian Ice). No Create machine fits inside the block — the plumbing must come to it.

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """generate_oxygen_generator.py — textures for the AlyrionCore Oxygen Generator.
 
-The machine is the heart of every pressurized habitat: a single solid
-meteoric-iron chassis (reusing the block-of-meteoric-iron plate so it matches
-the pack's metal) with its own front panel (status dial + LED), a raised vent
-cowl housing the animated impeller, a teal coolant tank + exhaust stack on
-top, and TWO directional input ports:
-  * power port on the east face (electrical terminal, teal energy glow)
-  * water port on the west face (pipe flange, water-blue accent)
+FULLY CUSTOM machine textures — nothing is reused or stretched from existing
+blocks. Every texture is designed for its own face:
 
-Palette = the pack's meteoric nickel-iron ramp (S0..SP) + starfall teal
-crystal (K1/K2/KG) — same identity as the meteoric toolset. All textures are
-opaque and top-left lit. The _lit variants (front, tank) swap in while the
-machine runs.
+  * side       — machine housing: recessed service panel, screws, cooling ribs
+  * control    — front instrument cluster: gauge, buttons, LED, hazard trim
+                 (+ _lit while running)
+  * top        — service hatch with hinges and screws
+  * ring       — the raised vent ring/frame that holds the animated impeller
+  * stack      — top exhaust/vent stack (pipe with ring bands)
+  * pipe       — side feed pipe (cylindrical shading, teal energy stripe)
+  * power_port — electrical terminal (socket + bolt contacts, teal glow)
+  * water_port — pipe flange (bolts + water-blue bore)
+  * fan        — impeller blade
+
+All use the pack's meteoric palette (S0..SP steel + K1/K2/KG teal), are opaque
+and top-left lit. The control _lit variant swaps in while the machine runs.
 
 Pure stdlib; imports mcutil from mc-scripts/. Writes PNGs directly into
 src/main/resources/assets/alyrioncore/textures/block/.
@@ -44,148 +48,149 @@ K1 = '#15998b'   # crystal dark
 K2 = '#2fd4bd'   # crystal bright
 KG = '#a8ffe9'   # crystal glint
 
-# The block-of-meteoric-iron plate grid + mapping (proven, tileable)
-IRON_BLOCK_GRID = [
-    '3223333333322223',
-    '2aaaaa9998777772',
-    '2777777777777771',
-    '0555555566644440',
-    '2aaaaaa999777771',
-    '2777777777777771',
-    '0555556666444440',
-    '2aa9999977777771',
-    '2777777777777771',
-    '0555555556664440',
-    '2aaaaaa999977771',
-    '2777777777777771',
-    '0555555666644440',
-    '2aaaa99997777771',
-    '2777777777777771',
-    '2222222112111111',
-]
-IRON_MAP = 'ccccddeeeff'
-IRON_LETTERS = {'c': S2, 'd': S3, 'e': S4, 'f': SP}
 
-
-def casing():
-    """The meteoric metal plate — the machine is built from the same material
-    as the block of meteoric iron, so the family reads at a glance."""
-    img = mc.new_img(16, 16, (0, 0, 0, 255))
-    for y, row in enumerate(IRON_BLOCK_GRID):
-        for x, ch in enumerate(row):
-            img[y][x] = mc.hex2rgb(IRON_LETTERS[IRON_MAP[int(ch, 36)]]) + (255,)
-    # family details (interior, off the frame): crystal flecks + fusion pits
-    for (x, y), hx in (((4, 5), K2), ((11, 9), K2), ((8, 8), K1),
-                       ((5, 4), KG), ((9, 6), S0), ((13, 5), S0)):
-        img[y][x] = mc.hex2rgb(hx) + (255,)
-    return img
-
-
-def tank(lit=False):
-    """Opaque frosted-glass tank with teal coolant. Metal clamps top/bottom,
-    liquid shaded brighter at the top-left, glass shine streaks, and a dark
-    edge on the right. The lit variant glows (K2/KG dominate)."""
-    img = mc.new_img(16, 16, (0, 0, 0, 255))
-    # metal clamps
-    for x in range(16):
-        img[0][x] = mc.hex2rgb(S3 if x < 8 else S2) + (255,)
-        img[1][x] = mc.hex2rgb(S2) + (255,)
-        img[14][x] = mc.hex2rgb(S1) + (255,)
-        img[15][x] = mc.hex2rgb(S0) + (255,)
-    # liquid body rows 2..13, top-left lit
-    for y in range(2, 14):
-        for x in range(16):
-            t = (y - 2) / 11.0   # 0 top .. 1 bottom
-            l = x / 15.0         # 0 left .. 1 right
-            shade = t * 0.62 + l * 0.38
-            if lit:
-                c = KG if shade < 0.16 else (K2 if shade < 0.52 else K1)
-            else:
-                c = K2 if shade < 0.34 else K1
-            img[y][x] = mc.hex2rgb(c) + (255,)
-    # glass edge: bright left, dark right
-    for y in range(2, 14):
-        img[y][0] = mc.hex2rgb(SP if lit else S4) + (255,)
-        img[y][15] = mc.hex2rgb(S1) + (255,)
-    # glass shine streaks (top-left)
-    for (x, y) in ((2, 3), (3, 4), (4, 5), (2, 6), (11, 3), (12, 4)):
-        img[y][x] = mc.hex2rgb(KG if lit else SP) + (255,)
-    # lit: a few bubbles / glow patches mid-tank
-    if lit:
-        for (x, y) in ((6, 7), (9, 9), (7, 11), (10, 6)):
-            img[y][x] = mc.hex2rgb(KG) + (255,)
-    return img
-
-
-def front(lit=False):
-    """The machine's own front panel: paneled metal with rivets, a status dial
-    and LED (right side). The vent is a separate raised cowl element, so this
-    texture only carries the instrument cluster. Lit: dial + LED glow teal."""
+def _panel_bg():
+    """Gentle panel metal: brighter top-left, darker bottom-right."""
     img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
-    # subtle panel shading: brighter top-left, darker bottom-right
     for y in range(16):
         for x in range(16):
-            t = y / 15.0
-            l = x / 15.0
-            shade = t * 0.5 + l * 0.5
-            c = S3 if shade < 0.35 else (S2 if shade < 0.7 else S1)
+            shade = (y / 15.0) * 0.55 + (x / 15.0) * 0.45
+            c = S3 if shade < 0.38 else (S2 if shade < 0.72 else S1)
             img[y][x] = mc.hex2rgb(c) + (255,)
-    # panel seams (1px, beveled): horizontal at y=5, vertical at x=9
-    for x in range(16):
-        img[5][x] = mc.hex2rgb(S0) + (255,)
-        img[6][x] = mc.hex2rgb(S3) + (255,)
-    for y in range(16):
-        img[y][9] = mc.hex2rgb(S0) + (255,)
-        img[y][10] = mc.hex2rgb(S3) + (255,)
-    # rivets in the four corners (S4 dot + S0 shadow below-right)
-    for (x, y) in ((2, 2), (13, 2), (2, 13), (13, 13)):
-        img[y][x] = mc.hex2rgb(S4) + (255,)
-        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
-    # status dial (right side): dark face, rim lit top-left
-    cx, cy, r = 12.0, 7.5, 3.4
+    return img
+
+
+def _screw(img, x, y):
+    img[y][x] = mc.hex2rgb(S4) + (255,)
+    img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
+
+
+def side():
+    """Machine housing side: recessed service panel with screws + cooling ribs."""
+    img = _panel_bg()
+    # recessed service panel
+    for y in range(3, 14):
+        for x in range(2, 14):
+            img[y][x] = mc.hex2rgb(S1) + (255,)
+    for x in range(2, 14):
+        img[3][x] = mc.hex2rgb(O0) + (255,)   # shadow top-left inner edge
+        img[13][x] = mc.hex2rgb(S3) + (255,)  # highlight bottom-right inner edge
+    for y in range(3, 14):
+        img[y][2] = mc.hex2rgb(O0) + (255,)
+        img[y][13] = mc.hex2rgb(S3) + (255,)
+    for (x, y) in ((3, 4), (12, 4), (3, 12), (12, 12)):
+        _screw(img, x, y)
+    # cooling ribs at the bottom
+    for y in range(14, 16):
+        for x in range(16):
+            img[y][x] = mc.hex2rgb(S0 if (x + y) % 2 == 0 else S2) + (255,)
+    return img
+
+
+def control(lit=False):
+    """Front instrument cluster (recessed panel face): gauge, buttons, LED,
+    hazard trim. The vent ring covers the left-middle in the model, so the
+    cluster sits right-of-center. Lit: needle + LED glow teal."""
+    img = _panel_bg()
+    # corner screws
+    for (x, y) in ((1, 1), (14, 1), (1, 14), (14, 14)):
+        _screw(img, x, y)
+    # hazard chevrons, bottom-left
+    for y in range(13, 16):
+        for x in range(0, 7):
+            img[y][x] = mc.hex2rgb(S0 if (x + y) % 2 == 0 else S1) + (255,)
+    # small O2 label plaque, top-left (left of the vent ring)
+    for y in range(2, 4):
+        for x in range(2, 7):
+            img[y][x] = mc.hex2rgb(S1) + (255,)
+    img[2][3] = mc.hex2rgb(K2) + (255,)
+    img[2][5] = mc.hex2rgb(K2) + (255,)
+    img[3][3] = mc.hex2rgb(KG if lit else K2) + (255,)
+    # main gauge, right side
+    cx, cy, r = 11.0, 5.0, 2.9
     for y in range(16):
         for x in range(16):
             d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if d <= r - 0.6:
+            if d <= r - 0.5:
                 img[y][x] = mc.hex2rgb(O0) + (255,)
             elif d <= r + 0.5:
-                rim = S3 if (x + y) < 20 else S1
+                rim = S3 if (x + y) < 17 else S1
                 img[y][x] = mc.hex2rgb(rim) + (255,)
-    # tick marks + needle + LED
-    for (x, y) in ((11, 5), (12, 4), (13, 5)):
+    for (x, y) in ((10, 3), (11, 2), (12, 3)):
         img[y][x] = mc.hex2rgb(SP) + (255,)
-    for (x, y) in ((12, 8), (13, 7), (13, 6)):
+    for (x, y) in ((11, 6), (12, 5), (12, 4)):
         img[y][x] = mc.hex2rgb(KG if lit else K2) + (255,)
-    for (x, y) in ((13, 10), (13, 11)):
+    # buttons + status LED
+    for (x, y) in ((13, 9), (14.5, 9)):
+        for yy in range(2):
+            for xx in range(2):
+                img[int(y + yy)][int(x + xx)] = mc.hex2rgb(S3) + (255,)
+        img[int(y + 1)][int(x + 1)] = mc.hex2rgb(S0) + (255,)
+    for (x, y) in ((12, 11), (12, 12)):
         img[y][x] = mc.hex2rgb(KG if lit else K2) + (255,)
     if lit:
-        # the dial face warms with teal backlight
-        for (x, y) in ((11, 8), (11, 9), (12, 9)):
+        for (x, y) in ((10, 8), (10, 9), (11, 9)):
             img[y][x] = mc.hex2rgb(K1) + (255,)
     return img
 
 
-def vent():
-    """Vent grille for the fan cowl: dark recess with three horizontal slats,
-    lit top-left frame — reads as the machine's air intake/exhaust."""
-    img = mc.new_img(16, 16, mc.hex2rgb(S1) + (255,))
-    # frame bevel
+def top():
+    """Service hatch on the machine roof: recessed hatch plate, hinges, screws."""
+    img = _panel_bg()
+    for y in range(3, 14):
+        for x in range(3, 14):
+            img[y][x] = mc.hex2rgb(S1) + (255,)
+    for x in range(3, 14):
+        img[3][x] = mc.hex2rgb(O0) + (255,)
+        img[13][x] = mc.hex2rgb(S3) + (255,)
+    for y in range(3, 14):
+        img[y][3] = mc.hex2rgb(O0) + (255,)
+        img[y][13] = mc.hex2rgb(S3) + (255,)
+    for (x, y) in ((4, 4), (11, 4), (4, 11), (11, 11)):
+        _screw(img, x, y)
+    # hinges along the back edge
+    for (x, y) in ((5, 13), (9, 13)):
+        img[y][x] = mc.hex2rgb(S3) + (255,)
+        img[y + 1][x] = mc.hex2rgb(S0) + (255,)
+    return img
+
+
+def ring():
+    """Raised vent ring/frame around the impeller: beveled frame with screws
+    and a dark inner lip."""
+    img = _panel_bg()
+    # outer bevel
     for x in range(16):
         img[0][x] = mc.hex2rgb(S3) + (255,)
         img[15][x] = mc.hex2rgb(S0) + (255,)
     for y in range(16):
         img[y][0] = mc.hex2rgb(S3) + (255,)
         img[y][15] = mc.hex2rgb(S0) + (255,)
-    # slats (S3 with a bright top edge) over a dark recess
-    for (y0, y1) in ((2, 4), (6, 8), (10, 12)):
-        for y in range(y0, y1):
-            for x in range(2, 14):
-                c = S3 if y == y0 else S2
-                img[y][x] = mc.hex2rgb(c) + (255,)
+    # dark inner lip (the hole side)
+    for x in range(2, 14):
+        img[2][x] = mc.hex2rgb(O0) + (255,)
+        img[13][x] = mc.hex2rgb(O0) + (255,)
+    for y in range(2, 14):
+        img[y][2] = mc.hex2rgb(O0) + (255,)
+        img[y][13] = mc.hex2rgb(O0) + (255,)
+    for (x, y) in ((4, 4), (11, 4), (4, 11), (11, 11)):
+        _screw(img, x, y)
+    return img
+
+
+def pipe():
+    """Side feed pipe: cylinder with a teal energy stripe."""
+    img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
     for y in range(16):
-        for x in range(2, 14):
-            if y in (5, 9, 13):
-                img[y][x] = mc.hex2rgb(O0) + (255,)
+        for x in range(16):
+            d = abs(x - 7.5) / 6.0
+            c = S4 if d < 0.2 else (S3 if d < 0.5 else S1)
+            img[y][x] = mc.hex2rgb(c) + (255,)
+    # teal energy stripe down the pipe
+    for y in range(16):
+        img[y][6] = mc.hex2rgb(K1) + (255,)
+        img[y][7] = mc.hex2rgb(K2) + (255,)
+    img[2][7] = mc.hex2rgb(KG) + (255,)
     return img
 
 
@@ -193,26 +198,21 @@ def power_port():
     """Electrical input terminal (power side): dark plate, four bolt contacts
     and a central socket with the pack's teal energy glow."""
     img = mc.new_img(16, 16, mc.hex2rgb(S1) + (255,))
-    # bevel frame
     for x in range(16):
         img[0][x] = mc.hex2rgb(S3) + (255,)
         img[15][x] = mc.hex2rgb(S0) + (255,)
     for y in range(16):
         img[y][0] = mc.hex2rgb(S3) + (255,)
         img[y][15] = mc.hex2rgb(S0) + (255,)
-    # bolt contacts (2x2 S4 dots with S0 shadow)
     for (x, y) in ((3, 3), (12, 3), (3, 12), (12, 12)):
-        img[y][x] = mc.hex2rgb(S4) + (255,)
-        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
-    # central socket: O0 well, S2 lip, teal energy core
+        _screw(img, x, y)
     for y in range(5, 11):
         for x in range(5, 11):
             img[y][x] = mc.hex2rgb(O0) + (255,)
     for (x, y) in ((5, 5), (5, 10), (10, 5), (10, 10)):
         img[y][x] = mc.hex2rgb(S2) + (255,)
-    for (x, y) in ((7, 7), (8, 8)):
-        img[y][x] = mc.hex2rgb(K2) + (255,)
     img[7][7] = mc.hex2rgb(KG) + (255,)
+    img[8][8] = mc.hex2rgb(K2) + (255,)
     return img
 
 
@@ -225,16 +225,13 @@ def water_port():
         for x in range(16):
             d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
             if d <= 2.4:
-                img[y][x] = mc.hex2rgb(O0) + (255,)          # bore
+                img[y][x] = mc.hex2rgb(O0) + (255,)
             elif d <= 5.4:
-                img[y][x] = mc.hex2rgb(S3 if (x + y) < 17 else S1) + (255,)  # flange ring
+                img[y][x] = mc.hex2rgb(S3 if (x + y) < 17 else S1) + (255,)
             elif d <= 6.2:
-                img[y][x] = mc.hex2rgb(S2) + (255,)          # outer lip
-    # bolts around the ring
+                img[y][x] = mc.hex2rgb(S2) + (255,)
     for (x, y) in ((8, 2), (8, 13), (2, 8), (13, 8)):
-        img[y][x] = mc.hex2rgb(S4) + (255,)
-        img[y + 1][x + 1] = mc.hex2rgb(S0) + (255,)
-    # water accent (muted blue droplets in the bore)
+        _screw(img, x, y)
     img[7][6] = mc.hex2rgb('#7aa7d9') + (255,)
     img[6][7] = mc.hex2rgb('#7aa7d9') + (255,)
     img[8][8] = mc.hex2rgb('#a8c6e6') + (255,)
@@ -242,7 +239,7 @@ def water_port():
 
 
 def fan():
-    """Impeller blade texture: diagonal metal gradient (bright top-left, dark
+    """Impeller blade: diagonal metal gradient (bright top-left, dark
     bottom-right), a teal edge on the lower-right, specular glints up-left."""
     img = mc.new_img(16, 16, mc.hex2rgb(S2) + (255,))
     for y in range(16):
@@ -270,14 +267,14 @@ def write(name, img):
 
 def main():
     os.makedirs(BLOCK_DIR, exist_ok=True)
-    write('oxygen_generator_casing', casing())
-    write('oxygen_generator_front', front(lit=False))
-    write('oxygen_generator_front_lit', front(lit=True))
-    write('oxygen_generator_vent', vent())
+    write('oxygen_generator_side', side())
+    write('oxygen_generator_control', control(lit=False))
+    write('oxygen_generator_control_lit', control(lit=True))
+    write('oxygen_generator_top', top())
+    write('oxygen_generator_ring', ring())
+    write('oxygen_generator_pipe', pipe())
     write('oxygen_generator_power_port', power_port())
     write('oxygen_generator_water_port', water_port())
-    write('oxygen_generator_tank', tank(lit=False))
-    write('oxygen_generator_tank_lit', tank(lit=True))
     write('oxygen_generator_fan', fan())
     print('oxygen generator textures regenerated.')
 
