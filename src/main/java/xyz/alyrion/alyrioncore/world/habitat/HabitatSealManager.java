@@ -18,6 +18,8 @@ import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import xyz.alyrion.alyrioncore.block.AirlockBlock;
+import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlock;
+import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlockEntity;
 import xyz.alyrion.alyrioncore.block.SleepingPodBlock;
 import xyz.alyrion.alyrioncore.compat.VacuumAtmosphere;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
@@ -28,7 +30,17 @@ import java.util.Queue;
 public class HabitatSealManager {
 
     private static final int MAX_ROOM_VOLUME = 6144; // Up to 6,144 blocks volume for habitats & greenhouses
-    private static final ConcurrentMap<Long, Boolean> SEAL_CACHE = new ConcurrentHashMap<>();
+
+    /** A seal check result: is the cell inside a sealed room, and does that room
+     *  contain at least one powered (charged) oxygen generator? */
+    public record SealResult(boolean sealed, boolean oxygen) {
+        public static final SealResult OPEN_AIR = new SealResult(false, false);
+        public static final SealResult SEALED = new SealResult(true, false);
+        /** Non-vacuum dimensions: nothing to pressurize, always breathable. */
+        public static final SealResult PRESSURIZED = new SealResult(true, true);
+    }
+
+    private static final ConcurrentMap<Long, SealResult> SEAL_CACHE = new ConcurrentHashMap<>();
     private static long lastCacheClearTick = 0;
 
     // Where the last failed flood fill escaped (diagnostics: tells players where the leak is).
@@ -45,9 +57,11 @@ public class HabitatSealManager {
         return lastLeakDir;
     }
 
-    public static boolean isPositionSealed(Level level, BlockPos pos) {
+    /** Full habitat state: sealed AND supplied by a powered oxygen generator.
+     *  On non-vacuum dimensions there is nothing to pressurize — always breathable. */
+    public static SealResult sealState(Level level, BlockPos pos) {
         if (!VacuumAtmosphere.isVacuum(level, pos.getY())) {
-            return true; // Overworld and other non-vacuum dimensions are naturally pressurized
+            return new SealResult(true, true); // Overworld & co. are naturally pressurized
         }
 
         long gameTime = level.getGameTime();
@@ -57,30 +71,41 @@ public class HabitatSealManager {
         }
 
         long posKey = pos.asLong();
-        if (SEAL_CACHE.containsKey(posKey)) {
-            return SEAL_CACHE.get(posKey);
+        SealResult cached = SEAL_CACHE.get(posKey);
+        if (cached != null) {
+            return cached;
         }
 
-        boolean sealed = runFloodFill(level, pos);
-        SEAL_CACHE.put(posKey, sealed);
-        return sealed;
+        SealResult result = runFloodFill(level, pos);
+        SEAL_CACHE.put(posKey, result);
+        return result;
     }
 
-    private static boolean runFloodFill(Level level, BlockPos startPos) {
+    public static boolean isPositionSealed(Level level, BlockPos pos) {
+        return sealState(level, pos).sealed();
+    }
+
+    private static SealResult runFloodFill(Level level, BlockPos startPos) {
         // Fast pre-checks
         if (level.canSeeSky(startPos)) {
             lastLeakPos = startPos;
             lastLeakDir = Direction.UP; // open to the sky directly above
-            return false;
+            return SealResult.OPEN_AIR;
         }
 
         BlockState startState = level.getBlockState(startPos);
         if (isAirtight(startState, level, startPos)) {
-            return true;
+            // The queried cell is itself solid (player embedded / standing on a machine).
+            // The surrounding room isn't scanned here, but a powered generator right at
+            // the feet still counts as the room's oxygen source.
+            boolean oxygen = startState.getBlock() instanceof OxygenGeneratorBlock
+                    && generatorPowered(level, startPos, startState);
+            return new SealResult(true, oxygen);
         }
 
         LongSet visited = new LongOpenHashSet();
         Queue<BlockPos> queue = new ArrayDeque<>();
+        boolean hasOxygen = false;
 
         visited.add(startPos.asLong());
         queue.add(startPos);
@@ -99,10 +124,21 @@ public class HabitatSealManager {
                 if (neighbor.getY() >= level.getMaxBuildHeight() || neighbor.getY() <= level.getMinBuildHeight()) {
                     lastLeakPos = current;
                     lastLeakDir = dir; // escaped into the exosphere or void
-                    return false;
+                    return SealResult.OPEN_AIR;
                 }
 
                 BlockState state = level.getBlockState(neighbor);
+
+                // A powered oxygen generator inside the sealed volume pressurizes the room.
+                // Checked before the general airtight test so the machine itself (a solid
+                // full cube, and therefore "airtight") still registers as the O2 source.
+                if (state.getBlock() instanceof OxygenGeneratorBlock) {
+                    if (generatorPowered(level, neighbor, state)) {
+                        hasOxygen = true;
+                    }
+                    continue;
+                }
+
                 if (isAirtight(state, level, neighbor)) {
                     // Reached airtight boundary block (wall/window/closed airlock).
                     // Checked BEFORE sky exposure: a roof or wall that happens to be
@@ -113,7 +149,7 @@ public class HabitatSealManager {
                 if (level.canSeeSky(neighbor)) {
                     lastLeakPos = neighbor;
                     lastLeakDir = dir; // hole: a non-airtight cell exposed to open vacuum sky
-                    return false;
+                    return SealResult.OPEN_AIR;
                 }
 
                 visited.add(neighborKey);
@@ -122,17 +158,29 @@ public class HabitatSealManager {
                 if (visited.size() > MAX_ROOM_VOLUME) {
                     lastLeakPos = current;
                     lastLeakDir = dir;
-                    return false; // Room volume exceeds maximum limit; considered unsealed/open world
+                    return SealResult.OPEN_AIR; // Room volume exceeds maximum limit; considered unsealed/open world
                 }
             }
         }
 
-        // Cache all interior coordinates in the sealed room
+        // Cache all interior coordinates in the sealed room (same O2 state as the whole room)
+        SealResult result = new SealResult(true, hasOxygen);
         for (long key : visited) {
-            SEAL_CACHE.put(key, true);
+            SEAL_CACHE.put(key, result);
         }
 
-        return true;
+        return result;
+    }
+
+    /** True if the oxygen generator at this position currently has stored FE.
+     *  On the server this reads the block entity exactly; on the client the BE
+     *  energy may lag behind the server, so the synced ACTIVE blockstate (which
+     *  mirrors {@code energy > 0}) is used as a fallback. */
+    private static boolean generatorPowered(Level level, BlockPos pos, BlockState state) {
+        if (level.getBlockEntity(pos) instanceof OxygenGeneratorBlockEntity gen) {
+            return gen.hasPower();
+        }
+        return state.getValue(OxygenGeneratorBlock.ACTIVE);
     }
 
     public static boolean isAirtight(BlockState state, BlockGetter level, BlockPos pos) {
@@ -173,7 +221,8 @@ public class HabitatSealManager {
         boolean wasSealed = false;
         for (Direction dir : Direction.values()) {
             BlockPos adj = pos.relative(dir);
-            if (SEAL_CACHE.getOrDefault(adj.asLong(), false)) {
+            SealResult cached = SEAL_CACHE.get(adj.asLong());
+            if (cached != null && cached.sealed()) {
                 wasSealed = true;
                 break;
             }

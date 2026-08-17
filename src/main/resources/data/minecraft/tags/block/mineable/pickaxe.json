@@ -21,6 +21,7 @@
     "alyrioncore:olivine_block",
     "alyrioncore:sulfur_block",
     "alyrioncore:sleeping_pod",
-    "alyrioncore:airlock"
+    "alyrioncore:airlock",
+    "alyrioncore:oxygen_generator"
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=east,active=false":  { "model": "alyrioncore:block/oxygen_generator", "y": 90 },
+    "facing=south,active=false": { "model": "alyrioncore:block/oxygen_generator", "y": 0 },
+    "facing=west,active=false":  { "model": "alyrioncore:block/oxygen_generator", "y": 270 },
+    "facing=north,active=false": { "model": "alyrioncore:block/oxygen_generator", "y": 180 },
+    "facing=east,active=true":   { "model": "alyrioncore:block/oxygen_generator_active", "y": 90 },
+    "facing=south,active=true":  { "model": "alyrioncore:block/oxygen_generator_active", "y": 0 },
+    "facing=west,active=true":   { "model": "alyrioncore:block/oxygen_generator_active", "y": 270 },
+    "facing=north,active=true":  { "model": "alyrioncore:block/oxygen_generator_active", "y": 180 }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "textures": {
+    "casing": "alyrioncore:block/oxygen_generator_casing",
+    "tank": "alyrioncore:block/oxygen_generator_tank",
+    "dial": "alyrioncore:block/oxygen_generator_dial",
+    "particle": "#casing"
+  },
+  "elements": [
+    {
+      "name": "plinth",
+      "from": [0, 0, 0],
+      "to": [16, 2, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+      }
+    },
+    {
+      "name": "body_top",
+      "from": [1, 2, 1],
+      "to": [15, 5, 15],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+      }
+    },
+    {
+      "name": "body_bottom",
+      "from": [1, 9, 1],
+      "to": [15, 10, 15],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+      }
+    },
+    {
+      "name": "body_left",
+      "from": [1, 5, 1],
+      "to": [6, 9, 15],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+      }
+    },
+    {
+      "name": "body_right",
+      "from": [10, 5, 1],
+      "to": [15, 9, 15],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+      }
+    },
+    {
+      "name": "coolant_tank",
+      "from": [5, 10, 5],
+      "to": [11, 15, 14.8],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#tank"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#tank"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#tank"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#tank"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#tank"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#tank"}
+      }
+    },
+    {
+      "name": "dial",
+      "from": [11.2, 4.2, 14.6],
+      "to": [14.6, 7.2, 15.6],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#dial"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#dial"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#dial"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#dial"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#dial"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#dial"}
+      }
+    },
+    {
+      "name": "side_pipe",
+      "from": [15, 5.5, 4],
+      "to": [16, 8.5, 6],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#casing"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#casing"}
+      }
+    }
+  ]
+}

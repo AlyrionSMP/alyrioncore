@@ -69,6 +69,7 @@ public class ModCreativeTabs {
                         // Technology, Habitat & Greenhouse
                         output.accept(ModItems.SLEEPING_POD_ITEM.get());
                         output.accept(ModItems.AIRLOCK_ITEM.get());
+                        output.accept(ModItems.OXYGEN_GENERATOR_ITEM.get());
                         output.accept(ModItems.REGOLITH_FARMLAND_ITEM.get());
                         output.accept(ModItems.MARTIAN_POTATO.get());
                         output.accept(ModItems.BAKED_MARTIAN_POTATO.get());

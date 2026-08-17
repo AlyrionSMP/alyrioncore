@@ -48,8 +48,11 @@ import java.util.UUID;
 @EventBusSubscriber(modid = AlyrionCore.MODID)
 public class CommonGameEvents {
 
-    /** Last known seal state per player (for the diagnostic actionbar message). */
-    private static final Map<UUID, Boolean> LAST_SEAL_STATE = new HashMap<>();
+    /**
+     * Last known habitat state per player, for the actionbar feedback.
+     * 0 = unsealed / open vacuum, 1 = sealed + breathing, 2 = sealed but no oxygen generator.
+     */
+    private static final Map<UUID, Integer> LAST_SEAL_STATE = new HashMap<>();
 
     @SubscribeEvent
     public static void onFuelBurnTime(FurnaceFuelBurnTimeEvent event) {
@@ -61,19 +64,23 @@ public class CommonGameEvents {
     }
 
     /**
-     * Bulletproof air refill for sealed habitats: after every entity tick on a
-     * vacuum world, any entity inside a sealed room has its air supply restored
-     * to maximum. This does not depend on the LivingBreatheEvent outcome, so it
-     * works even if another mod (e.g. Rocketnautics) denies breathing for the
-     * dimension — the sealed habitat always wins.
+     * Bulletproof air refill for pressurized habitats: after every entity tick on a
+     * vacuum world, any entity inside a sealed room SUPPLIED BY A POWERED OXYGEN
+     * GENERATOR has its air supply restored to maximum. This does not depend on the
+     * LivingBreatheEvent outcome, so it works even if another mod (e.g. Rocketnautics)
+     * denies breathing for the dimension — the powered habitat always wins. A sealed
+     * room without a charged generator is NOT breathable: the air drains and you drown.
      */
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof LivingEntity living
                 && living.level() instanceof ServerLevel serverLevel) {
             boolean vacuum = VacuumAtmosphere.isVacuum(serverLevel, living.getY());
-            boolean sealed = vacuum && HabitatSealManager.isPositionSealed(serverLevel, living.blockPosition());
-            if (sealed) {
+            HabitatSealManager.SealResult seal = vacuum
+                    ? HabitatSealManager.sealState(serverLevel, living.blockPosition())
+                    : HabitatSealManager.SealResult.PRESSURIZED;
+            boolean breathable = seal.sealed() && seal.oxygen();
+            if (breathable) {
                 living.setAirSupply(living.getMaxAirSupply());
             }
             // Diagnostics (Mars / Moon): log the seal + air state every 5s; warn the
@@ -82,17 +89,16 @@ public class CommonGameEvents {
                     && serverLevel.getGameTime() % 100 == 0) {
                 int air = living.getAirSupply();
                 int max = living.getMaxAirSupply();
-                if (!sealed) {
+                if (!seal.sealed()) {
                     BlockPos leak = HabitatSealManager.getLastLeakPos();
                     Direction leakDir = HabitatSealManager.getLastLeakDir();
                     AlyrionCore.LOGGER.info("[habitat] {} sealed=false air={}/{} at {} (leak: {} via {})",
                             player.getName().getString(), air, max, living.blockPosition(),
                             leak == null ? "?" : leak, leakDir == null ? "?" : leakDir);
                 } else {
-                    AlyrionCore.LOGGER.info("[habitat] {} sealed=true air={}/{} at {}",
-                            player.getName().getString(), air, max, living.blockPosition());
+                    AlyrionCore.LOGGER.info("[habitat] {} sealed=true oxygen={} air={}/{} at {}",
+                            player.getName().getString(), seal.oxygen(), air, max, living.blockPosition());
                 }
-
             }
         }
     }
@@ -100,35 +106,44 @@ public class CommonGameEvents {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingBreathe(LivingBreatheEvent event) {
         // Works on BOTH logical sides: the client's local air bar must agree with
-        // the server so bubbles don't drain inside a sealed habitat.
+        // the server so bubbles don't drain inside a powered habitat.
         net.minecraft.world.level.Level level = event.getEntity().level();
         if (VacuumAtmosphere.isVacuum(level, event.getEntity().getY())) {
             // AlyrionCore owns the atmosphere rule on vacuum worlds (Mars, the Moon,
-            // deep space...): sealed habitats grant breathable air, the open surface
-            // is vacuum. Determined cooperatively from Rocketnautics' atmosphere API,
-            // so no hardcoded dimension lists and no priority fight.
-            boolean sealed = HabitatSealManager.isPositionSealed(level, event.getEntity().blockPosition());
-            if (sealed) {
+            // deep space...): a sealed habitat supplied by a powered oxygen generator
+            // grants breathable air; a sealed room WITHOUT a charged generator still
+            // drowns you; the open surface is vacuum. Determined cooperatively from
+            // Rocketnautics' atmosphere API, so no hardcoded dimension lists and no
+            // priority fight.
+            HabitatSealManager.SealResult seal = HabitatSealManager.sealState(level, event.getEntity().blockPosition());
+            boolean sealed = seal.sealed();
+            boolean oxygen = seal.oxygen();
+            if (sealed && oxygen) {
                 event.setCanBreathe(true);
                 event.setRefillAirAmount(Math.max(event.getRefillAirAmount(), 4));
                 event.setConsumeAirAmount(0);
             } else if (!(event.getEntity() instanceof Player player) || !player.getAbilities().invulnerable) {
-                // Open vacuum: deny breathing (creative is exempt).
+                // Open vacuum OR sealed-but-unpowered: deny breathing (creative is exempt).
                 event.setCanBreathe(false);
             }
-            // Diagnostic feedback: show the seal state whenever it changes,
-            // so players can tell why they are (or aren't) breathing.
+            // Actionbar feedback whenever the habitat state changes: pressurized &
+            // breathing, sealed but starved of power, or an existing habitat breached.
             if (level instanceof ServerLevel serverLevel && event.getEntity() instanceof ServerPlayer player) {
-                Boolean last = LAST_SEAL_STATE.get(player.getUUID());
-                if (last == null || last != sealed) {
-                    boolean wasSealed = last != null && last;
-                    LAST_SEAL_STATE.put(player.getUUID(), sealed);
-                    if (sealed) {
+                int state = sealed && oxygen ? 1 : (sealed ? 2 : 0);
+                Integer last = LAST_SEAL_STATE.get(player.getUUID());
+                if (last == null || last != state) {
+                    LAST_SEAL_STATE.put(player.getUUID(), state);
+                    if (state == 1) {
                         AlyrionCore.LOGGER.info("[habitat] {} pressurized habitat detected at {}",
                                 player.getName().getString(), player.blockPosition());
                         player.displayClientMessage(Component.literal(
                                 "§a✔ Pressurized habitat detected — breathing"), true);
-                    } else if (wasSealed) {
+                    } else if (state == 2) {
+                        AlyrionCore.LOGGER.info("[habitat] {} habitat sealed but NO oxygen generator at {}",
+                                player.getName().getString(), player.blockPosition());
+                        player.displayClientMessage(Component.literal(
+                                "§e⚠ Habitat sealed — no oxygen generator running!"), true);
+                    } else if (last != null && last != 0) {
                         BlockPos leak = HabitatSealManager.getLastLeakPos();
                         Direction leakDir = HabitatSealManager.getLastLeakDir();
                         AlyrionCore.LOGGER.info("[habitat] {} habitat BREACHED at {} (leak: {} via {})",

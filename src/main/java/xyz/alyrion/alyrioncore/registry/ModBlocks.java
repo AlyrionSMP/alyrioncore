@@ -12,6 +12,7 @@ import xyz.alyrion.alyrioncore.block.AirlockBlock;
 import xyz.alyrion.alyrioncore.block.DryIceBlock;
 import xyz.alyrion.alyrioncore.block.MartianPotatoCropBlock;
 import xyz.alyrion.alyrioncore.block.MartianSandBlock;
+import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlock;
 import xyz.alyrion.alyrioncore.block.RegolithFarmlandBlock;
 import xyz.alyrion.alyrioncore.block.SleepingPodBlock;
 
@@ -249,6 +250,12 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .sound(SoundType.NETHERITE_BLOCK)
                     .noOcclusion()
+    );
+
+    public static final DeferredBlock<OxygenGeneratorBlock> OXYGEN_GENERATOR = BLOCKS.registerBlock(
+            "oxygen_generator",
+            OxygenGeneratorBlock::new,
+            OxygenGeneratorBlock.machineProperties()
     );
 
     public static final DeferredBlock<RegolithFarmlandBlock> REGOLITH_FARMLAND = BLOCKS.registerBlock(

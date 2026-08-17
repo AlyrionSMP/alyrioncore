@@ -6,6 +6,7 @@
     "alyrioncore:martian_impact_breccia",
     "alyrioncore:meteoric_iron_block",
     "alyrioncore:raw_meteoric_iron_block",
-    "alyrioncore:olivine_block"
+    "alyrioncore:olivine_block",
+    "alyrioncore:oxygen_generator"
   ]
 }

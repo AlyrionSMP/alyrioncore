@@ -1,0 +1,37 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "blade": "alyrioncore:block/oxygen_generator_fan",
+    "particle": "#blade"
+  },
+  "elements": [
+    {
+      "name": "blade_h",
+      "from": [5.2, 6.8, 14.5],
+      "to": [10.8, 7.2, 14.9],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#blade"}
+      }
+    },
+    {
+      "name": "blade_v",
+      "from": [7.8, 4.8, 14.5],
+      "to": [8.2, 9.2, 14.9],
+      "shade": false,
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#blade"},
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#blade"}
+      }
+    }
+  ]
+}

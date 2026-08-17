@@ -74,6 +74,7 @@
   "block.alyrioncore.sleeping_pod": "Mars Sleeping Pod",
   "block.alyrioncore.sleeping_pod.occupied": "This sleeping pod is occupied",
   "block.alyrioncore.airlock": "Pressurized Habitat Airlock",
+  "block.alyrioncore.oxygen_generator": "Oxygen Generator",
   "block.alyrioncore.regolith_farmland": "Martian Regolith Farmland",
   "block.alyrioncore.martian_potato_crop": "Martian Potato Crop",
   "item.alyrioncore.martian_potato": "Martian Potato",

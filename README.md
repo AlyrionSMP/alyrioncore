@@ -88,7 +88,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Dynamic Mars Weather** | Seasonally driven state machine: Clear Skies → Dust Devils → Regional Storm → Global Planet-Encircling Dust Storm. | `MarsWeatherSavedData` + per-tick server simulation, synced via `s2c_mars_weather` payload |
 | **Dust Devils** | Towering conical dust columns spawn near players during midday or storm activity. | Server-tracked `DustDevilInstance`s rendered with swirling particle vortices |
 | **Storm-Aware Atmosphere** | Fog ramps into a dense ochre dust blackout and blue sunsets are suppressed during severe storms. | `MarsClientWeatherHandler` fog/color events + `MarsDimensionEffects` intensity blending |
-| **Pressurized Habitats** | Build airtight habitats and greenhouses that provide breathable air on **any vacuum world** — Mars, the Moon, deep space. | `HabitatSealManager` flood-fill seal detection + `VacuumAtmosphere` atmosphere-API compat, bulletproof per-tick air refill |
+| **Pressurized Habitats** | Build airtight habitats and greenhouses that provide breathable air on **any vacuum world** — Mars, the Moon, deep space. A sealed room stays breathable **only while a charged Oxygen Generator runs inside it**. | `HabitatSealManager` flood-fill seal detection + `VacuumAtmosphere` atmosphere-API compat, bulletproof per-tick air refill, FE-powered `OxygenGeneratorBlock` |
 | **Animated Pressurized Airlock** | Two-block airtight door with a folding armored hatch, viewport window and status LED. | `AirlockBlockEntity` + `AirlockBlockEntityRenderer` with smoothstep pneumatic swing |
 | **Mars Sleeping Pod** | Two-block tech bed that lets players sleep on Mars — even through raging dust storms. | Custom `SleepingPodBlock` with NeoForge bed hooks & dimension-aware sleep logic |
 | **Greenhouse Farming** | Till Martian regolith into farmland and grow Martian Potatoes — but only inside sealed, lit greenhouses. | `RegolithFarmlandBlock`, `MartianPotatoCropBlock` + `HabitatSealManager` integration |
@@ -364,10 +364,21 @@ Any solid-render / full-collision block seals, plus:
 - **Sleeping pods** (fully pressurized capsules)
 
 ### Breathable Air (`LivingBreatheEvent`)
-- On vacuum worlds, entities inside a sealed room **can breathe**: air is granted via the breathe event *and* restored to maximum after every entity tick (server-side), so no other mod's breathing logic can override a sealed habitat.
-- The client air bar is synchronized with the server result — no phantom "drowning" bubbles inside a sealed habitat.
+- On vacuum worlds, a sealed room is breathable **only while at least one powered Oxygen Generator runs inside it** (see below). The seal check returns both *sealed* and *oxygenated* state; while oxygenated, air is granted via the breathe event *and* restored to maximum after every entity tick (server-side), so no other mod's breathing logic can override a powered habitat.
+- A sealed room with an **unpowered / missing** generator is *not* breathable: your air drains and you drown — the generator is the difference between a habitat and a tomb.
+- The client air bar is synchronized with the server result — no phantom "drowning" bubbles inside a powered habitat.
 - Outside a seal — on the open surface — vacuum suffocation applies (creative is exempt).
-- In-game feedback: an actionbar shows **"✔ Pressurized habitat detected"** when you enter a sealed room and **"⚠ Habitat breached — depressurizing!"** the moment a sealed habitat loses pressure (airlock opened, wall broken).
+- In-game feedback: an actionbar shows **"✔ Pressurized habitat detected — breathing"** when you enter a powered sealed room, **"⚠ Habitat sealed — no oxygen generator running!"** when the room is sealed but starved of power, and **"⚠ Habitat breached — depressurizing!"** the moment a sealed habitat loses pressure (airlock opened, wall broken).
+
+### The Oxygen Generator (`oxygen_generator`)
+
+The **heart of every habitat**: a meteoric-iron machine with a teal coolant tank, front dial and an animated spinning impeller (rendered by `OxygenGeneratorBlockEntityRenderer`). It is what makes a sealed room breathable.
+
+- **Requires FE (Forge Energy)**: the block entity exposes a standard receive-only `IEnergyStorage` capability (16,000 FE buffer, up to 1,024 FE/t input). Any FE source can charge it — in the reference pack, **Create: Power Grid** supplies it through its **Device Connector / FE Inverter** (solar panel → battery → connector → generator). Jade shows the stored charge.
+- **Always-on drain**: while it has stored FE the machine runs and consumes **4 FE/t** (~80 FE/s); a full buffer lasts ~3.3 minutes. Keep the grid charged or the habitat depressurizes.
+- **Active state**: while running the block emits light level 8, the dial and tank glow (model switches to the `active` variant) and the vent fan spins; when the buffer runs dry it goes dark and still.
+- **Airtight**: a full solid cube, so it can be built into walls and roofs and still seal — the seal scan finds it even when it's part of the boundary.
+- Crafted from meteoric iron ingots + glass panes + redstone; drops itself (charge is lost on break).
 
 ### The Pressurized Airlock (`airlock`)
 
@@ -409,6 +420,7 @@ AlyrionCore includes pre-configured planetary definitions and physical parameter
 - **Atmospheric Drag**: Multi-tier altitude drag curves ($0.2\times$ drag below $4,000\text{ m}$ tapering to $0.0$ at orbital insertion).
 - **Gravity Ownership**: `apply_gravity_correction_to_entities_in_dimension` is set to `false` in both datapacks — the mod's own `MarsPhysicsHandler` attribute system owns Martian gravity to avoid double-application with the space mod.
 - **Vacuum-Aware Life Support**: `VacuumAtmosphere` reads the space mod's public atmosphere API (`DeepSpaceHelper`) so sealed habitats grant breathable air on any world flagged `drowning` (Mars, the Moon, deep space) — cooperative compat, not a priority fight over the breathe event.
+- **FE-Powered Habitats**: the **Oxygen Generator** runs on standard Forge Energy (`IEnergyStorage`), so it plugs straight into **Create: Power Grid**'s electricity network through its **Device Connector / FE Inverter** (solar panel → battery → connector → generator) — no custom energy system, no adapter needed.
 
 ---
 
@@ -714,7 +726,7 @@ The tab icon features the **Martian Rock Sample** (`martian_rock_sample`) and or
 5. **Stones & Architectural Blocks**: Basalt, Polished Basalt, Basalt Bricks, Basalt Tiles, Stratified Stone, Scoria, Impact Breccia.
 6. **Planetary Ores**: Hematite Ore, Meteoric Iron Ore, Copper Ore, Sulfur Ore, Olivine Ore.
 7. **Polar Volatiles & Ices**: Glacial Ice, Dry Ice Block.
-8. **Technology, Habitat & Greenhouse**: Sleeping Pod, Pressurized Airlock, Regolith Farmland, Martian Potato, Baked Martian Potato.
+8. **Technology, Habitat & Greenhouse**: Sleeping Pod, Pressurized Airlock, Oxygen Generator, Regolith Farmland, Martian Potato, Baked Martian Potato.
 
 ---
 
@@ -764,7 +776,7 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 - `hematite_ore`, `meteoric_iron_ore`, `martian_copper_ore`, `martian_sulfur_ore`, `martian_olivine_ore`
 - `martian_ice`, `dry_ice_block`, `martian_permafrost`
 - `meteoric_iron_block`, `raw_meteoric_iron_block`, `olivine_block`, `sulfur_block`
-- `sleeping_pod`, `airlock`
+- `sleeping_pod`, `airlock`, `oxygen_generator`
 
 ### Mining Tiers
 - **Stone Tool or Better (`#minecraft:needs_stone_tool`)**:
@@ -811,6 +823,7 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 - `generate_sleeping_pod_assets.py`: Generates the two-block Sleeping Pod blockstates, multi-part models and interior/casing/glass textures.
 - `generate_habitat_greenhouse_assets.py`: Generates the Airlock bulkhead frame models + blockstate (the animated hatch is rendered at runtime), the Regolith Farmland / crop-stage blockstates, models and textures, and the procedurally painted 8-stage Martian Potato plant textures.
 - `generate_airlock_assets.py`: Generates the Airlock textures — titanium bulkhead frame, armored hatch leaf, viewport window, status LEDs (green/red) and the item icon.
+- `generate_oxygen_generator.py`: Generates the Oxygen Generator machine textures — meteoric-iron casing plate, teal coolant tank (+ lit variant), front dial (+ lit), status-LED glow and the impeller blade for the animated fan.
 - `generate_martian_moons.py`: Generates Phobos & Deimos `universe_planets` JSON and celestial sphere textures (AlyrionCore + Rocketnautics datapacks).
 - `generate_probe_structures.py`: Generates the crashed Soviet/US probe NBT structures, jigsaw pools, structure/structure-set configs and chest loot.
 - `generate_recipes_and_loot.py`: Generates the full recipe catalog and block/chest loot tables.
@@ -820,7 +833,7 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 
 ### Recipe Catalog (selection)
 - **Meteoric Iron**: tools, storage blocks, raw-block packing, ingot smelting/blasting from ore and raw, iron nuggets from hematite nodules.
-- **Greenhouse & Habitat**: Sleeping Pod, Airlock, Regolith Farmland (via hoe-tilling), Gunpowder (sulfur + coal/charcoal/bonemeal), Torches from sulfur, Glass from Martian Sand, Terracotta from regolith, Water Bucket from Martian Ice, Packed Ice, Snow Block from dry ice, Spyglass from Olivine, Smooth Stone from Rock Samples.
+- **Greenhouse & Habitat**: Sleeping Pod, Airlock, Oxygen Generator, Regolith Farmland (via hoe-tilling), Gunpowder (sulfur + coal/charcoal/bonemeal), Torches from sulfur, Glass from Martian Sand, Terracotta from regolith, Water Bucket from Martian Ice, Packed Ice, Snow Block from dry ice, Spyglass from Olivine, Smooth Stone from Rock Samples.
 - **Food**: Baked Martian Potato (smelting, smoking, campfire).
 - **Masonry**: Polished basalt, bricks and tiles via crafting, smelting/blasting and stonecutting chains.
 

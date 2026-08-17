@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MGM",
+    "GMG",
+    "MRM"
+  ],
+  "key": {
+    "M": {
+      "item": "alyrioncore:meteoric_iron_ingot"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "alyrioncore:oxygen_generator"
+  }
+}

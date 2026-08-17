@@ -1,20 +1,25 @@
 package xyz.alyrion.alyrioncore.registry;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DoubleHighBlockItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemNameBlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TooltipFlag;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.item.DryIceShardItem;
 import xyz.alyrion.alyrioncore.item.MartianRockSampleItem;
 import xyz.alyrion.alyrioncore.item.ModToolTiers;
+
+import java.util.List;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(AlyrionCore.MODID);
@@ -126,6 +131,26 @@ public class ModItems {
     public static final DeferredItem<DoubleHighBlockItem> AIRLOCK_ITEM = ITEMS.registerItem(
             "airlock",
             props -> new DoubleHighBlockItem(ModBlocks.AIRLOCK.get(), props)
+    );
+
+    /**
+     * The Oxygen Generator's item. Kept as a plain BlockItem so the custom 3D model
+     * shows in the inventory; the hover text explains the machine's job (oxygen for
+     * sealed habitats) and its FE appetite.
+     */
+    public static final DeferredItem<BlockItem> OXYGEN_GENERATOR_ITEM = ITEMS.registerItem(
+            "oxygen_generator",
+            props -> new BlockItem(ModBlocks.OXYGEN_GENERATOR.get(), props) {
+                @Override
+                public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                            List<Component> tooltipComponents, TooltipFlag flag) {
+                    tooltipComponents.add(Component.literal("§7Pressurizes sealed habitats"));
+                    tooltipComponents.add(Component.literal("§7and keeps them breathable."));
+                    tooltipComponents.add(Component.literal("§bConsumes FE while running"));
+                    tooltipComponents.add(Component.literal("§b— keep the grid charged!"));
+                }
+            },
+            new Item.Properties()
     );
     public static final DeferredItem<BlockItem> REGOLITH_FARMLAND_ITEM = ITEMS.registerSimpleBlockItem(ModBlocks.REGOLITH_FARMLAND);
 
