@@ -421,6 +421,8 @@ AlyrionCore includes pre-configured planetary definitions and physical parameter
 - **Gravity Ownership**: `apply_gravity_correction_to_entities_in_dimension` is set to `false` in both datapacks — the mod's own `MarsPhysicsHandler` attribute system owns Martian gravity to avoid double-application with the space mod.
 - **Vacuum-Aware Life Support**: `VacuumAtmosphere` reads the space mod's public atmosphere API (`DeepSpaceHelper`) so sealed habitats grant breathable air on any world flagged `drowning` (Mars, the Moon, deep space) — cooperative compat, not a priority fight over the breathe event.
 - **FE-Powered Habitats**: the **Oxygen Generator** runs on standard Forge Energy (`IEnergyStorage`), so it plugs straight into **Create: Power Grid**'s electricity network through its **Device Connector / FE Inverter** (solar panel → battery → connector → generator) — no custom energy system, no adapter needed.
+- **Overworld Space Program**: everything needed to reach space is obtainable from the Overworld — Rocketnautics' *engine nozzle*, *engine cycle pipes*, *thruster mount*, *hose anchor*, *fluid hose* and the *Space Helmet* gain crafting recipes from plain overworld materials (iron, copper, obsidian, glass, string), and titanium ore already generates in Overworld biomes, so the whole rocket line (titanium → Create machines → engines) never requires leaving the homeworld.
+- **Probe Chest Music**: the Rocketnautics music disc (*Brittle Rille*) has a **20% chance** to spawn in the chests of crashed **Soviet and US probes** (both structure variants).
 
 ---
 
@@ -834,6 +836,7 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 ### Recipe Catalog (selection)
 - **Meteoric Iron**: tools, storage blocks, raw-block packing, ingot smelting/blasting from ore and raw, iron nuggets from hematite nodules.
 - **Greenhouse & Habitat**: Sleeping Pod, Airlock, Oxygen Generator, Regolith Farmland (via hoe-tilling), Gunpowder (sulfur + coal/charcoal/bonemeal), Torches from sulfur, Glass from Martian Sand, Terracotta from regolith, Water Bucket from Martian Ice, Packed Ice, Snow Block from dry ice, Spyglass from Olivine, Smooth Stone from Rock Samples.
+- **Space Program (Rocketnautics compat)**: Engine Nozzle, Engine Cycle Pipes, Thruster Mount, Hose Anchor, Fluid Hose and the Space Helmet — all from overworld materials (iron, copper, obsidian, glass, string).
 - **Food**: Baked Martian Potato (smelting, smoking, campfire).
 - **Masonry**: Polished basalt, bricks and tiles via crafting, smelting/blasting and stonecutting chains.
 

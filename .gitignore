@@ -32,3 +32,6 @@ Thumbs.db
 previews/
 ref_iron_pickaxe.png
 __pycache__/
+
+# Extracted third-party jars (analyze_cosmonautics_crafting.py scratch dir)
+research_cosmonautics/
