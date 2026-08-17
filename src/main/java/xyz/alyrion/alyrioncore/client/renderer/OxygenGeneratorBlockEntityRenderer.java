@@ -22,7 +22,7 @@ import xyz.alyrion.alyrioncore.block.OxygenGeneratorBlockEntity;
  * Renders the Oxygen Generator's animated impeller: a small two-blade fan
  * spinning inside the raised vent ring on the front. It spins while the machine
  * has both FE and water (ACTIVE=true) and stands still when either runs dry.
- * The vent center in the authored model is x=4.5/16, y=6.5/16, z=15.85/16; the
+ * The vent center in the authored model is x=4.5/16, y=10.9/16, z=14.725/16; the
  * spin happens around the vent axis (Z).
  */
 public class OxygenGeneratorBlockEntityRenderer implements BlockEntityRenderer<OxygenGeneratorBlockEntity> {
@@ -59,10 +59,10 @@ public class OxygenGeneratorBlockEntityRenderer implements BlockEntityRenderer<O
         // Match the blockstate's facing rotation (model authored front = south/+z).
         pose.translate(0.5, 0.5, 0.5);
         pose.mulPose(Axis.YP.rotationDegrees(-yaw));
-        // Spin the impeller around the vent axis (block-space pivot: x=4.5, y=6.5, z=15.85).
-        pose.translate(4.5 / 16.0 - 0.5, 6.5 / 16.0 - 0.5, 15.85 / 16.0 - 0.5);
+        // Spin the impeller around the vent axis (block-space pivot: x=4.5, y=10.9, z=14.725).
+        pose.translate(4.5 / 16.0 - 0.5, 10.9 / 16.0 - 0.5, 14.725 / 16.0 - 0.5);
         pose.mulPose(Axis.ZP.rotationDegrees(spin));
-        pose.translate(-(4.5 / 16.0 - 0.5), -(6.5 / 16.0 - 0.5), -(15.85 / 16.0 - 0.5));
+        pose.translate(-(4.5 / 16.0 - 0.5), -(10.9 / 16.0 - 0.5), -(14.725 / 16.0 - 0.5));
         pose.translate(-0.5, -0.5, -0.5);
 
         VertexConsumer buffer = buffers.getBuffer(RenderType.cutout());
