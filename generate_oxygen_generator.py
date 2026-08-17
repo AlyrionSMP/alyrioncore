@@ -210,13 +210,24 @@ def port_frame():
 
 
 def _lightning(img):
-    """Teal lightning-bolt symbol for the power port."""
-    bolt = [(7, 3), (8, 3), (8, 4), (7, 5), (8, 5), (6, 6), (7, 6),
-            (6, 7), (7, 7), (8, 8), (9, 8), (9, 9), (10, 10), (9, 11)]
-    for (x, y) in bolt:
+    """Teal lightning-bolt symbol for the power port: a wide top bar and a
+    jagged shaft that zigzags down-left, tapering to a sharp point."""
+    bar = [(7, 3), (8, 3), (9, 3), (10, 3),
+           (7, 4), (8, 4), (9, 4), (10, 4)]
+    body = [(6, 5), (7, 5), (8, 5),
+            (6, 6), (7, 6), (8, 6),
+            (5, 7), (6, 7), (7, 7),
+            (5, 8), (6, 8),
+            (4, 9), (5, 9), (6, 9),
+            (4, 10), (5, 10),
+            (3, 11), (4, 11),
+            (3, 12)]
+    for (x, y) in bar + body:
         img[y][x] = mc.hex2rgb(K2) + (255,)
-    img[7][3] = mc.hex2rgb(KG) + (255,)
-    img[8][8] = mc.hex2rgb(KG) + (255,)
+    img[3][7] = mc.hex2rgb(KG) + (255,)
+    img[3][8] = mc.hex2rgb(KG) + (255,)
+    img[12][3] = mc.hex2rgb(KG) + (255,)
+    return img
 
 
 def _droplet(img):
