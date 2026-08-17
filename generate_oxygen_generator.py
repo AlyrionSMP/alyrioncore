@@ -210,22 +210,26 @@ def port_frame():
 
 
 def _lightning(img):
-    """Teal lightning-bolt symbol for the power port: a small forked bolt —
-    two prong tips joining a bar, then a jagged two-px shaft zigzagging
-    down-left to a sharp point."""
-    bolt = [(7, 4), (10, 4),                 # prong tips
-            (7, 5), (8, 5), (9, 5), (10, 5), # fork bar
-            (6, 6), (7, 6), (8, 6),          # shaft steps left
+    """Teal lightning-bolt symbol for the power port: the classic ⚡-glyph
+    shape — a solid horizontal top bar over a narrow jagged shaft that steps
+    down-left with alternating two/three-px widths and ends in a sharp point.
+    The wide-bar / narrow-shaft contrast is what makes it read as lightning
+    instead of a diagonal line."""
+    bolt = [(8, 3), (9, 3), (10, 3),           # top bar
+            (8, 4), (9, 4), (10, 4),
+            (7, 5), (8, 5),                    # shaft
+            (6, 6), (7, 6), (8, 6),            # flair
             (6, 7), (7, 7),
-            (5, 8), (6, 8), (7, 8),          # zig
+            (5, 8), (6, 8), (7, 8),            # flair
             (5, 9), (6, 9),
-            (4, 10), (5, 10),
-            (4, 11)]                         # point
+            (4, 10), (5, 10), (6, 10),         # flair
+            (4, 11), (5, 11),
+            (3, 12)]                           # point
     for (x, y) in bolt:
         img[y][x] = mc.hex2rgb(K2) + (255,)
-    img[4][7] = mc.hex2rgb(KG) + (255,)
-    img[4][10] = mc.hex2rgb(KG) + (255,)
-    img[11][4] = mc.hex2rgb(KG) + (255,)
+    img[3][8] = mc.hex2rgb(KG) + (255,)
+    img[3][9] = mc.hex2rgb(KG) + (255,)
+    img[12][3] = mc.hex2rgb(KG) + (255,)
     return img
 
 
