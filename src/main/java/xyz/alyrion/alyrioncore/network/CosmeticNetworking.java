@@ -1,21 +1,17 @@
 package xyz.alyrion.alyrioncore.network;
 
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import xyz.alyrion.alyrioncore.AlyrionCore;
-import xyz.alyrion.alyrioncore.cosmetics.CosmeticSound;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
 import xyz.alyrion.alyrioncore.cosmetics.ServerCosmeticsManager;
 
@@ -37,6 +33,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class CosmeticNetworking {
+
+    /**
+     * Client-side payload receivers. Defaults are no-ops so this class stays
+     * loadable on a dedicated server; {@code client.ClientNetworkHandlers}
+     * (Dist.CLIENT) replaces them with the real implementations at startup,
+     * well before any payload can arrive.
+     */
+    public static final class ClientHandlers {
+        public java.util.function.Consumer<S2CSyncCosmeticsPayload> onSyncCosmetics = p -> {};
+        public java.util.function.Consumer<S2CSyncCosmeticPayload> onSyncCosmeticSlot = p -> {};
+        public java.util.function.IntConsumer onPlayUiSound = soundId -> {};
+        public java.util.function.Consumer<MarsWeatherPayload> onMarsWeather = p -> {};
+    }
+
+    /** Set once by {@code client.ClientNetworkHandlers} during mod construction. */
+    public static volatile ClientHandlers clientHandlers = new ClientHandlers();
 
     /** Cache of other players' equipped cosmetics on the client: UUID -> (typeId -> cosmeticId). */
     private static final Map<UUID, Map<String, String>> CLIENT_COSMETIC_MAP = new ConcurrentHashMap<>();
@@ -229,9 +241,7 @@ public class CosmeticNetworking {
                 S2CSyncCosmeticsPayload.TYPE,
                 S2CSyncCosmeticsPayload.STREAM_CODEC,
                 (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        CosmeticsManager.get().applySync(payload);
-                    });
+                    context.enqueueWork(() -> clientHandlers.onSyncCosmetics.accept(payload));
                 }
         );
 
@@ -240,9 +250,7 @@ public class CosmeticNetworking {
                 S2CSyncCosmeticPayload.TYPE,
                 S2CSyncCosmeticPayload.STREAM_CODEC,
                 (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        setClientPlayerCosmetic(payload.playerUuid(), payload.typeId(), payload.cosmeticId());
-                    });
+                    context.enqueueWork(() -> clientHandlers.onSyncCosmeticSlot.accept(payload));
                 }
         );
 
@@ -251,9 +259,7 @@ public class CosmeticNetworking {
                 S2CPlaySoundPayload.TYPE,
                 S2CPlaySoundPayload.STREAM_CODEC,
                 (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        playUiSound(CosmeticSound.byId(payload.soundId()));
-                    });
+                    context.enqueueWork(() -> clientHandlers.onPlayUiSound.accept(payload.soundId()));
                 }
         );
 
@@ -261,9 +267,7 @@ public class CosmeticNetworking {
                 MarsWeatherPayload.TYPE,
                 MarsWeatherPayload.STREAM_CODEC,
                 (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        xyz.alyrion.alyrioncore.client.weather.MarsClientWeatherHandler.updateFromServer(payload);
-                    });
+                    context.enqueueWork(() -> clientHandlers.onMarsWeather.accept(payload));
                 }
         );
     }
@@ -284,23 +288,11 @@ public class CosmeticNetworking {
 
     private static void sendToServer(CustomPacketPayload payload) {
         try {
-            if (Minecraft.getInstance().getConnection() != null) {
+            if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
                 PacketDistributor.sendToServer(payload);
             }
         } catch (Throwable t) {
             AlyrionCore.LOGGER.debug("Cosmetics packet could not be sent: {}", t.getMessage());
-        }
-    }
-
-    private static void playUiSound(CosmeticSound sound) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.getSoundManager() == null) return;
-        switch (sound) {
-            case CLICK -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-            case SUCCESS -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0F));
-            case LEVEL_UP -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.PLAYER_LEVELUP, 1.2F));
-            default -> {
-            }
         }
     }
 }

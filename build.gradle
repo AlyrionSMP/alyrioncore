@@ -14,6 +14,17 @@ group = mod_group_id
 repositories {
     mavenLocal()
     mavenCentral()
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
 }
 
 base {
@@ -67,6 +78,8 @@ configurations {
 }
 
 dependencies {
+    // Epic Fight compat: compile against it, but don't require it at runtime
+    compileOnly "maven.modrinth:epic-fight:${project.epicfight_version}"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
