@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.particles.ParticleTypes;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -27,15 +28,18 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.item.FertilizerItem;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
 import xyz.alyrion.alyrioncore.registry.ModItems;
 import xyz.alyrion.alyrioncore.world.ModDimensions;
 import xyz.alyrion.alyrioncore.compat.VacuumAtmosphere;
+import xyz.alyrion.alyrioncore.world.farmland.FarmlandFertilizerSavedData;
 import xyz.alyrion.alyrioncore.world.habitat.HabitatOxygenManager;
 import xyz.alyrion.alyrioncore.world.habitat.HabitatSealManager;
 import xyz.alyrion.alyrioncore.world.weather.MarsWeatherSavedData;
@@ -219,6 +223,54 @@ public class CommonGameEvents {
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             HabitatSealManager.onBlockBreak(serverLevel, event.getPos(), event.getState());
+            FarmlandFertilizerSavedData.get(serverLevel).remove(event.getPos());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCropGrowPre(CropGrowEvent.Pre event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            BlockPos cropPos = event.getPos();
+            BlockPos soilPos = cropPos.below();
+            FarmlandFertilizerSavedData data = FarmlandFertilizerSavedData.get(serverLevel);
+
+            if (data.isFertilized(soilPos)) {
+                BlockState soilState = serverLevel.getBlockState(soilPos);
+                if (!FertilizerItem.isFarmland(soilState)) {
+                    data.remove(soilPos);
+                    return;
+                }
+
+                // If the default roll did not already trigger growth, roll bonus chance to make total growth rate 1.5x
+                if (event.getResult() == CropGrowEvent.Pre.Result.DEFAULT) {
+                    // For standard hydrated farmland crops, divisor = 4 (25% chance).
+                    // Bonus probability on failed base check = 1 / (2 * (divisor - 1)) = 1/6 (~16.67%).
+                    // Total growth probability = 25% + 75% * 1/6 = 37.5% = 1.5x of 25%.
+                    if (serverLevel.random.nextInt(6) == 0) {
+                        event.setResult(CropGrowEvent.Pre.Result.GROW);
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCropGrowPost(CropGrowEvent.Post event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            BlockPos soilPos = event.getPos().below();
+            if (FarmlandFertilizerSavedData.get(serverLevel).isFertilized(soilPos)) {
+                serverLevel.sendParticles(
+                        ParticleTypes.HAPPY_VILLAGER,
+                        event.getPos().getX() + 0.5,
+                        event.getPos().getY() + 0.3,
+                        event.getPos().getZ() + 0.5,
+                        3,
+                        0.25,
+                        0.2,
+                        0.25,
+                        0.02
+                );
+            }
         }
     }
 

@@ -77,8 +77,12 @@ public class ModCreativeTabs {
                         output.accept(ModItems.AIRLOCK_ITEM.get());
                         output.accept(ModItems.OXYGEN_GENERATOR_ITEM.get());
                         output.accept(ModItems.REGOLITH_FARMLAND_ITEM.get());
+                        output.accept(ModItems.FERTILIZER.get());
                         output.accept(ModItems.MARTIAN_POTATO.get());
                         output.accept(ModItems.BAKED_MARTIAN_POTATO.get());
+
+                        // Probe salvage & worn items
+                        output.accept(ModItems.USHANKA.get());
                     })
                     .build()
             );

@@ -64,17 +64,22 @@ public class ReinforcementEvents {
         int hits = be.getHitsRemaining();
         if (hits > 1) {
             be.setHitsRemaining(hits - 1);
-            be.setCrackStage(ReinforcedBlockEntity.crackStageFor(
-                    state.getValue(ReinforcedBlock.TIER).getHits(), hits - 1));
+            // Advance the crack stage on the BE ONLY — the blockstate and the
+            // block are never touched, so nothing can be "replaced".
+            int newStage = ReinforcedBlock.crackStageFor(
+                    state.getValue(ReinforcedBlock.TIER).getHits(), hits - 1);
+            be.setCrackStage(newStage);
             be.setChanged();
             event.setCanceled(true);
+            AlyrionCore.LOGGER.info("[reinforce] hit absorbed at {} hits {} stage {}", pos, hits - 1, newStage);
 
             ReinforcementTier tier = state.getValue(ReinforcedBlock.TIER);
             level.playSound(null, pos, tier.getHitSound(), SoundSource.BLOCKS, 1.0F, 0.9F);
             if (level instanceof ServerLevel serverLevel) {
-                // Re-broadcast the block entity so every client sees the new
-                // crack stage; the block state itself is unchanged.
-                serverLevel.sendBlockUpdated(pos, state, state, 3);
+                // One tick after the break event (past the client's destroy
+                // prediction) re-push the BE data so the client's re-created
+                // empty BE gets the original state + new crack stage back.
+                serverLevel.scheduleTick(pos, ModBlocks.REINFORCED_BLOCK.get(), 2);
                 serverLevel.sendParticles(ParticleTypes.CRIT,
                         pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5,
                         8, 0.25, 0.25, 0.25, 0.05);

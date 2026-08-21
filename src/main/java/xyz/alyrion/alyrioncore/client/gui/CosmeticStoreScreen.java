@@ -1,610 +1,487 @@
 package xyz.alyrion.alyrioncore.client.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import xyz.alyrion.alyrioncore.client.renderer.SatellitePetModel;
-import xyz.alyrion.alyrioncore.cosmetics.CapeDefinition;
+import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.client.renderer.ClientCosmeticsRenderers;
+import xyz.alyrion.alyrioncore.client.renderer.CosmeticRenderer;
+import xyz.alyrion.alyrioncore.client.renderer.WardrobeRenderer;
+import xyz.alyrion.alyrioncore.cosmetics.CosmeticDefinition;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
-import xyz.alyrion.alyrioncore.cosmetics.PetDefinition;
+import xyz.alyrion.alyrioncore.cosmetics.CosmeticsRegistry;
+import xyz.alyrion.alyrioncore.cosmetics.CosmeticType;
 import xyz.alyrion.alyrioncore.cosmetics.TaskDefinition;
 
-public class CosmeticStoreScreen extends Screen {
+import java.util.ArrayList;
+import java.util.List;
 
-    public enum Tab {
-        STORE,
-        PETS,
-        TASKS
+/**
+ * The Alyrion Wardrobe — a fixed-size, centered panel (vanilla-container
+ * style, so it fits at every GUI scale) with a Bedrock/Essential layout:
+ *
+ * <pre>
+ * ┌───────────────────────────────────────────────┐
+ * │ ◀  ALYRION WARDROBE                    ⛃ 123  │
+ * ├──────┬──────────────────────┬─────────────────┤
+ * │ Capes│   [ character on a   │  CAPES (7)      │
+ * │ Pets │     pedestal,        │  item card      │
+ * │Trails│     rotating ]       │  item card      │
+ * │ Tasks│   Name — 120 ⛃      │  item card      │
+ * ├──────┴──────────────────────┴─────────────────┤
+ * │              [ BUY · 120 ⛃ ]                 │
+ * └───────────────────────────────────────────────┘
+ * </pre>
+ *
+ * Vanilla buttons exist only for interaction (clicks, sounds); every visual
+ * is custom-painted on top of them, so no stretched vanilla textures and no
+ * element can ever overlap: all zones are fixed inside the panel and every
+ * text is truncated to its box.
+ */
+public class CosmeticStoreScreen extends CosmeticScreen {
+
+    private static final Object TASKS_TAB = new Object();
+
+    // --- Fixed panel geometry (clamped for tiny windows) ---
+    private int pw() {
+        return Math.min(460, this.width - 8);
     }
 
-    private Tab currentTab = Tab.STORE;
-    private CapeDefinition selectedCape = CapeDefinition.TWO_YEAR_CELEBRATION;
-    private PetDefinition selectedPet = PetDefinition.SATELLITE;
-    private int scrollOffset = 0;
-    private int lastRevision = -1;
+    private int ph() {
+        return Math.min(250, this.height - 8);
+    }
+
+    private int ox() {
+        return (this.width - pw()) / 2;
+    }
+
+    private int oy() {
+        return (this.height - ph()) / 2;
+    }
+
+    private int sideX() {
+        return ox() + 6;
+    }
+
+    private int sideW() {
+        return 40;
+    }
+
+    private int bodyTop() {
+        return oy() + 30;
+    }
+
+    private int bodyBottom() {
+        return oy() + ph() - 34;
+    }
+
+    private int catW() {
+        return 148;
+    }
+
+    private int catX() {
+        return ox() + pw() - 6 - catW();
+    }
+
+    private int prevX() {
+        return sideX() + sideW() + 6;
+    }
+
+    private int prevRight() {
+        return catX() - 6;
+    }
+
+    private int prevCenterX() {
+        return prevX() + (prevRight() - prevX()) / 2;
+    }
+
+    private int tabH() {
+        return Math.min(36, (bodyBottom() - bodyTop() - 12) / 4);
+    }
+
+    private final List<Object> tabs = new ArrayList<>();
+    private int tabIndex = 0;
+    private CosmeticDefinition selected = null;
 
     public CosmeticStoreScreen() {
-        super(Component.literal("Alyrion Cosmetic Store"));
+        super(Component.literal("Alyrion Wardrobe"));
     }
 
     @Override
     protected void init() {
+        buildTabs();
         super.init();
-        // All progression is server-side; make sure we have the latest state from the server
-        CosmeticsManager.get().ensureSynced();
-        rebuildWidgets();
     }
+
+    // --- Tabs / selection ---
+
+    private void buildTabs() {
+        tabs.clear();
+        for (CosmeticType type : CosmeticType.values()) {
+            if (!CosmeticsRegistry.getByType(type).isEmpty()) {
+                tabs.add(type);
+            }
+        }
+        tabs.add(TASKS_TAB);
+        if (tabIndex >= tabs.size()) {
+            tabIndex = 0;
+        }
+        selectDefault();
+    }
+
+    private void selectDefault() {
+        if (onTasks()) {
+            selected = null;
+            return;
+        }
+        List<CosmeticDefinition> items = CosmeticsRegistry.getByType(currentType());
+        if (items.isEmpty()) {
+            selected = null;
+            return;
+        }
+        if (selected == null || selected.getType() != currentType() || !items.contains(selected)) {
+            selected = items.get(0);
+        }
+    }
+
+    private boolean onTasks() {
+        return !tabs.isEmpty() && tabs.get(tabIndex) == TASKS_TAB;
+    }
+
+    private CosmeticType currentType() {
+        if (tabs.isEmpty()) return null;
+        Object tab = tabs.get(tabIndex);
+        return tab instanceof CosmeticType type ? type : null;
+    }
+
+    // --- Widgets (interaction only; painted over in renderContent) ---
 
     @Override
     protected void rebuildWidgets() {
         this.clearWidgets();
-        CosmeticsManager manager = CosmeticsManager.get();
 
-        int topY = 30;
-        int tabWidth = 95;
-        int tabHeight = 20;
-        int tabStartX = (this.width - (tabWidth * 3 + 8)) / 2;
+        this.addRenderableWidget(Button.builder(Component.literal(""), btn -> this.onClose())
+                .bounds(ox() + 4, oy() + 4, 16, 16).build());
 
-        // Tab Buttons
-        this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.STORE ? "§6§lStore & Wardrobe" : "Store & Wardrobe"), btn -> {
-            currentTab = Tab.STORE;
-            scrollOffset = 0;
-            rebuildWidgets();
-        }).bounds(tabStartX, topY, tabWidth, tabHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.PETS ? "§6§lPets" : "Pets"), btn -> {
-            currentTab = Tab.PETS;
-            scrollOffset = 0;
-            rebuildWidgets();
-        }).bounds(tabStartX + tabWidth + 4, topY, tabWidth, tabHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal(currentTab == Tab.TASKS ? "§e§lTasks & Playtime" : "Tasks & Playtime"), btn -> {
-            currentTab = Tab.TASKS;
-            scrollOffset = 0;
-            rebuildWidgets();
-        }).bounds(tabStartX + tabWidth * 2 + 8, topY, tabWidth, tabHeight).build());
-
-        int contentY = 56;
-
-        if (currentTab == Tab.STORE) {
-            initStoreWidgets(manager, contentY);
-        } else if (currentTab == Tab.PETS) {
-            initPetsWidgets(manager, contentY);
-        } else if (currentTab == Tab.TASKS) {
-            initTasksWidgets(manager, contentY);
-        }
-
-        // Bottom Close Button
-        this.addRenderableWidget(Button.builder(Component.literal("Close"), btn -> this.onClose())
-                .bounds(this.width / 2 - 50, this.height - 24, 100, 18).build());
-    }
-
-    private void initStoreWidgets(CosmeticsManager manager, int contentY) {
-        int listX = 16;
-        int listWidth = this.width / 2 + 15;
-        CapeDefinition[] capes = CapeDefinition.values();
-        int availableHeight = this.height - contentY - 30;
-        int itemSpacing = 3;
-        int itemHeight = Math.max(26, Math.min(32, (availableHeight - (capes.length - 1) * itemSpacing) / capes.length));
-
-        for (int i = 0; i < capes.length; i++) {
-            CapeDefinition cape = capes[i];
-            int itemY = contentY + i * (itemHeight + itemSpacing) - scrollOffset;
-
-            // Only add widgets if in visible viewport
-            if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
-
-            // Clamp the widget into the list viewport so buttons never overlap the tab bar / Close button
-            int cardTop = Math.max(itemY, contentY);
-            int cardH = Math.min(itemY + itemHeight, this.height - 30) - cardTop;
-            if (cardH < 12) continue;
-
-            boolean isUnlocked = manager.isCapeUnlocked(cape);
-            boolean isEquipped = manager.isCapeEquipped(cape);
-
-            // Select Cape card button (empty message; the name is painted left-aligned after the icon in render)
-            int btnSelectX = listX;
-            int btnSelectWidth = listWidth - 85;
+        for (int i = 0; i < tabs.size(); i++) {
+            final int index = i;
             this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
-                this.selectedCape = cape;
-            }).bounds(btnSelectX, cardTop, btnSelectWidth, cardH).build());
-
-            // Action Button (Equip / Unequip / Buy / Claim)
-            int actionBtnX = listX + listWidth - 80;
-            int actionBtnWidth = 78;
-            int actionBtnHeight = Math.min(20, cardH - 4);
-            if (actionBtnHeight >= 12) {
-                int actionBtnY = cardTop + (cardH - actionBtnHeight) / 2;
-                Button actionBtn;
-
-            if (isEquipped) {
-                actionBtn = Button.builder(Component.literal("§cUnequip"), btn -> {
-                    manager.unequipCape();
-                    rebuildWidgets();
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-            } else if (isUnlocked) {
-                actionBtn = Button.builder(Component.literal("§aEquip"), btn -> {
-                    manager.equipCape(cape);
-                    rebuildWidgets();
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-            } else if (!cape.isPurchasable()) {
-                // Task-only capes (e.g. the Pride Cape) can't be bought; it can only be earned in the Tasks tab
-                actionBtn = Button.builder(Component.literal("§dTask Reward"), btn -> {
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-                actionBtn.active = false;
-            } else if (cape.isFree()) {
-                actionBtn = Button.builder(Component.literal("§bClaim Free"), btn -> {
-                    manager.purchaseCape(cape);
-                    rebuildWidgets();
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-            } else {
-                boolean canAfford = manager.getCoins() >= cape.getPrice();
-                actionBtn = Button.builder(Component.literal(canAfford ? "§6Buy (" + cape.getPrice() + "⛃)" : "§7" + cape.getPrice() + " ⛃"), btn -> {
-                    if (canAfford) {
-                        manager.purchaseCape(cape);
-                        rebuildWidgets();
-                    }
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-                actionBtn.active = canAfford;
-            }
-
-            this.addRenderableWidget(actionBtn);
-            }
+                tabIndex = index;
+                selectDefault();
+                rebuildWidgets();
+            }).bounds(sideX(), bodyTop() + i * (tabH() + 4), sideW(), tabH()).build());
         }
 
-        // Preview panel action button
-        int previewX = this.width / 2 + 38;
-        int previewWidth = this.width - previewX - 16;
-        if (selectedCape != null) {
-            boolean isUnlocked = manager.isCapeUnlocked(selectedCape);
-            int actionBtnY = this.height - 48;
-
-            // Equip / Unequip is handled on the cape cards in the store list only —
-            // the preview panel is for looking at the cape, not equipping it.
-            if (!isUnlocked) {
-                if (!selectedCape.isPurchasable()) {
-                    Button taskBtn = Button.builder(Component.literal("§dTask Reward"), btn -> {
-                    }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build();
-                    taskBtn.active = false;
-                    this.addRenderableWidget(taskBtn);
-                } else if (selectedCape.isFree()) {
-                    this.addRenderableWidget(Button.builder(Component.literal("§bClaim Free"), btn -> {
-                        manager.purchaseCape(selectedCape);
-                        rebuildWidgets();
-                    }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-                } else {
-                    boolean canAfford = manager.getCoins() >= selectedCape.getPrice();
-                    Button buyBtn = Button.builder(Component.literal("§6Buy (" + selectedCape.getPrice() + " Coins)"), btn -> {
-                        if (canAfford) {
-                            manager.purchaseCape(selectedCape);
-                            rebuildWidgets();
-                        }
-                    }).bounds(previewX + (previewWidth - 120) / 2, actionBtnY, 120, 20).build();
-                    buyBtn.active = canAfford;
-                    this.addRenderableWidget(buyBtn);
-                }
+        if (!onTasks()) {
+            List<CosmeticDefinition> items = CosmeticsRegistry.getByType(currentType());
+            int cardH = cardHeight(items.size());
+            int y = bodyTop() + 14;
+            for (CosmeticDefinition cosmetic : items) {
+                if (y + cardH > bodyBottom()) break;
+                final CosmeticDefinition def = cosmetic;
+                this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
+                    selected = def;
+                    rebuildWidgets();
+                }).bounds(catX(), y, catW(), cardH).build());
+                y += cardH + 3;
             }
         }
     }
 
-    private void initPetsWidgets(CosmeticsManager manager, int contentY) {
-        int listX = 16;
-        int listWidth = this.width / 2 + 15;
-        PetDefinition[] pets = PetDefinition.values();
-        int availableHeight = this.height - contentY - 30;
-        int itemSpacing = 3;
-        int itemHeight = Math.max(26, Math.min(32, (availableHeight - (pets.length - 1) * itemSpacing) / pets.length));
-
-        for (int i = 0; i < pets.length; i++) {
-            PetDefinition pet = pets[i];
-            int itemY = contentY + i * (itemHeight + itemSpacing) - scrollOffset;
-
-            // Only add widgets if in visible viewport
-            if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
-
-            // Clamp the widget into the list viewport so buttons never overlap the tab bar / Close button
-            int cardTop = Math.max(itemY, contentY);
-            int cardH = Math.min(itemY + itemHeight, this.height - 30) - cardTop;
-            if (cardH < 12) continue;
-
-            boolean isUnlocked = manager.isPetUnlocked(pet);
-            boolean isEquipped = manager.isPetEquipped(pet);
-
-            // Select Pet card button (empty message; the name is painted left-aligned after the icon in render)
-            int btnSelectX = listX;
-            int btnSelectWidth = listWidth - 85;
-            this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
-                this.selectedPet = pet;
-            }).bounds(btnSelectX, cardTop, btnSelectWidth, cardH).build());
-
-            // Action Button (Equip / Unequip / Buy)
-            int actionBtnX = listX + listWidth - 80;
-            int actionBtnWidth = 78;
-            int actionBtnHeight = Math.min(20, cardH - 4);
-            if (actionBtnHeight >= 12) {
-                int actionBtnY = cardTop + (cardH - actionBtnHeight) / 2;
-                Button actionBtn;
-
-            if (isEquipped) {
-                actionBtn = Button.builder(Component.literal("§cUnequip"), btn -> {
-                    manager.unequipPet();
-                    rebuildWidgets();
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-            } else if (isUnlocked) {
-                actionBtn = Button.builder(Component.literal("§aEquip"), btn -> {
-                    manager.equipPet(pet);
-                    rebuildWidgets();
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-            } else if (pet.isFree()) {
-                actionBtn = Button.builder(Component.literal("§bClaim Free"), btn -> {
-                    manager.purchasePet(pet);
-                    rebuildWidgets();
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-            } else {
-                boolean canAfford = manager.getCoins() >= pet.getPrice();
-                actionBtn = Button.builder(Component.literal(canAfford ? "§6Buy (" + pet.getPrice() + "⛃)" : "§7" + pet.getPrice() + " ⛃"), btn -> {
-                    if (canAfford) {
-                        manager.purchasePet(pet);
-                        rebuildWidgets();
-                    }
-                }).bounds(actionBtnX, actionBtnY, actionBtnWidth, actionBtnHeight).build();
-                actionBtn.active = canAfford;
-            }
-
-            this.addRenderableWidget(actionBtn);
-            }
-        }
-
-        // Preview panel action button
-        int previewX = this.width / 2 + 38;
-        int previewWidth = this.width - previewX - 16;
-        if (selectedPet != null) {
-            boolean isUnlocked = manager.isPetUnlocked(selectedPet);
-            boolean isEquipped = manager.isPetEquipped(selectedPet);
-            int actionBtnY = this.height - 48;
-
-            if (isEquipped) {
-                this.addRenderableWidget(Button.builder(Component.literal("§cUnequip Pet"), btn -> {
-                    manager.unequipPet();
-                    rebuildWidgets();
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-            } else if (isUnlocked) {
-                this.addRenderableWidget(Button.builder(Component.literal("§aEquip Pet"), btn -> {
-                    manager.equipPet(selectedPet);
-                    rebuildWidgets();
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-            } else if (selectedPet.isFree()) {
-                this.addRenderableWidget(Button.builder(Component.literal("§bClaim Free"), btn -> {
-                    manager.purchasePet(selectedPet);
-                    rebuildWidgets();
-                }).bounds(previewX + (previewWidth - 110) / 2, actionBtnY, 110, 20).build());
-            } else {
-                boolean canAfford = manager.getCoins() >= selectedPet.getPrice();
-                Button buyBtn = Button.builder(Component.literal("§6Buy (" + selectedPet.getPrice() + " Coins)"), btn -> {
-                    if (canAfford) {
-                        manager.purchasePet(selectedPet);
-                        rebuildWidgets();
-                    }
-                }).bounds(previewX + (previewWidth - 120) / 2, actionBtnY, 120, 20).build();
-                buyBtn.active = canAfford;
-                this.addRenderableWidget(buyBtn);
-            }
-        }
+    private int cardHeight(int itemCount) {
+        int available = bodyBottom() - (bodyTop() + 14);
+        int gaps = Math.max(0, itemCount - 1) * 3;
+        return Math.max(18, Math.min(24, (available - gaps) / Math.max(1, itemCount)));
     }
 
-    private void initTasksWidgets(CosmeticsManager manager, int contentY) {
-    }
+    // --- Backdrop ---
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (currentTab == Tab.STORE || currentTab == Tab.PETS || currentTab == Tab.TASKS) {
-            if (scrollY != 0) {
-                scrollOffset = Math.max(0, scrollOffset - (int) (scrollY * 16));
+    protected void renderBackdrop(GuiGraphics guiGraphics) {
+        int x = ox();
+        int y = oy();
+        int w = pw();
+        int h = ph();
+
+        // Panel body + header + bottom bar
+        guiGraphics.fill(x, y, x + w, y + h, 0xFF10141F);
+        guiGraphics.fill(x, y, x + w, y + 24, 0xFF0C1120);
+        guiGraphics.fill(x, y + 24, x + w, y + 25, 0xFFEAB308);
+        guiGraphics.fill(x, y + h - 30, x + w, y + h - 29, 0xFFEAB308);
+        guiGraphics.fill(x, y + h - 29, x + w, y + h, 0xFF0C1120);
+        guiGraphics.renderOutline(x, y, w, h, 0xFF31405E);
+    }
+
+    // --- Content ---
+
+    @Override
+    protected void renderContent(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        long tick = currentTick();
+        CosmeticsManager manager = CosmeticsManager.get();
+
+        // Header: back arrow, title, coins
+        boolean backHover = mouseX >= ox() + 4 && mouseX < ox() + 20 && mouseY >= oy() + 4 && mouseY < oy() + 20;
+        guiGraphics.fill(ox() + 4, oy() + 4, ox() + 20, oy() + 20, backHover ? 0xFF202B44 : 0xFF161D2E);
+        guiGraphics.renderOutline(ox() + 4, oy() + 4, 16, 16, 0xFF31405E);
+        guiGraphics.drawString(this.font, "§7◀", ox() + 8, oy() + 8, 0xFFFFFF, false);
+
+        guiGraphics.drawString(this.font, "§6§lALYRION WARDROBE", ox() + 26, oy() + 8, 0xFFFFFF, true);
+
+        String coinText = "§e⛃ §6" + manager.getCoins();
+        int coinW = this.font.width(coinText) + 10;
+        int coinX = ox() + pw() - 6 - coinW;
+        guiGraphics.fill(coinX, oy() + 4, coinX + coinW, oy() + 20, 0xFF161D2E);
+        guiGraphics.renderOutline(coinX, oy() + 4, coinW, 16, 0xFFEAB308);
+        guiGraphics.drawString(this.font, coinText, coinX + 5, oy() + 8, 0xFFFFFF, true);
+
+        renderSidebar(guiGraphics, mouseX, mouseY, tick);
+
+        if (onTasks()) {
+            renderTasksTab(guiGraphics);
+            String hint = "Tasks complete automatically while you play — rewards are credited instantly.";
+            guiGraphics.drawCenteredString(this.font, fit("§7" + hint, pw() - 16), ox() + pw() / 2, oy() + ph() - 17, 0xAAAAAA);
+        } else {
+            renderCatalog(guiGraphics, mouseX, mouseY, tick);
+            // Action bar paints BEFORE the 3D preview so it can never be
+            // skipped if the character render misbehaves.
+            renderActionBar(guiGraphics, mouseX, mouseY);
+            try {
+                renderPreview(guiGraphics, tick, partialTick, mouseX, mouseY);
+            } catch (Throwable t) {
+                AlyrionCore.LOGGER.debug("Store preview failed: {}", t.toString());
+            }
+        }
+    }
+
+    private void renderSidebar(GuiGraphics guiGraphics, int mouseX, int mouseY, long tick) {
+        for (int i = 0; i < tabs.size(); i++) {
+            Object tab = tabs.get(i);
+            int x = sideX();
+            int y = bodyTop() + i * (tabH() + 4);
+            boolean active = i == tabIndex;
+            boolean hover = mouseX >= x && mouseX < x + sideW() && mouseY >= y && mouseY < y + tabH();
+
+            guiGraphics.fill(x, y, x + sideW(), y + tabH(), active ? 0xFF243352 : hover ? 0xFF202B44 : 0xFF161D2E);
+            guiGraphics.renderOutline(x, y, sideW(), tabH(), active ? 0xFFFFD700 : 0xFF31405E);
+
+            int iconX = x + (sideW() - 16) / 2;
+            int iconY = y + 3;
+            if (tab instanceof CosmeticType type) {
+                List<CosmeticDefinition> items = CosmeticsRegistry.getByType(type);
+                CosmeticRenderer renderer = ClientCosmeticsRenderers.get(type);
+                if (!items.isEmpty() && renderer != null) {
+                    renderer.drawStoreIcon(guiGraphics, items.get(0), iconX, iconY, 16, tick);
+                }
+                guiGraphics.drawCenteredString(this.font, fit("§7" + type.getDisplayName(), sideW() - 4), x + sideW() / 2, y + tabH() - 10, 0xFFFFFF);
+            } else {
+                drawTaskStar(guiGraphics, iconX, iconY);
+                guiGraphics.drawCenteredString(this.font, "§7Tasks", x + sideW() / 2, y + tabH() - 10, 0xFFFFFF);
+            }
+        }
+    }
+
+    private void drawTaskStar(GuiGraphics guiGraphics, int x, int y) {
+        int cx = x + 8;
+        int cy = y + 8;
+        int color = 0xFFEAB308;
+        guiGraphics.fill(cx - 2, cy - 5, cx + 2, cy - 2, color);
+        guiGraphics.fill(cx - 4, cy - 2, cx + 4, cy + 1, color);
+        guiGraphics.fill(cx - 4, cy + 1, cx + 4, cy + 3, color);
+        guiGraphics.fill(cx - 2, cy + 3, cx + 2, cy + 5, color);
+    }
+
+    private void renderCatalog(GuiGraphics guiGraphics, int mouseX, int mouseY, long tick) {
+        CosmeticsManager manager = CosmeticsManager.get();
+        CosmeticType type = currentType();
+        CosmeticRenderer renderer = ClientCosmeticsRenderers.get(type);
+        List<CosmeticDefinition> items = CosmeticsRegistry.getByType(type);
+        int cardH = cardHeight(items.size());
+        int y = bodyTop() + 14;
+
+        guiGraphics.drawString(this.font, "§6§l" + type.getDisplayName().toUpperCase() + " §7(" + items.size() + ")",
+                catX() + 4, bodyTop() + 2, 0xFFFFFF, true);
+
+        for (CosmeticDefinition cosmetic : items) {
+            if (y + cardH > bodyBottom()) break;
+            boolean isSelected = cosmetic == selected;
+            boolean hover = mouseX >= catX() && mouseX < catX() + catW() && mouseY >= y && mouseY < y + cardH;
+
+            guiGraphics.fill(catX(), y, catX() + catW(), y + cardH, isSelected ? 0xFF1B2740 : hover ? 0xFF202B44 : 0xFF161D2E);
+            guiGraphics.renderOutline(catX(), y, catW(), cardH, isSelected ? 0xFFFFD700 : 0xFF31405E);
+
+            int iconX = catX() + 5;
+            int iconY = y + (cardH - 14) / 2;
+            if (renderer != null) {
+                renderer.drawStoreIcon(guiGraphics, cosmetic, iconX, iconY, 14, tick);
+            }
+
+            String status;
+            if (manager.isEquipped(cosmetic)) {
+                status = "§a✔ Eq.";
+            } else if (manager.isUnlocked(cosmetic)) {
+                status = "§b✔";
+            } else if (!cosmetic.isPurchasable()) {
+                status = "§e★";
+            } else if (cosmetic.isFree()) {
+                status = "§dFree";
+            } else {
+                status = "§6" + cosmetic.getPrice() + "⛃";
+            }
+            int statusW = this.font.width(status);
+            guiGraphics.drawString(this.font, status, catX() + catW() - statusW - 4, y + (cardH - 8) / 2, 0xFFFFFF, true);
+
+            String name = (manager.isEquipped(cosmetic) ? "§a" : "§f") + fit(cosmetic.getDisplayName(), catW() - 24 - statusW - 6);
+            guiGraphics.drawString(this.font, name, catX() + 22, y + (cardH - 8) / 2, 0xFFFFFF, false);
+
+            y += cardH + 3;
+        }
+    }
+
+    /** The action bar (Equip/Unequip/Buy/Claim) is painted purely by
+     *  {@link #renderActionBar}; clicking is handled here instead of by a
+     *  vanilla widget so no stock button texture can ever show through. */
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && !onTasks() && selected != null) {
+            int bx = prevCenterX() - 75;
+            int by = oy() + ph() - 26;
+            int bw = 150;
+            int bh = 18;
+            if (mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + bh) {
+                CosmeticsManager manager = CosmeticsManager.get();
+                if (manager.isEquipped(selected)) {
+                    manager.unequip(selected.getType());
+                } else if (manager.isUnlocked(selected)) {
+                    manager.equip(selected);
+                } else if (selected.isPurchasable() && manager.getCoins() >= selected.getPrice()) {
+                    manager.purchase(selected);
+                }
                 rebuildWidgets();
                 return true;
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    private void renderPreview(GuiGraphics guiGraphics, long tick, float partialTick, int mouseX, int mouseY) {
+        CosmeticsManager manager = CosmeticsManager.get();
+        if (selected == null) return;
+
+        int px = prevX();
+        int pw = prevRight() - px;
+        int modelTop = bodyTop() + 6;
+        int modelBottom = bodyBottom() - 34;
+        int modelHeight = Math.max(60, modelBottom - modelTop);
+        int cx = prevCenterX();
+        int cy = (modelTop + modelBottom) / 2;
+
+        CosmeticDefinition preview = selected;
+        CosmeticDefinition cape = preview.getType() == CosmeticType.CAPE ? preview : manager.getEquipped(CosmeticType.CAPE);
+        CosmeticDefinition pet = preview.getType() == CosmeticType.PET ? preview : manager.getEquipped(CosmeticType.PET);
+        CosmeticDefinition trail = preview.getType() == CosmeticType.TRAIL ? preview : manager.getEquipped(CosmeticType.TRAIL);
+
+        // Pedestal shadow under the feet
+        int feetY = modelBottom;
+        int[] bandW = {56, 42, 28, 14};
+        for (int i = 0; i < bandW.length; i++) {
+            int bw = bandW[i];
+            int alpha = 0x55 - i * 0x10;
+            guiGraphics.fill(cx - bw / 2, feetY + 2 + i, cx + bw / 2, feetY + 3 + i, (alpha << 24));
+        }
+        guiGraphics.fill(cx - 22, feetY + 6, cx + 22, feetY + 7, 0x66EAB308);
+
+        // The trail is drawn live onto the 3D character below (same render
+        // layer the world uses), so there is no separate 2D preview pass.
+        WardrobeRenderer.drawPlayerModel(guiGraphics, cx, cy, modelHeight, tick, partialTick, mouseX, mouseY, cape, pet, trail);
+
+        // Name + status under the character
+        guiGraphics.drawCenteredString(this.font, "§e§l" + fit(preview.getDisplayName(), pw - 8), cx, modelBottom + 12, 0xFFFFFF);
+
+        String info;
+        if (manager.isEquipped(preview)) {
+            info = "§aStatus: Equipped";
+        } else if (manager.isUnlocked(preview)) {
+            info = "§bStatus: Owned";
+        } else if (!preview.isPurchasable()) {
+            info = "§d" + taskTitleFor(preview);
+        } else if (preview.isFree()) {
+            info = "§dFree — claim it";
+        } else {
+            info = "§6" + preview.getPrice() + " Coins" + (manager.getCoins() >= preview.getPrice() ? "" : " §7(need " + (preview.getPrice() - manager.getCoins()) + " more)");
+        }
+        guiGraphics.drawCenteredString(this.font, fit(info, pw - 8), cx, modelBottom + 24, 0xFFFFFF);
+    }
+
+    private static String taskTitleFor(CosmeticDefinition cosmetic) {
+        for (TaskDefinition task : TaskDefinition.values()) {
+            if (cosmetic.equals(task.getReward())) {
+                return "★ Task: " + task.getTitle();
+            }
+        }
+        return "★ Task reward";
+    }
+
+    private void renderActionBar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (selected == null) return;
         CosmeticsManager manager = CosmeticsManager.get();
 
-        // Live-refresh the widgets whenever the server syncs new state (coins,
-        // unlocks, task completions) while the store is open.
-        if (manager.getRevision() != lastRevision) {
-            lastRevision = manager.getRevision();
-            rebuildWidgets();
+        int bx = prevCenterX() - 75;
+        int by = oy() + ph() - 26;
+        int bw = 150;
+        int bh = 18;
+        boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + bh;
+
+        boolean isEquipped = manager.isEquipped(selected);
+        boolean isUnlocked = manager.isUnlocked(selected);
+
+        String label;
+        boolean enabled;
+        int fill;
+        int border;
+        if (isEquipped) {
+            label = "§cUNEQUIP";
+            enabled = true;
+            fill = 0xFF3A1B22;
+            border = 0xFF8A3B47;
+        } else if (isUnlocked) {
+            label = "§aEQUIP";
+            enabled = true;
+            fill = 0xFF173A26;
+            border = 0xFF2F8A57;
+        } else if (!selected.isPurchasable()) {
+            label = "§dTASK REWARD";
+            enabled = false;
+            fill = 0xFF1A2130;
+            border = 0xFF31405E;
+        } else if (selected.isFree()) {
+            label = "§bCLAIM FREE";
+            enabled = true;
+            fill = 0xFF123A44;
+            border = 0xFF2F8AA0;
+        } else {
+            boolean canAfford = manager.getCoins() >= selected.getPrice();
+            label = "§6BUY · " + selected.getPrice() + " ⛃";
+            enabled = canAfford;
+            fill = canAfford ? 0xFF3A2C12 : 0xFF1A2130;
+            border = canAfford ? 0xFFB98A2F : 0xFF31405E;
         }
 
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        // Top Header
-        guiGraphics.fill(0, 0, this.width, 26, 0xDD0C0F17);
-        guiGraphics.fill(0, 25, this.width, 26, 0xFFEAB308);
-        guiGraphics.drawString(this.font, "§6§l✦ ALYRION COSMETIC STORE & REWARDS ✦", 14, 8, 0xFFFFFF, true);
-
-        // Coin Counter Badge
-        String coinText = "§6Coins: §e⛃ " + manager.getCoins();
-        int coinWidth = this.font.width(coinText) + 16;
-        int coinBoxX = this.width - coinWidth - 12;
-        guiGraphics.fill(coinBoxX, 3, coinBoxX + coinWidth, 23, 0xCC1E2333);
-        guiGraphics.renderOutline(coinBoxX, 3, coinWidth, 20, 0xFFEAB308);
-        guiGraphics.drawString(this.font, coinText, coinBoxX + 8, 9, 0xFFFFFF, true);
-
-        int contentY = 56;
-
-        if (currentTab == Tab.STORE) {
-            renderStoreTab(guiGraphics, manager, contentY);
-        } else if (currentTab == Tab.PETS) {
-            renderPetsTab(guiGraphics, manager, contentY);
-        } else if (currentTab == Tab.TASKS) {
-            renderTasksTab(guiGraphics, manager, contentY);
-        }
+        guiGraphics.fill(bx, by, bx + bw, by + bh, enabled && hover ? 0xFF2A3550 : fill);
+        guiGraphics.renderOutline(bx, by, bw, bh, border);
+        guiGraphics.drawCenteredString(this.font, enabled ? label : "§7" + label.substring(2), bx + bw / 2, by + 5, 0xFFFFFF);
     }
 
-    private void renderStoreTab(GuiGraphics guiGraphics, CosmeticsManager manager, int contentY) {
-        int listX = 16;
-        int listWidth = this.width / 2 + 15;
-        CapeDefinition[] capes = CapeDefinition.values();
-        int availableHeight = this.height - contentY - 30;
-        int itemSpacing = 3;
-        int itemHeight = Math.max(26, Math.min(32, (availableHeight - (capes.length - 1) * itemSpacing) / capes.length));
+    private void renderTasksTab(GuiGraphics guiGraphics) {
+        CosmeticsManager manager = CosmeticsManager.get();
 
-        // Clip list painting to the viewport so cards never paint over the Close button
-        guiGraphics.enableScissor(listX - 1, contentY, listX + listWidth + 1, this.height - 30);
+        int tx = prevX();
+        int tw = (catX() + catW()) - tx;
 
-        // Render cape list items
-        for (int i = 0; i < capes.length; i++) {
-            CapeDefinition cape = capes[i];
-            int itemY = contentY + i * (itemHeight + itemSpacing) - scrollOffset;
-
-            if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
-
-            boolean isUnlocked = manager.isCapeUnlocked(cape);
-            boolean isEquipped = manager.isCapeEquipped(cape);
-            boolean isSelected = cape == selectedCape;
-
-            // Highlight border if selected
-            if (isSelected) {
-                guiGraphics.renderOutline(listX - 1, itemY - 1, listWidth + 2, itemHeight + 2, 0xFFFFD700);
-            }
-
-            // Draw miniature cape texture preview inside button
-            int iconX = listX + 5;
-            int iconY = itemY + 3;
-            int iconH = itemHeight - 6;
-            int iconW = (int) (iconH * 10.0F / 16.0F);
-
-            guiGraphics.blit(
-                    cape.getTextureLocation(),
-                    iconX, iconY,
-                    iconW, iconH,
-                    12.0F, 1.0F,
-                    10, 16,
-                    64, 32
-            );
-
-            // Cape name, left-aligned after the icon
-            guiGraphics.drawString(this.font, Component.literal("§f" + cape.getDisplayName()), iconX + iconW + 12, itemY + (itemHeight - 8) / 2, 0xFFFFFF, false);
-
-            // Subtitle info
-            String statusText;
-            if (isEquipped) {
-                statusText = "§a✔ EQUIPPED";
-            } else if (isUnlocked) {
-                statusText = "§b✔ UNLOCKED";
-            } else if (!cape.isPurchasable()) {
-                statusText = "§e★ PARTY REWARD";
-            } else if (cape.isFree()) {
-                statusText = "§d★ FREE";
-            } else {
-                statusText = "§6" + cape.getPrice() + " Coins";
-            }
-            if (itemHeight >= 28) {
-                guiGraphics.drawString(this.font, statusText, listX + iconW + 10, itemY + itemHeight - 11, 0xAAAAAA, false);
-            }
-        }
-        guiGraphics.disableScissor();
-
-        // Right Preview Showcase Panel
-        int previewX = this.width / 2 + 38;
-        int previewY = contentY;
-        int previewWidth = this.width - previewX - 16;
-        int previewHeight = this.height - previewY - 30;
-
-        guiGraphics.fill(previewX, previewY, previewX + previewWidth, previewY + previewHeight, 0xCC111827);
-        guiGraphics.renderOutline(previewX, previewY, previewWidth, previewHeight, 0xFF3B82F6);
-
-        if (selectedCape != null) {
-            guiGraphics.drawCenteredString(this.font, "§e§l" + selectedCape.getDisplayName(), previewX + previewWidth / 2, previewY + 8, 0xFFFFFF);
-
-            // Draw Large 2D Cape Display
-            int capeDrawH = Math.min(65, previewHeight - 85);
-            int capeDrawW = (int) (capeDrawH * 10.0F / 16.0F);
-            int capeDrawX = previewX + (previewWidth - capeDrawW) / 2;
-            int capeDrawY = previewY + 22;
-
-            guiGraphics.fill(capeDrawX - 3, capeDrawY - 3, capeDrawX + capeDrawW + 3, capeDrawY + capeDrawH + 3, 0xFF000000);
-            guiGraphics.renderOutline(capeDrawX - 3, capeDrawY - 3, capeDrawW + 6, capeDrawH + 6, 0xFF60A5FA);
-
-            guiGraphics.blit(
-                    selectedCape.getTextureLocation(),
-                    capeDrawX, capeDrawY,
-                    capeDrawW, capeDrawH,
-                    12.0F, 1.0F,
-                    10, 16,
-                    64, 32
-            );
-
-            // Cape Description
-            int descY = capeDrawY + capeDrawH + 8;
-            guiGraphics.drawWordWrap(this.font, Component.literal("§7" + selectedCape.getDescription()), previewX + 8, descY, previewWidth - 16, 0xCCCCCC);
-
-            // Status label
-            boolean isUnlocked = manager.isCapeUnlocked(selectedCape);
-            boolean isEquipped = manager.isCapeEquipped(selectedCape);
-            String stateStr;
-            if (isEquipped) {
-                stateStr = "§aStatus: Equipped";
-            } else if (isUnlocked) {
-                stateStr = "§bStatus: Unlocked";
-            } else if (!selectedCape.isPurchasable()) {
-                stateStr = "§dStatus: Locked (Party Task Reward)";
-            } else {
-                stateStr = "§6Status: Locked (" + selectedCape.getPrice() + " Coins)";
-            }
-            guiGraphics.drawCenteredString(this.font, stateStr, previewX + previewWidth / 2, this.height - 60, 0xFFFFFF);
-        }
-    }
-
-    private void renderPetsTab(GuiGraphics guiGraphics, CosmeticsManager manager, int contentY) {
-        int listX = 16;
-        int listWidth = this.width / 2 + 15;
-        PetDefinition[] pets = PetDefinition.values();
-        int availableHeight = this.height - contentY - 30;
-        int itemSpacing = 3;
-        int itemHeight = Math.max(26, Math.min(32, (availableHeight - (pets.length - 1) * itemSpacing) / pets.length));
-
-        // Clip list painting to the viewport so cards never paint over the Close button
-        guiGraphics.enableScissor(listX - 1, contentY, listX + listWidth + 1, this.height - 30);
-
-        // Render pet list items
-        for (int i = 0; i < pets.length; i++) {
-            PetDefinition pet = pets[i];
-            int itemY = contentY + i * (itemHeight + itemSpacing) - scrollOffset;
-
-            if (itemY + itemHeight < contentY || itemY > this.height - 28) continue;
-
-            boolean isUnlocked = manager.isPetUnlocked(pet);
-            boolean isEquipped = manager.isPetEquipped(pet);
-            boolean isSelected = pet == selectedPet;
-
-            // Highlight border if selected
-            if (isSelected) {
-                guiGraphics.renderOutline(listX - 1, itemY - 1, listWidth + 2, itemHeight + 2, 0xFFFFD700);
-            }
-
-            // Draw a small procedural satellite icon
-            int iconX = listX + 6;
-            int iconY = itemY + (itemHeight - 12) / 2;
-            drawSatelliteIcon(guiGraphics, iconX, iconY, 12);
-
-            // Pet name, left-aligned after the icon
-            guiGraphics.drawString(this.font, Component.literal("§f" + pet.getDisplayName()), listX + 24, itemY + (itemHeight - 8) / 2, 0xFFFFFF, false);
-
-            // Subtitle info
-            String statusText;
-            if (isEquipped) {
-                statusText = "§a✔ EQUIPPED";
-            } else if (isUnlocked) {
-                statusText = "§b✔ UNLOCKED";
-            } else if (pet.isFree()) {
-                statusText = "§d★ FREE";
-            } else {
-                statusText = "§6" + pet.getPrice() + " Coins";
-            }
-            if (itemHeight >= 28) {
-                guiGraphics.drawString(this.font, statusText, listX + 24, itemY + itemHeight - 11, 0xAAAAAA, false);
-            }
-        }
-        guiGraphics.disableScissor();
-
-        // Right Preview Showcase Panel
-        int previewX = this.width / 2 + 38;
-        int previewY = contentY;
-        int previewWidth = this.width - previewX - 16;
-        int previewHeight = this.height - previewY - 30;
-
-        guiGraphics.fill(previewX, previewY, previewX + previewWidth, previewY + previewHeight, 0xCC111827);
-        guiGraphics.renderOutline(previewX, previewY, previewWidth, previewHeight, 0xFF3B82F6);
-
-        if (selectedPet != null) {
-            guiGraphics.drawCenteredString(this.font, "§e§l" + selectedPet.getDisplayName(), previewX + previewWidth / 2, previewY + 8, 0xFFFFFF);
-
-            // Draw a spinning 3D satellite display
-            int modelCenterX = previewX + previewWidth / 2;
-            int modelCenterY = previewY + Math.min(85, previewHeight - 90) / 2 + 22;
-            int modelScale = Math.max(14, Math.min(30, (int) (previewHeight / 9.0F)));
-            drawSatellite3D(guiGraphics, modelCenterX, modelCenterY, modelScale);
-
-            // Pet Description
-            int descY = modelCenterY + modelScale + 18;
-            guiGraphics.drawWordWrap(this.font, Component.literal("§7" + selectedPet.getDescription()), previewX + 8, descY, previewWidth - 16, 0xCCCCCC);
-
-            // Status label
-            boolean isUnlocked = manager.isPetUnlocked(selectedPet);
-            boolean isEquipped = manager.isPetEquipped(selectedPet);
-            String stateStr = isEquipped ? "§aStatus: Equipped" : (isUnlocked ? "§bStatus: Unlocked" : "§6Status: Locked (" + selectedPet.getPrice() + " Coins)");
-            guiGraphics.drawCenteredString(this.font, stateStr, previewX + previewWidth / 2, this.height - 60, 0xFFFFFF);
-        }
-    }
-
-    /** Small 2D satellite glyph drawn in the pet list rows. */
-    private void drawSatelliteIcon(GuiGraphics guiGraphics, int x, int y, int size) {
-        int s = Math.max(6, size);
-        int half = s / 2;
-        int panelW = Math.max(2, s / 6);
-        int bodyH = Math.max(4, (int) (s * 0.6F));
-
-        // Solar wings
-        guiGraphics.fill(x, y + bodyH / 2 - 1, x + panelW, y + bodyH / 2 + 1, 0xFF2E6FD8);
-        guiGraphics.fill(x + s - panelW, y + bodyH / 2 - 1, x + s, y + bodyH / 2 + 1, 0xFF2E6FD8);
-        // Body
-        guiGraphics.fill(x + panelW, y, x + s - panelW, y + bodyH, 0xFFE8B840);
-        // Dish
-        guiGraphics.fill(x + panelW - 1, y - 2, x + s - panelW + 1, y - 1, 0xFFD4A02C);
-        // Mast
-        guiGraphics.fill(x + half - 1, y - 2, x + half + 1, y + 2, 0xFFC0C8D0);
-        // Beacon light
-        guiGraphics.fill(x + half - 1, y - 5, x + half + 1, y - 3, 0xFFFFF6D8);
-    }
-
-    /** Spinning 3D satellite model render for the preview panel. */
-    private void drawSatellite3D(GuiGraphics guiGraphics, int centerX, int centerY, int scale) {
-        Minecraft mc = Minecraft.getInstance();
-        ModelPart model = mc.getEntityModels().bakeLayer(SatellitePetModel.LAYER);
-        ModelPart satellite = model.getChild("satellite");
-
-        long tick = mc.level != null ? mc.level.getGameTime() : 0L;
-        float spin = (tick % 200L) / 200.0F * 360.0F;
-
-        guiGraphics.drawManaged(() -> {
-            PoseStack pose = guiGraphics.pose();
-            pose.pushPose();
-            pose.translate(centerX, centerY, 120.0F);
-            pose.scale(scale, scale, scale);
-            pose.mulPose(Axis.XP.rotationDegrees(-18.0F));
-            pose.mulPose(Axis.YP.rotationDegrees(spin));
-
-            VertexConsumer consumer = guiGraphics.bufferSource().getBuffer(RenderType.entityCutoutNoCull(selectedPet.getTextureLocation()));
-            satellite.render(pose, consumer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-
-            guiGraphics.flush();
-            pose.popPose();
-        });
-    }
-
-    private void renderTasksTab(GuiGraphics guiGraphics, CosmeticsManager manager, int contentY) {
-        int cardX = 20;
-        int cardW = this.width - 40;
-
-        // Playtime Header Card
-        int playCardH = 40;
-        guiGraphics.fill(cardX, contentY, cardX + cardW, contentY + playCardH, 0xCC111827);
-        guiGraphics.renderOutline(cardX, contentY, cardW, playCardH, 0xFFEAB308);
+        // Playtime card
+        int py = bodyTop();
+        int playH = 30;
+        guiGraphics.fill(tx, py, tx + tw, py + playH, 0xFF161D2E);
+        guiGraphics.renderOutline(tx, py, tw, playH, 0xFF31405E);
 
         long seconds = manager.getPlaytimeSeconds();
         long hours = seconds / 3600;
@@ -612,49 +489,46 @@ public class CosmeticStoreScreen extends Screen {
         long secs = seconds % 60;
         long nextCoinSecs = seconds % 3600;
 
-        String playtimeStr = String.format("§eSurvival Playtime: §f%dh %02dm %02ds §7| §61 Coin awarded every 1 Hour", hours, minutes, secs);
-        guiGraphics.drawString(this.font, playtimeStr, cardX + 8, contentY + 6, 0xFFFFFF, true);
+        guiGraphics.drawString(this.font,
+                fit(String.format("§ePlaytime: §f%dh %02dm %02ds §7| §61 Coin / 1h", hours, minutes, secs), tw - 8),
+                tx + 4, py + 4, 0xFFFFFF, true);
 
-        // Progress Bar to next coin
-        int barX = cardX + 8;
-        int barY = contentY + 20;
-        int barW = cardW - 16;
-        int barH = 12;
+        int barX = tx + 4;
+        int barY = py + 16;
+        int barW = tw - 8;
+        int barH = 9;
         float progress = (float) nextCoinSecs / 3600.0F;
 
         guiGraphics.fill(barX, barY, barX + barW, barY + barH, 0xFF000000);
-        guiGraphics.fill(barX + 1, barY + 1, barX + (int) ((barW - 2) * progress), barY + barH - 1, 0xFFF59E0B);
+        guiGraphics.fill(barX + 1, barY + 1, barX + 1 + (int) ((barW - 2) * progress), barY + barH - 1, 0xFFF59E0B);
         guiGraphics.renderOutline(barX, barY, barW, barH, 0xFF6B7280);
+        guiGraphics.drawCenteredString(this.font,
+                fit(String.format("§fNext: %dm %02ds (%d%%)", nextCoinSecs / 60, nextCoinSecs % 60, (int) (progress * 100)), barW - 4),
+                barX + barW / 2, barY + 1, 0xFFFFFF);
 
-        String progressPercent = String.format("Next Coin: %dm %02ds / 60m (%d%%)", nextCoinSecs / 60, nextCoinSecs % 60, (int) (progress * 100));
-        guiGraphics.drawCenteredString(this.font, "§f" + progressPercent, barX + barW / 2, barY + 2, 0xFFFFFF);
-
-        // Tasks List
-        int taskListY = contentY + playCardH + 8;
+        // Task cards
+        int ty = py + playH + 6;
         TaskDefinition[] tasks = TaskDefinition.values();
-        int availableH = this.height - taskListY - 30;
-        int taskCardH = Math.max(26, Math.min(32, (availableH - (tasks.length - 1) * 4) / tasks.length));
+        int gaps = (tasks.length - 1) * 3;
+        int cardH = Math.max(18, Math.min(30, (bodyBottom() - ty - gaps) / Math.max(1, tasks.length)));
 
-        for (int i = 0; i < tasks.length; i++) {
-            TaskDefinition task = tasks[i];
-            int ty = taskListY + i * (taskCardH + 4);
-            if (ty + taskCardH > this.height - 26) break;
-
+        for (TaskDefinition task : tasks) {
+            if (ty + cardH > bodyBottom()) break;
             boolean completed = manager.isTaskCompleted(task.getId());
 
-            guiGraphics.fill(cardX, ty, cardX + cardW, ty + taskCardH, completed ? 0xCC0F291E : 0xCC1F2937);
-            guiGraphics.renderOutline(cardX, ty, cardW, taskCardH, completed ? 0xFF10B981 : 0xFF4B5563);
+            guiGraphics.fill(tx, ty, tx + tw, ty + cardH, completed ? 0xFF0F291E : 0xFF1F2937);
+            guiGraphics.renderOutline(tx, ty, tw, cardH, completed ? 0xFF10B981 : 0xFF4B5563);
 
-            guiGraphics.drawString(this.font, (completed ? "§a§l✔ " : "§e§l⏳ ") + task.getTitle(), cardX + 8, ty + 4, 0xFFFFFF, true);
-            guiGraphics.drawString(this.font, "§7" + task.getDescription(), cardX + 8, ty + 15, 0xAAAAAA, false);
+            String reward = "§6+" + task.getCoinReward() + "⛃" + (task.getReward() != null ? " §b+" + fit(task.getReward().getDisplayName(), tw / 3) : "");
+            int rW = this.font.width(reward);
+            guiGraphics.drawString(this.font, reward, tx + tw - rW - 4, ty + 3, 0xFFFFFF, true);
 
-            String rewardText = "§6+" + task.getCoinReward() + " Coins" + (task.getCapeReward() != null ? " §b+ " + task.getCapeReward().getDisplayName() : "");
-            int rWidth = this.font.width(rewardText);
-            guiGraphics.drawString(this.font, rewardText, cardX + cardW - rWidth - 8, ty + 5, 0xFFFFFF, true);
+            guiGraphics.drawString(this.font,
+                    (completed ? "§a✔ " : "§e⏳ ") + fit(task.getTitle(), tw - rW - 14),
+                    tx + 4, ty + 3, 0xFFFFFF, true);
+            guiGraphics.drawString(this.font, "§7" + fit(task.getDescription(), tw - 8), tx + 4, ty + 13, 0xAAAAAA, false);
 
-            String statusBadge = completed ? "§a[COMPLETED]" : "§7[IN PROGRESS]";
-            int sWidth = this.font.width(statusBadge);
-            guiGraphics.drawString(this.font, statusBadge, cardX + cardW - sWidth - 8, ty + 16, 0xFFFFFF, false);
+            ty += cardH + 3;
         }
     }
 }

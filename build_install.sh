@@ -27,7 +27,11 @@ echo "==> Building (this can take a few minutes on the first run)"
 "$PWD/gradlew" --console=plain --no-daemon build
 
 JAR="$(ls build/libs/alyrioncore-*.jar | head -1)"
-MODS_DIR="${MODS_DIR:-$HOME/.minecraftx/instances/Alyrion-indev-8.0.0/mods}"
+MODS_DIR="${MODS_DIR:-$HOME/.minecraftx/instances/Alyrion/mods}"
+if [ ! -d "$MODS_DIR" ] && [ -d "$HOME/.minecraftx/instances/Alyrion-indev-8.0.0/mods" ]; then
+    MODS_DIR="$HOME/.minecraftx/instances/Alyrion-indev-8.0.0/mods"
+fi
+mkdir -p "$MODS_DIR"
 echo "==> Installing $JAR -> $MODS_DIR/"
 cp "$JAR" "$MODS_DIR/"
 echo "==> Done: $(basename "$JAR")"

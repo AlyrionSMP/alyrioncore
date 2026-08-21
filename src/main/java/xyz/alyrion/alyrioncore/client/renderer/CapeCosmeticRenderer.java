@@ -1,44 +1,27 @@
 package xyz.alyrion.alyrioncore.client.renderer;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.PlayerModel;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.RenderLayerParent;
-import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import xyz.alyrion.alyrioncore.cosmetics.CapeDefinition;
-import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
-import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
+import xyz.alyrion.alyrioncore.cosmetics.CosmeticDefinition;
 
-public class AlyrionCapeLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-
-    public AlyrionCapeLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> renderer) {
-        super(renderer);
-    }
+/**
+ * Renders an equipped cape with vanilla cloak physics, exactly like the old
+ * {@code AlyrionCapeLayer}. Moved into the generic renderer dispatch so capes
+ * are just one cosmetic type among many.
+ */
+public class CapeCosmeticRenderer implements CosmeticRenderer {
 
     @Override
-    public void render(
-            PoseStack poseStack,
-            MultiBufferSource buffer,
-            int packedLight,
-            AbstractClientPlayer player,
-            float limbSwing,
-            float limbSwingAmount,
-            float partialTick,
-            float ageInTicks,
-            float netHeadYaw,
-            float headPitch
-    ) {
+    public void render(CosmeticRenderContext ctx, CosmeticDefinition cosmetic) {
+        var player = ctx.player();
         if (player.isInvisible() || !player.isModelPartShown(PlayerModelPart.CAPE)) {
             return;
         }
@@ -48,24 +31,11 @@ public class AlyrionCapeLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
             return;
         }
 
-        CapeDefinition capeDef = null;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && player.getUUID().equals(mc.player.getUUID())) {
-            capeDef = CosmeticsManager.get().getEquippedCape();
-        } else {
-            String syncedCapeId = CosmeticNetworking.getClientPlayerCape(player.getUUID());
-            if (syncedCapeId != null) {
-                capeDef = CapeDefinition.fromId(syncedCapeId);
-            }
-        }
-
-        if (capeDef == null) {
-            return;
-        }
-
+        var poseStack = ctx.poseStack();
         poseStack.pushPose();
         poseStack.translate(0.0F, 0.0F, 0.125F);
 
+        float partialTick = ctx.partialTick();
         double d0 = Mth.lerp((double) partialTick, player.xCloakO, player.xCloak)
                 - Mth.lerp((double) partialTick, player.xo, player.getX());
         double d1 = Mth.lerp((double) partialTick, player.yCloakO, player.yCloak)
@@ -102,9 +72,45 @@ public class AlyrionCapeLayer extends RenderLayer<AbstractClientPlayer, PlayerMo
         poseStack.mulPose(Axis.ZP.rotationDegrees(f3 / 2.0F));
         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - f3 / 2.0F));
 
-        VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entitySolid(capeDef.getTextureLocation()));
-        this.getParentModel().renderCloak(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
+        VertexConsumer vertexConsumer = ctx.buffer().getBuffer(RenderType.entitySolid(cosmetic.getTextureLocation()));
+        ctx.parentModel().renderCloak(poseStack, vertexConsumer, ctx.packedLight(), OverlayTexture.NO_OVERLAY);
 
         poseStack.popPose();
+    }
+
+    /** Mini cape sprite in the store list rows (10:16 design area, like the old list icon). */
+    @Override
+    public void drawStoreIcon(GuiGraphics guiGraphics, CosmeticDefinition cosmetic, int x, int y, int size, long tick) {
+        int iconH = size;
+        int iconW = (int) (iconH * 10.0F / 16.0F);
+        guiGraphics.blit(
+                cosmetic.getTextureLocation(),
+                x, y,
+                iconW, iconH,
+                12.0F, 1.0F,
+                10, 16,
+                64, 32
+        );
+    }
+
+    /** Large cape blit for the store preview panel. */
+    @Override
+    public void drawStorePreview(GuiGraphics guiGraphics, CosmeticDefinition cosmetic, int x, int y, int w, int h, long tick) {
+        int capeDrawH = Math.min(h, w * 16 / 10);
+        int capeDrawW = (int) (capeDrawH * 10.0F / 16.0F);
+        int drawX = x + (w - capeDrawW) / 2;
+        int drawY = y + (h - capeDrawH) / 2;
+
+        guiGraphics.fill(drawX - 3, drawY - 3, drawX + capeDrawW + 3, drawY + capeDrawH + 3, 0xFF000000);
+        guiGraphics.renderOutline(drawX - 3, drawY - 3, capeDrawW + 6, capeDrawH + 6, 0xFF60A5FA);
+
+        guiGraphics.blit(
+                cosmetic.getTextureLocation(),
+                drawX, drawY,
+                capeDrawW, capeDrawH,
+                12.0F, 1.0F,
+                10, 16,
+                64, 32
+        );
     }
 }

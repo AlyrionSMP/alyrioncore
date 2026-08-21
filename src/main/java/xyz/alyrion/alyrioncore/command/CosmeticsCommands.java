@@ -14,6 +14,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import xyz.alyrion.alyrioncore.AlyrionCore;
+import xyz.alyrion.alyrioncore.cosmetics.CosmeticsRegistry;
 import xyz.alyrion.alyrioncore.cosmetics.PlayerCosmeticsData;
 import xyz.alyrion.alyrioncore.cosmetics.ServerCosmeticsManager;
 import xyz.alyrion.alyrioncore.cosmetics.TaskDefinition;
@@ -91,6 +92,29 @@ public class CosmeticsCommands {
                                                     return 1;
                                                 })))
                         )
+                        .then(Commands.literal("unlock")
+                                .requires(src -> src.hasPermission(2))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .then(Commands.argument("cosmetic", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        CosmeticsRegistry.all().stream().map(def -> def.getId()),
+                                                        builder
+                                                ))
+                                                .executes(ctx -> {
+                                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                                    String cosmeticId = StringArgumentType.getString(ctx, "cosmetic");
+                                                    if (CosmeticsRegistry.fromId(cosmeticId) == null) {
+                                                        ctx.getSource().sendFailure(Component.literal("Unknown cosmetic id. Valid ids: "
+                                                                + CosmeticsRegistry.all().stream().map(def -> def.getId())
+                                                                .reduce((a, b) -> a + ", " + b).orElse("")));
+                                                        return 0;
+                                                    }
+                                                    ServerCosmeticsManager.get().devUnlock(target, cosmeticId);
+                                                    ctx.getSource().sendSuccess(() -> Component.literal(
+                                                            "§d[DEV] §aUnlocked §e" + cosmeticId + " §afor " + target.getName().getString() + "."), true);
+                                                    return 1;
+                                                })))
+                        )
                         .then(Commands.literal("resettasks")
                                 .requires(src -> src.hasPermission(2))
                                 .then(Commands.argument("player", EntityArgument.player())
@@ -124,8 +148,9 @@ public class CosmeticsCommands {
         long minutes = (seconds % 3600) / 60;
         long secs = seconds % 60;
         source.sendSuccess(() -> Component.literal(
-                String.format("§6[Alyrion] §eCoins: §6%d §7| Survival Playtime: §e%dh %02dm %02ds §7| Unlocked Capes: §b%d",
-                        data.getCoins(), hours, minutes, secs, data.getUnlockedCapes().size())), false);
+                String.format("§6[Alyrion] §eCoins: §6%d §7| Survival Playtime: §e%dh %02dm %02ds §7| Unlocked Cosmetics: §b%d §7| Equipped Slots: §b%d",
+                        data.getCoins(), hours, minutes, secs,
+                        data.getUnlockedCosmetics().size(), data.getEquippedSlotCount())), false);
         return 1;
     }
 }

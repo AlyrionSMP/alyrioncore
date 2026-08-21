@@ -54,11 +54,13 @@
   "cape.alyrioncore.moon.name": "Moon Cape",
   "cape.alyrioncore.moon.desc": "Lunar surface overlooking planet Earth in deep space.",
   "cape.alyrioncore.marsian.name": "The Martian Cape",
-  "cape.alyrioncore.marsian.desc": "Martian rust dunes and Olympus Mons with a green Martian.",
+  "cape.alyrioncore.marsian.desc": "Rust-ochre Martian dunes under the red planet, with a little green Martian.",
   "cape.alyrioncore.grim.name": "Grim Cape",
   "cape.alyrioncore.grim.desc": "A black cape bearing a bleached skull, earned with 10 coins or 10 player kills.",
   "cape.alyrioncore.pride.name": "Pride Cape",
   "cape.alyrioncore.pride.desc": "A vibrant rainbow cape earned by partying up with at least 4 players (Open Parties and Claims).",
+  "trail.alyrioncore.rocket_trail.name": "Rocket Trail",
+  "trail.alyrioncore.rocket_trail.desc": "Leave a fiery rocket exhaust trail behind you as you run!",
   "task.alyrioncore.task_space.title": "Going to Space",
   "task.alyrioncore.task_space.desc": "Launch into Space or Orbit (Cosmonautics / Orbit).",
   "task.alyrioncore.task_moon.title": "Going to the Moon",
@@ -82,5 +84,12 @@
   "item.alyrioncore.iron_reinforcement_plate": "Iron Reinforcement Plate",
   "item.alyrioncore.diamond_reinforcement_plate": "Diamond Reinforcement Plate",
   "item.alyrioncore.meteoric_iron_reinforcement_plate": "Meteoric Iron Reinforcement Plate",
-  "item.alyrioncore.netherite_reinforcement_plate": "Netherite Reinforcement Plate"
+  "item.alyrioncore.netherite_reinforcement_plate": "Netherite Reinforcement Plate",
+  "item.alyrioncore.fertilizer": "Fertilizer",
+  "item.alyrioncore.ushanka": "Soviet Ushanka",
+  "item.alyrioncore.fertilizer.tooltip_1": "§7Apply to farmland to increase",
+  "item.alyrioncore.fertilizer.tooltip_2": "§a§l+50% §7crop growth speed (1.5x)",
+  "message.alyrioncore.fertilizer_applied": "§a✔ Farmland fertilized (+50% growth speed)",
+  "message.alyrioncore.farmland_already_fertilized": "§e⚠ This farmland is already fertilized!",
+  "block.alyrioncore.reinforced_block.name": "Reinforced %s"
 }

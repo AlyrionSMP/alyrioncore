@@ -16,13 +16,18 @@ import xyz.alyrion.alyrioncore.world.ModDimensions;
 
 import java.util.function.Predicate;
 
+/**
+ * Tasks grant coins and a cosmetic reward (any {@link CosmeticType}, not just
+ * capes). Rewards are looked up from {@link CosmeticsRegistry} so a task can
+ * reward a cape, a pet, a trail or any future cosmetic kind.
+ */
 public enum TaskDefinition {
     GOING_TO_SPACE(
             "task_space",
             "Going to Space",
             "Launch into Space or Orbit (Cosmonautics / Orbit).",
             5,
-            CapeDefinition.STARS,
+            CosmeticsRegistry.fromId("stars"),
             player -> {
                 if (player.level() == null) return false;
                 ResourceLocation dim = player.level().dimension().location();
@@ -53,7 +58,7 @@ public enum TaskDefinition {
             "Going to the Moon",
             "Touch down on the lunar surface (Cosmonautics Moon).",
             5,
-            CapeDefinition.MOON,
+            CosmeticsRegistry.fromId("moon"),
             player -> {
                 if (player.level() == null) return false;
                 ResourceLocation dim = player.level().dimension().location();
@@ -79,7 +84,7 @@ public enum TaskDefinition {
             "Going to Mars",
             "Touch down on the red Martian surface.",
             5,
-            CapeDefinition.MARSIAN,
+            CosmeticsRegistry.fromId("marsian"),
             player -> {
                 if (player.level() == null) return false;
 
@@ -140,7 +145,7 @@ public enum TaskDefinition {
             "Grim Reaper",
             "Slay 10 players in Survival.",
             5,
-            CapeDefinition.GRIM,
+            CosmeticsRegistry.fromId("grim"),
             player -> {
                 if (!(player instanceof ServerPlayer serverPlayer)) return false;
                 return ServerCosmeticsManager.get().getPlayerData(serverPlayer).getPvpKills() >= 10;
@@ -151,7 +156,7 @@ public enum TaskDefinition {
             "United We Stand",
             "Be a member of a party with at least 4 players (Open Parties and Claims).",
             5,
-            CapeDefinition.PRIDE,
+            CosmeticsRegistry.fromId("pride"),
             player -> {
                 if (!(player instanceof ServerPlayer serverPlayer)) return false;
                 return OpacCompat.isPartySizeAtLeast(serverPlayer, 4);
@@ -162,15 +167,15 @@ public enum TaskDefinition {
     private final String title;
     private final String description;
     private final int coinReward;
-    private final CapeDefinition capeReward;
+    private final CosmeticDefinition reward;
     private final Predicate<Player> condition;
 
-    TaskDefinition(String id, String title, String description, int coinReward, CapeDefinition capeReward, Predicate<Player> condition) {
+    TaskDefinition(String id, String title, String description, int coinReward, CosmeticDefinition reward, Predicate<Player> condition) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.coinReward = coinReward;
-        this.capeReward = capeReward;
+        this.reward = reward;
         this.condition = condition;
     }
 
@@ -198,8 +203,9 @@ public enum TaskDefinition {
         return coinReward;
     }
 
-    public CapeDefinition getCapeReward() {
-        return capeReward;
+    /** The cosmetic unlocked by completing this task (any type), or null. */
+    public CosmeticDefinition getReward() {
+        return reward;
     }
 
     public boolean test(Player player) {

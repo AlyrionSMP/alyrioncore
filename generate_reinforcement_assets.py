@@ -219,6 +219,8 @@ def shell_elements():
 
 
 def shell_model(tier, tex):
+    """The plate-frame shell. The crack overlay is a SEPARATE model rendered by
+    the BESR — the blockstate and the block itself are never touched."""
     return {
         "textures": {"particle": tex, "plate": tex},
         "elements": shell_elements(),
@@ -346,14 +348,14 @@ def main():
                    for tier in TIERS
                }})
 
-    # 8-stage crack overlay (cumulative damage shown by the BESR)
+    # 8 crack overlay textures + standalone overlay models (BESR-rendered)
     for stage in range(8):
         write_png(os.path.join(ASSETS, "textures", "block", "reinforced_crack_%d.png" % stage),
                   draw_crack(stage))
         write_json(os.path.join(ASSETS, "models", "block", "reinforced_crack_%d.json" % stage),
                    crack_model(stage))
     print("wrote reinforcement assets for tiers:", ", ".join(TIERS))
-    print("wrote 8 crack overlay stages")
+    print("wrote 8 crack overlay stages (BESR-rendered)")
 
 
 if __name__ == "__main__":

@@ -35,3 +35,6 @@ __pycache__/
 
 # Extracted third-party jars (analyze_cosmonautics_crafting.py scratch dir)
 research_cosmonautics/
+
+# Command Code session tooling
+.commandcode/

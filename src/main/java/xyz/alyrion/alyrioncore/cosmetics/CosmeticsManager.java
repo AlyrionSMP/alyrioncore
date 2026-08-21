@@ -5,11 +5,15 @@ import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
 /**
  * Client-side mirror of the player's cosmetics & rewards state.
  *
- * The client no longer owns any progression: coins, playtime, cape unlocks,
- * task completions and the equipped cape are all decided and persisted by the
+ * The client no longer owns any progression: coins, playtime, unlocks, task
+ * completions and the equipped cosmetics are all decided and persisted by the
  * server. This manager only caches the latest state the server synced to us
- * (via {@link CosmeticNetworking.S2CSyncCosmeticsPayload}) and forwards store
- * actions to the server as C2S requests.
+ * (via {@code S2CSyncCosmeticsPayload}) and forwards store actions to the
+ * server as C2S requests.
+ *
+ * Everything is type-agnostic: any {@link CosmeticDefinition} of any
+ * {@link CosmeticType} works through the same four operations
+ * (purchase / equip / unequip / get equipped).
  */
 public class CosmeticsManager {
     private static final CosmeticsManager INSTANCE = new CosmeticsManager();
@@ -30,11 +34,11 @@ public class CosmeticsManager {
         PlayerCosmeticsData newData = new PlayerCosmeticsData();
         newData.setCoins(payload.coins());
         newData.setSurvivalPlaytimeSeconds(payload.survivalPlaytimeSeconds());
-        newData.getUnlockedCapes().addAll(payload.unlockedCapes());
-        newData.setEquippedCapeId(payload.equippedCapeId());
+        newData.getUnlockedCosmetics().addAll(payload.unlockedCosmetics());
+        for (CosmeticNetworking.S2CSyncCosmeticsPayload.EquippedSlot slot : payload.equippedSlots()) {
+            newData.setEquippedSlot(slot.typeId(), slot.cosmeticId());
+        }
         newData.getCompletedTasks().addAll(payload.completedTasks());
-        newData.getUnlockedPets().addAll(payload.petState().unlockedPets());
-        newData.setEquippedPetId(payload.petState().equippedPetId());
         newData.sanitize();
 
         this.data = newData;
@@ -73,22 +77,27 @@ public class CosmeticsManager {
         return data.getSurvivalPlaytimeSeconds();
     }
 
-    public boolean isCapeUnlocked(CapeDefinition cape) {
-        if (cape == null) return false;
-        return data.isCapeUnlocked(cape.getId());
+    // --- Generic cosmetic ops ---
+
+    public boolean isUnlocked(CosmeticDefinition def) {
+        if (def == null) return false;
+        return data.isCosmeticUnlocked(def.getId());
     }
 
-    public boolean isCapeEquipped(CapeDefinition cape) {
-        if (cape == null) return false;
-        return cape.getId().equalsIgnoreCase(data.getEquippedCapeId());
+    public boolean isEquipped(CosmeticDefinition def) {
+        if (def == null) return false;
+        return def.getId().equalsIgnoreCase(data.getEquippedSlot(def.getType().getId()));
     }
 
-    public CapeDefinition getEquippedCape() {
-        return CapeDefinition.fromId(data.getEquippedCapeId());
+    public CosmeticDefinition getEquipped(CosmeticType type) {
+        if (type == null) return null;
+        return CosmeticsRegistry.fromId(data.getEquippedSlot(type.getId()));
     }
 
-    public boolean isTaskCompleted(String taskId) {
-        return data.isTaskCompleted(taskId);
+    public boolean isSlotEquipped(CosmeticType type) {
+        if (type == null) return false;
+        String id = data.getEquippedSlot(type.getId());
+        return id != null && !id.isEmpty();
     }
 
     /**
@@ -96,94 +105,46 @@ public class CosmeticsManager {
      * feedback; the server is authoritative and will send back the true state,
      * which replaces this mirror.
      */
-    public boolean purchaseCape(CapeDefinition cape) {
-        if (cape == null) return false;
-        if (isCapeUnlocked(cape)) {
-            equipCape(cape);
+    public boolean purchase(CosmeticDefinition def) {
+        if (def == null) return false;
+        if (isUnlocked(def)) {
+            equip(def);
             return true;
         }
 
-        if (!cape.isPurchasable()) {
-            // Task-only capes (e.g. the Pride Cape) cannot be bought; the server
-            // rejects any such request and will sync back the true state.
+        if (!def.isPurchasable()) {
+            // Task-only cosmetics cannot be bought; the server rejects any such
+            // request and will sync back the true state.
             return false;
         }
 
-        if (data.getCoins() >= cape.getPrice()) {
-            data.setCoins(data.getCoins() - cape.getPrice());
-            data.unlockCape(cape.getId());
-            data.setEquippedCapeId(cape.getId());
+        if (data.getCoins() >= def.getPrice()) {
+            data.setCoins(data.getCoins() - def.getPrice());
+            data.unlockCosmetic(def.getId());
+            data.setEquippedSlot(def.getType().getId(), def.getId());
             revision++;
-            CosmeticNetworking.sendPurchaseCape(cape.getId());
+            CosmeticNetworking.sendPurchaseCosmetic(def.getId());
             return true;
         }
         return false;
     }
 
-    public void equipCape(CapeDefinition cape) {
-        if (cape != null && isCapeUnlocked(cape)) {
-            data.setEquippedCapeId(cape.getId());
+    public void equip(CosmeticDefinition def) {
+        if (def != null && isUnlocked(def)) {
+            data.setEquippedSlot(def.getType().getId(), def.getId());
             revision++;
-            CosmeticNetworking.sendCapeEquipped(cape.getId());
+            CosmeticNetworking.sendEquipCosmetic(def.getType().getId(), def.getId());
         }
     }
 
-    public void unequipCape() {
-        data.setEquippedCapeId(null);
+    public void unequip(CosmeticType type) {
+        if (type == null) return;
+        data.setEquippedSlot(type.getId(), null);
         revision++;
-        CosmeticNetworking.sendCapeEquipped("");
+        CosmeticNetworking.sendEquipCosmetic(type.getId(), "");
     }
 
-    // --- Pets ---
-
-    public boolean isPetUnlocked(PetDefinition pet) {
-        if (pet == null) return false;
-        return data.isPetUnlocked(pet.getId());
-    }
-
-    public boolean isPetEquipped(PetDefinition pet) {
-        if (pet == null) return false;
-        return pet.getId().equalsIgnoreCase(data.getEquippedPetId());
-    }
-
-    public PetDefinition getEquippedPet() {
-        return PetDefinition.fromId(data.getEquippedPetId());
-    }
-
-    /**
-     * Request a pet purchase. Applies the change optimistically for instant UI
-     * feedback; the server is authoritative and will send back the true state,
-     * which replaces this mirror.
-     */
-    public boolean purchasePet(PetDefinition pet) {
-        if (pet == null) return false;
-        if (isPetUnlocked(pet)) {
-            equipPet(pet);
-            return true;
-        }
-
-        if (data.getCoins() >= pet.getPrice()) {
-            data.setCoins(data.getCoins() - pet.getPrice());
-            data.unlockPet(pet.getId());
-            data.setEquippedPetId(pet.getId());
-            revision++;
-            CosmeticNetworking.sendPurchasePet(pet.getId());
-            return true;
-        }
-        return false;
-    }
-
-    public void equipPet(PetDefinition pet) {
-        if (pet != null && isPetUnlocked(pet)) {
-            data.setEquippedPetId(pet.getId());
-            revision++;
-            CosmeticNetworking.sendPetEquipped(pet.getId());
-        }
-    }
-
-    public void unequipPet() {
-        data.setEquippedPetId(null);
-        revision++;
-        CosmeticNetworking.sendPetEquipped("");
+    public boolean isTaskCompleted(String taskId) {
+        return data.isTaskCompleted(taskId);
     }
 }

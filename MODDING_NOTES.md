@@ -255,20 +255,28 @@ Ship-block-reinforcement on top of ANY block without new textures:
   cancel). `inspect_jar.py has-id` gives false "ghost item" warnings for
   DeferredRegister ids (namespace is split from the id string) — grep the
   class constant pool for the bare id instead.
-- **Custom crack progression without a mixin**: the vanilla crack overlay
-  (per-mining-cycle, `renderBreakingTexture` → `ModelBakery.DESTROY_TYPES`) is
-  global and can't be swapped per block. Instead keep a server-synced
-  `crackStage` (0..7) on the BE — computed from consumed hits
-  (`consumed*7/(total-1)`) — re-broadcast after each absorbed hit with
-  `ServerLevel.sendBlockUpdated(pos, state, state, 3)` (same state still
-  triggers `ChunkHolder.broadcastChanges` → BE `getUpdatePacket`). The BESR
-  then renders one of 8 registered additional models (a full cube at
-  ±0.12 protrusion so crack lines sit 0.02 in front of the plates and never
-  z-fight the shell at ±0.1 or the original model at 0/16) with
-  `RenderType.translucent`. Crack art: dark fissure core + lit (-1,-1) edge
-  + dark "missing chunk" holes — reads on light AND dark plates.
+- **The crack overlay must NEVER touch the block**: the ONLY thing that may
+  change is what the renderer draws. `level.setBlock` to advance a cosmetic
+  blockstate property is a trap: on the SERVER the chunk's `setBlockState`
+  re-creates the block entity (`newBlockEntity`) when
+  `getBlockEntity(pos, CHECK)` finds nothing usable, and even when it is kept,
+  the client's destroy prediction has already dropped ITS block entity and
+  re-created it empty — so the wrapper suddenly renders with no original block
+  inside ("clear block, reinforced shell only") and its hardness falls back to
+  the wrapper defaults. Keep the blockstate static (tier only) and drive the
+  crack from the BE: `ReinforcedBlockEntity.crackStage` (0..7, in
+  save/load + update tag), set in the absorb handler; the BESR renders one of 8
+  registered additional models (full cube at ±0.12, cutout) on top of the
+  original model. The absorb handler then schedules a 1-tick `tick` that ONLY
+  re-sends `be.getUpdatePacket()` to every player — the destroy prediction
+  drops the client's BE and re-creates it EMPTY, and this guaranteed re-send
+  (past the prediction window, after the block-changed ack) restores the
+  original state + crack stage. Keep the wrapper `strength()` hardness NORMAL
+  (2.0) as a fallback so a momentarily-empty client BE never grinds at
+  obsidian speed. And give the block an EMPTY lang value
+  (`"block.alyrioncore.reinforced_block": ""`) so its name never shows — it is
+  a barrier-like wrapper.
 
----
 
 ## 7. Time-based game state (the habitat oxygen fill)
 

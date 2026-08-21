@@ -5,16 +5,22 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Server-authoritative cosmetics & rewards manager.
  *
- * Every progression decision (purchasing a cape, equipping it, completing a
+ * Every progression decision (purchasing a cosmetic, equipping it, completing a
  * task, earning playtime coins, dev overrides) is made here, on the server,
  * against the per-world {@link CosmeticsSavedData}. Clients never decide
  * anything themselves: they request an action via a C2S payload and receive the
  * resulting state back via the S2C sync payloads.
+ *
+ * All methods are type-agnostic — a "cosmetic" is any {@link CosmeticDefinition}
+ * of any {@link CosmeticType}. New cosmetic kinds need zero changes here.
  */
 public class ServerCosmeticsManager {
     private static final ServerCosmeticsManager INSTANCE = new ServerCosmeticsManager();
@@ -35,176 +41,109 @@ public class ServerCosmeticsManager {
 
     public void syncToPlayer(ServerPlayer player) {
         PlayerCosmeticsData data = getPlayerData(player);
+        List<CosmeticNetworking.S2CSyncCosmeticsPayload.EquippedSlot> slots = new ArrayList<>();
+        for (Map.Entry<String, String> entry : data.getEquippedSlots().entrySet()) {
+            if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                slots.add(new CosmeticNetworking.S2CSyncCosmeticsPayload.EquippedSlot(entry.getKey(), entry.getValue()));
+            }
+        }
         PacketDistributor.sendToPlayer(player, new CosmeticNetworking.S2CSyncCosmeticsPayload(
                 data.getCoins(),
                 data.getSurvivalPlaytimeSeconds(),
-                new HashSet<>(data.getUnlockedCapes()),
-                data.getEquippedCapeId() != null ? data.getEquippedCapeId() : "",
-                new HashSet<>(data.getCompletedTasks()),
-                new CosmeticNetworking.S2CSyncCosmeticsPayload.PetState(
-                        new HashSet<>(data.getUnlockedPets()),
-                        data.getEquippedPetId() != null ? data.getEquippedPetId() : ""
-                )
+                new HashSet<>(data.getUnlockedCosmetics()),
+                slots,
+                new HashSet<>(data.getCompletedTasks())
         ));
     }
 
-    /** Broadcast a single player's equipped cape to everyone tracking them (and themselves). */
-    public void broadcastCape(ServerPlayer player) {
+    /** Broadcast one equipped slot of a player to everyone tracking them (and themselves). */
+    public void broadcastSlot(ServerPlayer player, CosmeticType type) {
+        if (type == null) return;
         PlayerCosmeticsData data = getPlayerData(player);
-        String capeId = data.getEquippedCapeId() != null ? data.getEquippedCapeId() : "";
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new CosmeticNetworking.S2CSyncCapePayload(player.getUUID(), capeId));
+        String id = data.getEquippedSlot(type.getId());
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player,
+                new CosmeticNetworking.S2CSyncCosmeticPayload(player.getUUID(), type.getId(), id != null ? id : ""));
     }
 
-    /** Send another player's equipped cape to a specific recipient (used when someone logs in). */
-    public void sendCapeTo(ServerPlayer recipient, ServerPlayer target) {
+    /** Send one equipped slot of a target player to a specific recipient (used on login). */
+    public void sendSlotTo(ServerPlayer recipient, ServerPlayer target, CosmeticType type) {
+        if (type == null) return;
         PlayerCosmeticsData data = getPlayerData(target);
-        String capeId = data.getEquippedCapeId() != null ? data.getEquippedCapeId() : "";
-        PacketDistributor.sendToPlayer(recipient, new CosmeticNetworking.S2CSyncCapePayload(target.getUUID(), capeId));
-    }
-
-    /** Broadcast a single player's equipped pet to everyone tracking them (and themselves). */
-    public void broadcastPet(ServerPlayer player) {
-        PlayerCosmeticsData data = getPlayerData(player);
-        String petId = data.getEquippedPetId() != null ? data.getEquippedPetId() : "";
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new CosmeticNetworking.S2CSyncPetPayload(player.getUUID(), petId));
-    }
-
-    /** Send another player's equipped pet to a specific recipient (used when someone logs in). */
-    public void sendPetTo(ServerPlayer recipient, ServerPlayer target) {
-        PlayerCosmeticsData data = getPlayerData(target);
-        String petId = data.getEquippedPetId() != null ? data.getEquippedPetId() : "";
-        PacketDistributor.sendToPlayer(recipient, new CosmeticNetworking.S2CSyncPetPayload(target.getUUID(), petId));
+        String id = data.getEquippedSlot(type.getId());
+        PacketDistributor.sendToPlayer(recipient,
+                new CosmeticNetworking.S2CSyncCosmeticPayload(target.getUUID(), type.getId(), id != null ? id : ""));
     }
 
     // --- Store actions ---
 
-    public boolean purchaseCape(ServerPlayer player, String capeId) {
-        CapeDefinition cape = CapeDefinition.fromId(capeId);
-        if (cape == null) return false;
-        if (!cape.isPurchasable()) {
-            // Task-only capes (e.g. the Pride Cape) can never be bought, only earned
+    public boolean purchase(ServerPlayer player, String cosmeticId) {
+        CosmeticDefinition cosmetic = CosmeticsRegistry.fromId(cosmeticId);
+        if (cosmetic == null) return false;
+        if (!cosmetic.isPurchasable()) {
+            // Task-only cosmetics can never be bought, only earned
             syncToPlayer(player);
             return false;
         }
 
         PlayerCosmeticsData data = getPlayerData(player);
-        if (data.isCapeUnlocked(cape.getId())) {
+        if (data.isCosmeticUnlocked(cosmetic.getId())) {
             // Already owned: just equip it
-            equipCape(player, cape.getId());
+            equip(player, cosmetic.getType().getId(), cosmetic.getId());
             return true;
         }
 
-        if (data.getCoins() >= cape.getPrice()) {
-            data.setCoins(data.getCoins() - cape.getPrice());
-            data.unlockCape(cape.getId());
-            data.setEquippedCapeId(cape.getId());
+        if (data.getCoins() >= cosmetic.getPrice()) {
+            data.setCoins(data.getCoins() - cosmetic.getPrice());
+            data.unlockCosmetic(cosmetic.getId());
+            data.setEquippedSlot(cosmetic.getType().getId(), cosmetic.getId());
             markDirty(player);
 
             syncToPlayer(player);
-            broadcastCape(player);
+            broadcastSlot(player, cosmetic.getType());
             notify(player,
-                    "§6§l[Alyrion SMP] §aUnlocked " + cape.getDisplayName() + "! §7(§6-" + cape.getPrice() + " Coins§7)",
+                    "§6§l[Alyrion SMP] §aUnlocked " + cosmetic.getDisplayName() + "! §7(§6-" + cosmetic.getPrice() + " Coins§7)",
                     CosmeticSound.SUCCESS);
             return true;
         }
         return false;
     }
 
-    public void equipCape(ServerPlayer player, String capeId) {
-        if (capeId == null || capeId.isEmpty()) {
-            unequipCape(player);
+    public void equip(ServerPlayer player, String typeId, String cosmeticId) {
+        if (typeId == null || typeId.isEmpty()) return;
+        if (cosmeticId == null || cosmeticId.isEmpty()) {
+            unequipSlot(player, typeId);
             return;
         }
 
-        CapeDefinition cape = CapeDefinition.fromId(capeId);
-        if (cape == null) return;
+        CosmeticDefinition cosmetic = CosmeticsRegistry.fromId(cosmeticId);
+        if (cosmetic == null || !cosmetic.getType().getId().equalsIgnoreCase(typeId)) return;
 
         PlayerCosmeticsData data = getPlayerData(player);
-        if (!data.isCapeUnlocked(cape.getId())) {
-            // Server rejects equipping capes the player hasn't unlocked
+        if (!data.isCosmeticUnlocked(cosmetic.getId())) {
+            // Server rejects equipping cosmetics the player hasn't unlocked
             syncToPlayer(player);
             return;
         }
 
-        data.setEquippedCapeId(cape.getId());
+        data.setEquippedSlot(typeId, cosmetic.getId());
         markDirty(player);
 
         syncToPlayer(player);
-        broadcastCape(player);
-        notify(player, "§6§l[Alyrion SMP] §aEquipped " + cape.getDisplayName() + ".", CosmeticSound.CLICK);
+        broadcastSlot(player, cosmetic.getType());
+        notify(player, "§6§l[Alyrion SMP] §aEquipped " + cosmetic.getDisplayName() + ".", CosmeticSound.CLICK);
     }
 
-    public void unequipCape(ServerPlayer player) {
+    public void unequipSlot(ServerPlayer player, String typeId) {
+        CosmeticType type = CosmeticType.fromId(typeId);
+        if (type == null) return;
+
         PlayerCosmeticsData data = getPlayerData(player);
-        data.setEquippedCapeId(null);
+        data.setEquippedSlot(typeId, null);
         markDirty(player);
 
         syncToPlayer(player);
-        broadcastCape(player);
-        notify(player, "§6§l[Alyrion SMP] §7Cape unequipped.", CosmeticSound.CLICK);
-    }
-
-    // --- Pet store actions ---
-
-    public boolean purchasePet(ServerPlayer player, String petId) {
-        PetDefinition pet = PetDefinition.fromId(petId);
-        if (pet == null) return false;
-
-        PlayerCosmeticsData data = getPlayerData(player);
-        if (data.isPetUnlocked(pet.getId())) {
-            // Already owned: just equip it
-            equipPet(player, pet.getId());
-            return true;
-        }
-
-        if (data.getCoins() >= pet.getPrice()) {
-            data.setCoins(data.getCoins() - pet.getPrice());
-            data.unlockPet(pet.getId());
-            data.setEquippedPetId(pet.getId());
-            markDirty(player);
-
-            syncToPlayer(player);
-            broadcastPet(player);
-            notify(player,
-                    "§6§l[Alyrion SMP] §aUnlocked " + pet.getDisplayName() + "! §7(§6-" + pet.getPrice() + " Coins§7)",
-                    CosmeticSound.SUCCESS);
-            return true;
-        }
-        return false;
-    }
-
-    public void equipPet(ServerPlayer player, String petId) {
-        if (petId == null || petId.isEmpty()) {
-            unequipPet(player);
-            return;
-        }
-
-        PetDefinition pet = PetDefinition.fromId(petId);
-        if (pet == null) return;
-
-        PlayerCosmeticsData data = getPlayerData(player);
-        if (!data.isPetUnlocked(pet.getId())) {
-            // Server rejects equipping pets the player hasn't unlocked
-            syncToPlayer(player);
-            return;
-        }
-
-        data.setEquippedPetId(pet.getId());
-        markDirty(player);
-
-        syncToPlayer(player);
-        broadcastPet(player);
-        notify(player, "§6§l[Alyrion SMP] §aEquipped " + pet.getDisplayName() + ".", CosmeticSound.CLICK);
-    }
-
-    public void unequipPet(ServerPlayer player) {
-        PlayerCosmeticsData data = getPlayerData(player);
-        data.setEquippedPetId(null);
-        markDirty(player);
-
-        syncToPlayer(player);
-        broadcastPet(player);
-        notify(player, "§6§l[Alyrion SMP] §7Pet unequipped.", CosmeticSound.CLICK);
+        broadcastSlot(player, type);
+        notify(player, "§6§l[Alyrion SMP] §7" + type.getDisplayName() + " cosmetic unequipped.", CosmeticSound.CLICK);
     }
 
     // --- Progression ---
@@ -244,9 +183,9 @@ public class ServerCosmeticsManager {
         PlayerCosmeticsData data = getPlayerData(player);
         for (TaskDefinition task : TaskDefinition.values()) {
             boolean taskDone = data.isTaskCompleted(task.getId());
-            boolean capeUnlocked = task.getCapeReward() == null || data.isCapeUnlocked(task.getCapeReward().getId());
+            boolean rewardUnlocked = task.getReward() == null || data.isCosmeticUnlocked(task.getReward().getId());
 
-            if (!taskDone || !capeUnlocked) {
+            if (!taskDone || !rewardUnlocked) {
                 if (task.test(player)) {
                     completeTask(player, task, false);
                 }
@@ -265,19 +204,21 @@ public class ServerCosmeticsManager {
             if (!alreadyDone || isManualDev) {
                 data.addCoins(task.getCoinReward());
             }
-            if (task.getCapeReward() != null) {
-                data.unlockCape(task.getCapeReward().getId());
+            if (task.getReward() != null) {
+                data.unlockCosmetic(task.getReward().getId());
             }
             data.sanitize();
             markDirty(player);
 
             syncToPlayer(player);
-            broadcastCape(player);
+            if (task.getReward() != null) {
+                broadcastSlot(player, task.getReward().getType());
+            }
 
             String prefix = isManualDev ? "§d§l[DEV TASK COMPLETED] §f" : "§6§l[TASK COMPLETED] §f";
-            String capeNotice = task.getCapeReward() != null ? " + §bUnlocked " + task.getCapeReward().getDisplayName() + "!" : "";
+            String rewardNotice = task.getReward() != null ? " + §bUnlocked " + task.getReward().getDisplayName() + "!" : "";
             notify(player,
-                    prefix + "§a" + task.getTitle() + " §7(§6+" + task.getCoinReward() + " Coins" + capeNotice + "§7)",
+                    prefix + "§a" + task.getTitle() + " §7(§6+" + task.getCoinReward() + " Coins" + rewardNotice + "§7)",
                     CosmeticSound.LEVEL_UP);
         }
     }
@@ -306,6 +247,16 @@ public class ServerCosmeticsManager {
         notify(target, "§d[DEV] §aAdded " + (seconds / 60) + " minutes of survival playtime. (+" + coinsEarned + " coins)", CosmeticSound.LEVEL_UP);
     }
 
+    public void devUnlock(ServerPlayer target, String cosmeticId) {
+        CosmeticDefinition cosmetic = CosmeticsRegistry.fromId(cosmeticId);
+        if (cosmetic == null) return;
+        PlayerCosmeticsData data = getPlayerData(target);
+        data.unlockCosmetic(cosmetic.getId());
+        markDirty(target);
+        syncToPlayer(target);
+        notify(target, "§d[DEV] §aUnlocked " + cosmetic.getDisplayName() + ".", CosmeticSound.CLICK);
+    }
+
     public void devResetAllTasks(ServerPlayer target) {
         PlayerCosmeticsData data = getPlayerData(target);
         data.resetAllTasks();
@@ -319,8 +270,9 @@ public class ServerCosmeticsManager {
         data.resetCosmetics();
         markDirty(target);
         syncToPlayer(target);
-        broadcastCape(target);
-        broadcastPet(target);
+        for (CosmeticType type : CosmeticType.values()) {
+            broadcastSlot(target, type);
+        }
         notify(target, "§d[DEV] §cAll cosmetic unlocks have been reset.", CosmeticSound.CLICK);
     }
 

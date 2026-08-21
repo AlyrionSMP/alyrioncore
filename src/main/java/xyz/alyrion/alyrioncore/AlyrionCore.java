@@ -5,6 +5,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.slf4j.Logger;
+import xyz.alyrion.alyrioncore.registry.ModArmorMaterials;
 import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
 import xyz.alyrion.alyrioncore.registry.ModCreativeTabs;
@@ -21,6 +22,7 @@ public class AlyrionCore {
         // Register Deferred Registers
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 

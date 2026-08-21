@@ -19,63 +19,64 @@ import xyz.alyrion.alyrioncore.cosmetics.CosmeticSound;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
 import xyz.alyrion.alyrioncore.cosmetics.ServerCosmeticsManager;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Networking for the generic cosmetics framework.
+ *
+ * Every payload is type-agnostic: clients ask to equip/purchase a cosmetic by
+ * its registry id, the server answers with the full player state, and other
+ * players' equipped slots are broadcast per {@code (player, slot type)}. Adding
+ * a new {@code CosmeticType} requires no networking changes at all.
+ */
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class CosmeticNetworking {
 
-    // Cache of other players' equipped capes on the client
-    private static final Map<UUID, String> CLIENT_CAPE_MAP = new ConcurrentHashMap<>();
+    /** Cache of other players' equipped cosmetics on the client: UUID -> (typeId -> cosmeticId). */
+    private static final Map<UUID, Map<String, String>> CLIENT_COSMETIC_MAP = new ConcurrentHashMap<>();
 
-    // Cache of other players' equipped pets on the client
-    private static final Map<UUID, String> CLIENT_PET_MAP = new ConcurrentHashMap<>();
-
-    public static String getClientPlayerCape(UUID playerUuid) {
-        if (playerUuid == null) return null;
-        return CLIENT_CAPE_MAP.get(playerUuid);
+    public static String getClientPlayerCosmetic(UUID playerUuid, String typeId) {
+        if (playerUuid == null || typeId == null) return null;
+        Map<String, String> slots = CLIENT_COSMETIC_MAP.get(playerUuid);
+        return slots != null ? slots.get(typeId) : null;
     }
 
-    public static void setClientPlayerCape(UUID playerUuid, String capeId) {
-        if (playerUuid == null) return;
-        if (capeId == null || capeId.isEmpty()) {
-            CLIENT_CAPE_MAP.remove(playerUuid);
+    public static void setClientPlayerCosmetic(UUID playerUuid, String typeId, String cosmeticId) {
+        if (playerUuid == null || typeId == null) return;
+        Map<String, String> slots = CLIENT_COSMETIC_MAP.computeIfAbsent(playerUuid, u -> new ConcurrentHashMap<>());
+        if (cosmeticId == null || cosmeticId.isEmpty()) {
+            slots.remove(typeId);
+            if (slots.isEmpty()) {
+                CLIENT_COSMETIC_MAP.remove(playerUuid);
+            }
         } else {
-            CLIENT_CAPE_MAP.put(playerUuid, capeId);
-        }
-    }
-
-    public static String getClientPlayerPet(UUID playerUuid) {
-        if (playerUuid == null) return null;
-        return CLIENT_PET_MAP.get(playerUuid);
-    }
-
-    public static void setClientPlayerPet(UUID playerUuid, String petId) {
-        if (playerUuid == null) return;
-        if (petId == null || petId.isEmpty()) {
-            CLIENT_PET_MAP.remove(playerUuid);
-        } else {
-            CLIENT_PET_MAP.put(playerUuid, petId);
+            slots.put(typeId, cosmeticId);
         }
     }
 
     /** Wipe all client-side cosmetics state when leaving a server. */
     public static void clearClientData() {
-        CLIENT_CAPE_MAP.clear();
-        CLIENT_PET_MAP.clear();
+        CLIENT_COSMETIC_MAP.clear();
         CosmeticsManager.get().resetForDisconnect();
     }
 
-    // Packet: Client -> Server: "I want to equip/unequip cape X"
-    public record C2SEquipCapePayload(String capeId) implements CustomPacketPayload {
-        public static final Type<C2SEquipCapePayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_equip_cape"));
+    // Packet: Client -> Server: "equip/unequip cosmetic X in slot type T"
+    // (empty cosmeticId = unequip that slot)
+    public record C2SEquipCosmeticPayload(String typeId, String cosmeticId) implements CustomPacketPayload {
+        public static final Type<C2SEquipCosmeticPayload> TYPE =
+                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_equip_cosmetic"));
 
-        public static final StreamCodec<ByteBuf, C2SEquipCapePayload> STREAM_CODEC =
-                ByteBufCodecs.STRING_UTF8.map(C2SEquipCapePayload::new, C2SEquipCapePayload::capeId);
+        public static final StreamCodec<ByteBuf, C2SEquipCosmeticPayload> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, C2SEquipCosmeticPayload::typeId,
+                ByteBufCodecs.STRING_UTF8, C2SEquipCosmeticPayload::cosmeticId,
+                C2SEquipCosmeticPayload::new
+        );
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -83,13 +84,13 @@ public class CosmeticNetworking {
         }
     }
 
-    // Packet: Client -> Server: "I want to buy cape X"
-    public record C2SPurchaseCapePayload(String capeId) implements CustomPacketPayload {
-        public static final Type<C2SPurchaseCapePayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_purchase_cape"));
+    // Packet: Client -> Server: "I want to buy cosmetic X"
+    public record C2SPurchaseCosmeticPayload(String cosmeticId) implements CustomPacketPayload {
+        public static final Type<C2SPurchaseCosmeticPayload> TYPE =
+                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_purchase_cosmetic"));
 
-        public static final StreamCodec<ByteBuf, C2SPurchaseCapePayload> STREAM_CODEC =
-                ByteBufCodecs.STRING_UTF8.map(C2SPurchaseCapePayload::new, C2SPurchaseCapePayload::capeId);
+        public static final StreamCodec<ByteBuf, C2SPurchaseCosmeticPayload> STREAM_CODEC =
+                ByteBufCodecs.STRING_UTF8.map(C2SPurchaseCosmeticPayload::new, C2SPurchaseCosmeticPayload::cosmeticId);
 
         @Override
         public Type<? extends CustomPacketPayload> type() {
@@ -111,61 +112,31 @@ public class CosmeticNetworking {
         }
     }
 
-    // Packet: Client -> Server: "I want to equip/unequip pet X"
-    public record C2SEquipPetPayload(String petId) implements CustomPacketPayload {
-        public static final Type<C2SEquipPetPayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_equip_pet"));
-
-        public static final StreamCodec<ByteBuf, C2SEquipPetPayload> STREAM_CODEC =
-                ByteBufCodecs.STRING_UTF8.map(C2SEquipPetPayload::new, C2SEquipPetPayload::petId);
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    // Packet: Client -> Server: "I want to buy pet X"
-    public record C2SPurchasePetPayload(String petId) implements CustomPacketPayload {
-        public static final Type<C2SPurchasePetPayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_purchase_pet"));
-
-        public static final StreamCodec<ByteBuf, C2SPurchasePetPayload> STREAM_CODEC =
-                ByteBufCodecs.STRING_UTF8.map(C2SPurchasePetPayload::new, C2SPurchasePetPayload::petId);
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
     // Packet: Server -> Client: "Here is your full cosmetics state"
     public record S2CSyncCosmeticsPayload(
             int coins,
             long survivalPlaytimeSeconds,
-            Set<String> unlockedCapes,
-            String equippedCapeId,
-            Set<String> completedTasks,
-            PetState petState
+            Set<String> unlockedCosmetics,
+            List<EquippedSlot> equippedSlots,
+            Set<String> completedTasks
     ) implements CustomPacketPayload {
         public static final Type<S2CSyncCosmeticsPayload> TYPE =
                 new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "s2c_sync_cosmetics"));
 
-        public record PetState(Set<String> unlockedPets, String equippedPetId) {
-            public static final StreamCodec<ByteBuf, PetState> STREAM_CODEC = StreamCodec.composite(
-                    ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8), PetState::unlockedPets,
-                    ByteBufCodecs.STRING_UTF8, PetState::equippedPetId,
-                    PetState::new
+        public record EquippedSlot(String typeId, String cosmeticId) {
+            public static final StreamCodec<ByteBuf, EquippedSlot> STREAM_CODEC = StreamCodec.composite(
+                    ByteBufCodecs.STRING_UTF8, EquippedSlot::typeId,
+                    ByteBufCodecs.STRING_UTF8, EquippedSlot::cosmeticId,
+                    EquippedSlot::new
             );
         }
 
         public static final StreamCodec<ByteBuf, S2CSyncCosmeticsPayload> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.VAR_INT, S2CSyncCosmeticsPayload::coins,
                 ByteBufCodecs.VAR_LONG, S2CSyncCosmeticsPayload::survivalPlaytimeSeconds,
-                ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8), S2CSyncCosmeticsPayload::unlockedCapes,
-                ByteBufCodecs.STRING_UTF8, S2CSyncCosmeticsPayload::equippedCapeId,
+                ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8), S2CSyncCosmeticsPayload::unlockedCosmetics,
+                ByteBufCodecs.collection(ArrayList::new, EquippedSlot.STREAM_CODEC), S2CSyncCosmeticsPayload::equippedSlots,
                 ByteBufCodecs.collection(HashSet::new, ByteBufCodecs.STRING_UTF8), S2CSyncCosmeticsPayload::completedTasks,
-                PetState.STREAM_CODEC, S2CSyncCosmeticsPayload::petState,
                 S2CSyncCosmeticsPayload::new
         );
 
@@ -175,36 +146,19 @@ public class CosmeticNetworking {
         }
     }
 
-    // Packet: Server -> Client: "Player UUID has equipped pet X"
-    public record S2CSyncPetPayload(UUID playerUuid, String petId) implements CustomPacketPayload {
-        public static final Type<S2CSyncPetPayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "s2c_sync_pet"));
+    // Packet: Server -> Client: "Player UUID has equipped cosmetic X in slot T"
+    public record S2CSyncCosmeticPayload(UUID playerUuid, String typeId, String cosmeticId) implements CustomPacketPayload {
+        public static final Type<S2CSyncCosmeticPayload> TYPE =
+                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "s2c_sync_cosmetic"));
 
-        public static final StreamCodec<ByteBuf, S2CSyncPetPayload> STREAM_CODEC = StreamCodec.composite(
+        public static final StreamCodec<ByteBuf, S2CSyncCosmeticPayload> STREAM_CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8.map(UUID::fromString, UUID::toString),
-                S2CSyncPetPayload::playerUuid,
+                S2CSyncCosmeticPayload::playerUuid,
                 ByteBufCodecs.STRING_UTF8,
-                S2CSyncPetPayload::petId,
-                S2CSyncPetPayload::new
-        );
-
-        @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
-        }
-    }
-
-    // Packet: Server -> Client: "Player UUID has equipped cape X"
-    public record S2CSyncCapePayload(UUID playerUuid, String capeId) implements CustomPacketPayload {
-        public static final Type<S2CSyncCapePayload> TYPE =
-                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "s2c_sync_cape"));
-
-        public static final StreamCodec<ByteBuf, S2CSyncCapePayload> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8.map(UUID::fromString, UUID::toString),
-                S2CSyncCapePayload::playerUuid,
+                S2CSyncCosmeticPayload::typeId,
                 ByteBufCodecs.STRING_UTF8,
-                S2CSyncCapePayload::capeId,
-                S2CSyncCapePayload::new
+                S2CSyncCosmeticPayload::cosmeticId,
+                S2CSyncCosmeticPayload::new
         );
 
         @Override
@@ -229,16 +183,16 @@ public class CosmeticNetworking {
 
     @SubscribeEvent
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar("1.0.0").optional();
+        final PayloadRegistrar registrar = event.registrar("2.0.0").optional();
 
         // Client -> Server: equip / unequip request (validated against server data)
         registrar.playToServer(
-                C2SEquipCapePayload.TYPE,
-                C2SEquipCapePayload.STREAM_CODEC,
+                C2SEquipCosmeticPayload.TYPE,
+                C2SEquipCosmeticPayload.STREAM_CODEC,
                 (payload, context) -> {
                     context.enqueueWork(() -> {
                         if (context.player() instanceof ServerPlayer serverPlayer) {
-                            ServerCosmeticsManager.get().equipCape(serverPlayer, payload.capeId());
+                            ServerCosmeticsManager.get().equip(serverPlayer, payload.typeId(), payload.cosmeticId());
                         }
                     });
                 }
@@ -246,12 +200,12 @@ public class CosmeticNetworking {
 
         // Client -> Server: purchase request (coins deducted server-side)
         registrar.playToServer(
-                C2SPurchaseCapePayload.TYPE,
-                C2SPurchaseCapePayload.STREAM_CODEC,
+                C2SPurchaseCosmeticPayload.TYPE,
+                C2SPurchaseCosmeticPayload.STREAM_CODEC,
                 (payload, context) -> {
                     context.enqueueWork(() -> {
                         if (context.player() instanceof ServerPlayer serverPlayer) {
-                            ServerCosmeticsManager.get().purchaseCape(serverPlayer, payload.capeId());
+                            ServerCosmeticsManager.get().purchase(serverPlayer, payload.cosmeticId());
                         }
                     });
                 }
@@ -270,32 +224,6 @@ public class CosmeticNetworking {
                 }
         );
 
-        // Client -> Server: equip / unequip pet request (validated against server data)
-        registrar.playToServer(
-                C2SEquipPetPayload.TYPE,
-                C2SEquipPetPayload.STREAM_CODEC,
-                (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        if (context.player() instanceof ServerPlayer serverPlayer) {
-                            ServerCosmeticsManager.get().equipPet(serverPlayer, payload.petId());
-                        }
-                    });
-                }
-        );
-
-        // Client -> Server: pet purchase request (coins deducted server-side)
-        registrar.playToServer(
-                C2SPurchasePetPayload.TYPE,
-                C2SPurchasePetPayload.STREAM_CODEC,
-                (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        if (context.player() instanceof ServerPlayer serverPlayer) {
-                            ServerCosmeticsManager.get().purchasePet(serverPlayer, payload.petId());
-                        }
-                    });
-                }
-        );
-
         // Server -> Client: full cosmetics state for the local player
         registrar.playToClient(
                 S2CSyncCosmeticsPayload.TYPE,
@@ -307,24 +235,13 @@ public class CosmeticNetworking {
                 }
         );
 
-        // Server -> Client: equipped cape of another player
+        // Server -> Client: equipped cosmetic (one slot) of another player
         registrar.playToClient(
-                S2CSyncCapePayload.TYPE,
-                S2CSyncCapePayload.STREAM_CODEC,
+                S2CSyncCosmeticPayload.TYPE,
+                S2CSyncCosmeticPayload.STREAM_CODEC,
                 (payload, context) -> {
                     context.enqueueWork(() -> {
-                        setClientPlayerCape(payload.playerUuid(), payload.capeId());
-                    });
-                }
-        );
-
-        // Server -> Client: equipped pet of another player
-        registrar.playToClient(
-                S2CSyncPetPayload.TYPE,
-                S2CSyncPetPayload.STREAM_CODEC,
-                (payload, context) -> {
-                    context.enqueueWork(() -> {
-                        setClientPlayerPet(payload.playerUuid(), payload.petId());
+                        setClientPlayerCosmetic(payload.playerUuid(), payload.typeId(), payload.cosmeticId());
                     });
                 }
         );
@@ -353,20 +270,12 @@ public class CosmeticNetworking {
 
     // --- Client -> Server send helpers ---
 
-    public static void sendCapeEquipped(String capeId) {
-        sendToServer(new C2SEquipCapePayload(capeId != null ? capeId : ""));
+    public static void sendEquipCosmetic(String typeId, String cosmeticId) {
+        sendToServer(new C2SEquipCosmeticPayload(typeId != null ? typeId : "", cosmeticId != null ? cosmeticId : ""));
     }
 
-    public static void sendPurchaseCape(String capeId) {
-        sendToServer(new C2SPurchaseCapePayload(capeId != null ? capeId : ""));
-    }
-
-    public static void sendPetEquipped(String petId) {
-        sendToServer(new C2SEquipPetPayload(petId != null ? petId : ""));
-    }
-
-    public static void sendPurchasePet(String petId) {
-        sendToServer(new C2SPurchasePetPayload(petId != null ? petId : ""));
+    public static void sendPurchaseCosmetic(String cosmeticId) {
+        sendToServer(new C2SPurchaseCosmeticPayload(cosmeticId != null ? cosmeticId : ""));
     }
 
     public static void sendRequestSync() {

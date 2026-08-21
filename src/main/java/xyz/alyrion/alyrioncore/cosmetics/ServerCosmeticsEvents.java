@@ -64,15 +64,17 @@ public class ServerCosmeticsEvents {
         // Push the joining player their own full cosmetics state
         manager.syncToPlayer(serverPlayer);
 
-        // Let everyone already online see the joiner's cape & pet
-        manager.broadcastCape(serverPlayer);
-        manager.broadcastPet(serverPlayer);
+        // Let everyone already online see the joiner's equipped cosmetics (all slots)
+        for (CosmeticType type : CosmeticType.values()) {
+            manager.broadcastSlot(serverPlayer, type);
+        }
 
-        // Let the joiner see the capes & pets of everyone already online
+        // Let the joiner see the equipped cosmetics of everyone already online
         for (ServerPlayer other : serverPlayer.server.getPlayerList().getPlayers()) {
             if (other != serverPlayer) {
-                manager.sendCapeTo(serverPlayer, other);
-                manager.sendPetTo(serverPlayer, other);
+                for (CosmeticType type : CosmeticType.values()) {
+                    manager.sendSlotTo(serverPlayer, other, type);
+                }
             }
         }
     }

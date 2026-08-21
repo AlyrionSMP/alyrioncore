@@ -285,89 +285,102 @@ def create_cape_moon():
     print("Saved moon.png")
 
 def create_cape_marsian():
-    """Martian cape v2: green alien waving on the Martian surface under a dusty
-    rust sky with Phobos & Deimos, Olympus Mons silhouette and dune terrain.
-    The design is symmetric so the cape texture's mirrored half reads the same.
-    Pure stdlib (uses mcutil) so it regenerates without Pillow."""
+    """Martian cape (64x32), redesigned to match the look of moon.png: deep space
+    with stars, a rust Mars globe, a dithered 4-tone cratered Martian surface and
+    a little green Martian standing on the dunes. Same 10x16 design grid and
+    mirrored layout as moon.png. Pure stdlib (mcutil)."""
     import os
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mc-scripts'))
     import mcutil as mc
 
     C = {
-        '0': "#4A1705",  # deep sky top
-        '1': "#7A3114",  # sky
-        '2': "#A84F2B",  # sky mid
-        '3': "#C2501F",  # sky near horizon
-        '4': "#D96434",  # horizon glow
-        'm': "#EAD9B4",  # moon (Phobos / Deimos)
-        'p': "#471808",  # mountain shadow
-        'P': "#5E210D",  # mountain (Olympus Mons)
-        'l': "#E07340",  # soil light
-        'M': "#BA4B1F",  # soil mid
-        'd': "#852A0B",  # soil dark
-        'x': "#4E1603",  # soil deep
-        'a': "#6EE787",  # alien light
-        'A': "#34D353",  # alien skin
-        'D': "#15803D",  # alien dark
-        'e': "#061A0C",  # alien eye
-        'g': "#DCFCE7",  # eye gleam
+        '0': "#060810",   # deep space (same as moon.png)
+        '*': "#FFFFFF",   # bright star
+        '+': "#94A3B8",   # dim star
+        # Mars globe
+        'W': "#FFF7E8",   # polar cap
+        'p': "#F08C48",   # planet light surface
+        'P': "#C1440E",   # planet mid
+        'r': "#8A2E0C",   # planet dark maria
+        'R': "#5F1E06",   # planet deep shadow
+        # Martian surface (4-tone rust ramp, moon-style spacing)
+        'L': "#F5A95E",   # light rust
+        'N': "#DA6E1F",   # mid rust
+        'D': "#96381A",   # dark rust
+        'S': "#471604",   # shadow rust
+        # Little Martian
+        'A': "#86EFAC",   # alien highlight
+        'a': "#22C55E",   # alien mid green
+        'z': "#15803D",   # alien shadow / feet
+        'e': "#064E3B",   # alien eye
+        'w': "#FFFFFF",   # eye shine
+        'm': "#065F46",   # alien mouth
     }
 
-    scene = [
-        "1111111111",
-        "112m2222m2",
-        "2222222222",
-        "2222222222",
-        "2222222222",
-        "222pppp222",
-        "22ppppp222",
-        "2ppppppp22",
-        "2ppppppp22",
-        "3444444443",
-        "lMMllMMddd",
-        "MlMMllMMdd",
-        "MMlMMlMMdd",
-        "lMMllMMddd",
-        "dMMdddMMdx",
-        "dddddddddx",
+    grid = [
+        "0*000+0000",   # 0  sky: stars
+        "000000Wpp0",   # 1  Mars globe: polar cap + light surface
+        "00*000rppP",   # 2  dark maria, mid surface
+        "0000+0rpRr",   # 3  maria + deep shadow
+        "0+00000Pr0",   # 4  globe bottom
+        "00000000*0",   # 5  sky: star
+        "000+000000",   # 6  sky: dim star
+        "SDNDNDS000",   # 7  cratered horizon (sky gap right, like moon)
+        "DNLLLNDDDS",   # 8  light dune ridge
+        "NLSSSDNDSD",   # 9  distant crater (light rim, dark bowl)
+        "DNDSDNSDDN",   # 10 mid ground
+        "NDSDDSDSND",   # 11
+        "LNDNDNLNLN",   # 12
+        "NNDDNNLLNN",   # 13
+        "DNNDNDNNDN",   # 14
+        "SDDNNNDSSS",   # 15 dark base
     ]
 
-    # Green alien overlaying the scene: big head with 2x2 gleaming eyes, small
-    # body, arms out — no outline/antenna so nothing reads as hat or hair.
+    # Little Martian (5 wide x 6 tall, xr2..6, yr10..15): big head, big eyes
+    # with shine, small smile, tiny body. All rows are exactly 10 chars,
+    # centered on xr4.
     alien = {
-        (3, 7): 'a', (4, 7): 'A', (5, 7): 'A', (6, 7): 'A', (7, 7): 'a',                # head top
-        (2, 8): 'A', (3, 8): 'g', (4, 8): 'e', (5, 8): 'A', (6, 8): 'g', (7, 8): 'e', (8, 8): 'A',  # eyes (gleam + black)
-        (2, 9): 'A', (3, 9): 'e', (4, 9): 'e', (5, 9): 'A', (6, 9): 'e', (7, 9): 'e', (8, 9): 'A',  # eyes (black)
-        (2, 10): 'A', (3, 10): 'A', (4, 10): 'A', (5, 10): 'A', (6, 10): 'A', (7, 10): 'A', (8, 10): 'A',  # chin
-        (3, 11): 'A', (4, 11): 'A', (5, 11): 'A', (6, 11): 'A',                         # chin taper
-        (4, 12): 'D', (5, 12): 'D',                                                     # neck
-        (2, 13): 'a', (3, 13): 'D', (4, 13): 'D', (5, 13): 'D', (6, 13): 'D', (7, 13): 'D', (8, 13): 'a',  # shoulders
-        (1, 14): 'a', (2, 14): 'D', (3, 14): 'A', (4, 14): 'A', (5, 14): 'A', (6, 14): 'A', (7, 14): 'D', (8, 14): 'D', (9, 14): 'a',  # arms + hands
-        (3, 15): 'D', (4, 15): 'A', (5, 15): 'A', (6, 15): 'D',                         # feet
+        10: "...AAa....",
+        11: "..AAaaa...",
+        12: "..weawe...",
+        13: "..eeaee...",
+        14: "..ammaa...",
+        15: "..zaaaz...",
     }
+    for yr, row in alien.items():
+        assert len(row) == 10, (yr, row)
+        cells = list(grid[yr])
+        for xr, ch in enumerate(row):
+            if ch != '.':
+                cells[xr] = ch
+        grid[yr] = "".join(cells)
 
-    grid = [list(row) for row in scene]
-    for (xr, yr), ch in alien.items():
-        grid[yr][xr] = ch
-
-    img = [[(0, 0, 0, 0)] * 64 for _ in range(32)]
+    # Same 64x32 mapping as moon.png: 10x16 design grid mirrored about the seam.
+    width = 64
+    height = 32
+    img = [[(0, 0, 0, 0)] * width for _ in range(height)]
     for yr in range(16):
         y = 1 + yr
         for xr in range(10):
             rgb = mc.hex2rgb(C[grid[yr][xr]])
-            img[y][10 - xr] = rgb + (255,)   # mirrored left copy (visible cape back)
-            img[y][12 + xr] = rgb + (255,)   # right copy (inner faces)
+            img[y][10 - xr] = rgb + (255,)   # mirrored left copy (cape back)
+            img[y][12 + xr] = rgb + (255,)   # right copy
 
-    # Cape frame: top edge + the two 1px side seams (cape box edges)
-    for x in range(1, 21):
+    # Top edge (y=0): space left, rust seam right (moon-style)
+    for x in range(1, 11):
         img[0][x] = mc.hex2rgb(C['0']) + (255,)
+    for x in range(11, 21):
+        img[0][x] = mc.hex2rgb(C['D']) + (255,)
+
+    # Side edges + center seam: space above the horizon, rust below
     for y in range(1, 17):
-        img[y][0] = mc.hex2rgb(C['x']) + (255,)
-        img[y][11] = mc.hex2rgb(C['x']) + (255,)
+        c = mc.hex2rgb(C['0']) if y <= 8 else mc.hex2rgb(C['D'])
+        img[y][0] = c + (255,)
+        img[y][11] = c + (255,)
 
     mc.write_png("src/main/resources/assets/alyrioncore/textures/capes/marsian.png", img)
-    print("Saved marsian.png")
+    print("Saved 64x32 marsian.png (Moon-Style Mars with little Martian)")
 
 def create_cape_grim():
     img = Image.new("RGBA", (64, 32), (0, 0, 0, 0))

@@ -5,7 +5,9 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,72 +17,69 @@ import java.util.Set;
  * owned by the server (stored inside {@link CosmeticsSavedData} in the world save).
  * The client only ever holds a synchronized mirror of it, populated from the
  * {@code S2CSyncCosmeticsPayload} the server sends.
+ *
+ * Storage is fully generic: one set of unlocked cosmetic ids (all types) plus one
+ * equipped slot per {@link CosmeticType}. Old saves written with the legacy
+ * cape/pet split are migrated transparently in {@link #load(CompoundTag)}.
  */
 public class PlayerCosmeticsData {
     private static final String KEY_COINS = "Coins";
     private static final String KEY_PLAYTIME = "PlaytimeSeconds";
     private static final String KEY_PVP_KILLS = "PvpKills";
+    private static final String KEY_UNLOCKED_COSMETICS = "UnlockedCosmetics";
+    private static final String KEY_EQUIPPED = "EquippedCosmetics";
+    private static final String KEY_EQUIPPED_TYPE = "Type";
+    private static final String KEY_EQUIPPED_ID = "Id";
+    private static final String KEY_COMPLETED_TASKS = "CompletedTasks";
+
+    // Legacy keys (pre-unified saves), read for one-time migration
     private static final String KEY_UNLOCKED_CAPES = "UnlockedCapes";
     private static final String KEY_EQUIPPED_CAPE = "EquippedCape";
-    private static final String KEY_COMPLETED_TASKS = "CompletedTasks";
     private static final String KEY_UNLOCKED_PETS = "UnlockedPets";
     private static final String KEY_EQUIPPED_PET = "EquippedPet";
 
     private int coins = 0;
     private long survivalPlaytimeSeconds = 0;
     private int pvpKills = 0;
-    private Set<String> unlockedCapes = new HashSet<>();
-    private String equippedCapeId = null;
+    private Set<String> unlockedCosmetics = new HashSet<>();
+    private Map<String, String> equipped = new HashMap<>(); // typeId -> cosmeticId
     private Set<String> completedTasks = new HashSet<>();
-    private Set<String> unlockedPets = new HashSet<>();
-    private String equippedPetId = null;
 
     public PlayerCosmeticsData() {
         sanitize();
     }
 
     public void sanitize() {
-        if (unlockedCapes == null) unlockedCapes = new HashSet<>();
+        CosmeticsRegistry.ensureLoaded();
+        if (unlockedCosmetics == null) unlockedCosmetics = new HashSet<>();
         if (completedTasks == null) completedTasks = new HashSet<>();
-        if (unlockedPets == null) unlockedPets = new HashSet<>();
+        if (equipped == null) equipped = new HashMap<>();
 
-        // Ensure default free pets are always unlocked
-        for (PetDefinition pet : PetDefinition.values()) {
-            if (pet.isUnlockedByDefault()) {
-                unlockedPets.add(pet.getId());
+        // Default cosmetics are always unlocked
+        for (CosmeticDefinition def : CosmeticsRegistry.all()) {
+            if (def.isUnlockedByDefault()) {
+                unlockedCosmetics.add(def.getId());
             }
         }
 
-        // Ensure default free capes are always unlocked
-        unlockedCapes.add(CapeDefinition.TWO_YEAR_CELEBRATION.getId());
-        unlockedCapes.add(CapeDefinition.SEASON_8.getId());
-
-        // Sync completed tasks to cape unlocks
-        if (completedTasks.contains(TaskDefinition.GOING_TO_SPACE.getId())) {
-            unlockedCapes.add(CapeDefinition.STARS.getId());
-        }
-        if (completedTasks.contains(TaskDefinition.GOING_TO_MOON.getId())) {
-            unlockedCapes.add(CapeDefinition.MOON.getId());
-        }
-        if (completedTasks.contains(TaskDefinition.GOING_TO_MARS.getId())) {
-            unlockedCapes.add(CapeDefinition.MARSIAN.getId());
-        }
-        if (completedTasks.contains(TaskDefinition.SLAYING_PLAYERS.getId())) {
-            unlockedCapes.add(CapeDefinition.GRIM.getId());
-        }
-        if (completedTasks.contains(TaskDefinition.PARTY_OF_FOUR.getId())) {
-            unlockedCapes.add(CapeDefinition.PRIDE.getId());
+        // Completing a task unlocks its reward cosmetic
+        for (TaskDefinition task : TaskDefinition.values()) {
+            if (task.getReward() != null && completedTasks.contains(task.getId())) {
+                unlockedCosmetics.add(task.getReward().getId());
+            }
         }
 
-        // Never leave an equipped cape that isn't unlocked
-        if (equippedCapeId != null && !isCapeUnlocked(equippedCapeId)) {
-            equippedCapeId = null;
-        }
-
-        // Never leave an equipped pet that isn't unlocked
-        if (equippedPetId != null && !isPetUnlocked(equippedPetId)) {
-            equippedPetId = null;
-        }
+        // Drop ids that no longer exist (removed cosmetics) and equipped entries
+        // that point at locked or mismatched cosmetics.
+        unlockedCosmetics.removeIf(id -> CosmeticsRegistry.fromId(id) == null);
+        equipped.entrySet().removeIf(entry -> {
+            String id = entry.getValue();
+            if (id == null || id.isEmpty()) return true;
+            CosmeticDefinition def = CosmeticsRegistry.fromId(id);
+            if (def == null) return true;                    // unknown cosmetic
+            if (!def.getType().getId().equalsIgnoreCase(entry.getKey())) return true; // wrong slot
+            return !isCosmeticUnlocked(id);                  // not unlocked
+        });
     }
 
     public CompoundTag save(CompoundTag tag) {
@@ -88,31 +87,27 @@ public class PlayerCosmeticsData {
         tag.putLong(KEY_PLAYTIME, survivalPlaytimeSeconds);
         tag.putInt(KEY_PVP_KILLS, pvpKills);
 
-        ListTag capes = new ListTag();
-        for (String id : unlockedCapes) {
-            capes.add(StringTag.valueOf(id));
+        ListTag unlocked = new ListTag();
+        for (String id : unlockedCosmetics) {
+            unlocked.add(StringTag.valueOf(id));
         }
-        tag.put(KEY_UNLOCKED_CAPES, capes);
+        tag.put(KEY_UNLOCKED_COSMETICS, unlocked);
 
-        if (equippedCapeId != null && !equippedCapeId.isEmpty()) {
-            tag.putString(KEY_EQUIPPED_CAPE, equippedCapeId);
+        ListTag equippedList = new ListTag();
+        for (Map.Entry<String, String> entry : equipped.entrySet()) {
+            if (entry.getValue() == null || entry.getValue().isEmpty()) continue;
+            CompoundTag slot = new CompoundTag();
+            slot.putString(KEY_EQUIPPED_TYPE, entry.getKey());
+            slot.putString(KEY_EQUIPPED_ID, entry.getValue());
+            equippedList.add(slot);
         }
+        tag.put(KEY_EQUIPPED, equippedList);
 
         ListTag tasks = new ListTag();
         for (String id : completedTasks) {
             tasks.add(StringTag.valueOf(id));
         }
         tag.put(KEY_COMPLETED_TASKS, tasks);
-
-        ListTag pets = new ListTag();
-        for (String id : unlockedPets) {
-            pets.add(StringTag.valueOf(id));
-        }
-        tag.put(KEY_UNLOCKED_PETS, pets);
-
-        if (equippedPetId != null && !equippedPetId.isEmpty()) {
-            tag.putString(KEY_EQUIPPED_PET, equippedPetId);
-        }
         return tag;
     }
 
@@ -122,13 +117,20 @@ public class PlayerCosmeticsData {
         data.survivalPlaytimeSeconds = Math.max(0, tag.getLong(KEY_PLAYTIME));
         data.pvpKills = Math.max(0, tag.getInt(KEY_PVP_KILLS));
 
-        ListTag capes = tag.getList(KEY_UNLOCKED_CAPES, Tag.TAG_STRING);
-        for (int i = 0; i < capes.size(); i++) {
-            data.unlockedCapes.add(capes.getString(i));
+        // --- New unified format ---
+        ListTag unlocked = tag.getList(KEY_UNLOCKED_COSMETICS, Tag.TAG_STRING);
+        for (int i = 0; i < unlocked.size(); i++) {
+            data.unlockedCosmetics.add(unlocked.getString(i));
         }
 
-        if (tag.contains(KEY_EQUIPPED_CAPE, Tag.TAG_STRING)) {
-            data.equippedCapeId = tag.getString(KEY_EQUIPPED_CAPE);
+        ListTag equippedList = tag.getList(KEY_EQUIPPED, Tag.TAG_COMPOUND);
+        for (int i = 0; i < equippedList.size(); i++) {
+            CompoundTag slot = equippedList.getCompound(i);
+            String typeId = slot.getString(KEY_EQUIPPED_TYPE);
+            String cosmeticId = slot.getString(KEY_EQUIPPED_ID);
+            if (!typeId.isEmpty() && !cosmeticId.isEmpty()) {
+                data.equipped.put(typeId, cosmeticId);
+            }
         }
 
         ListTag tasks = tag.getList(KEY_COMPLETED_TASKS, Tag.TAG_STRING);
@@ -136,13 +138,25 @@ public class PlayerCosmeticsData {
             data.completedTasks.add(tasks.getString(i));
         }
 
-        ListTag pets = tag.getList(KEY_UNLOCKED_PETS, Tag.TAG_STRING);
-        for (int i = 0; i < pets.size(); i++) {
-            data.unlockedPets.add(pets.getString(i));
-        }
-
-        if (tag.contains(KEY_EQUIPPED_PET, Tag.TAG_STRING)) {
-            data.equippedPetId = tag.getString(KEY_EQUIPPED_PET);
+        // --- Legacy migration (old cape/pet split) ---
+        boolean hasLegacy = tag.contains(KEY_UNLOCKED_CAPES) || tag.contains(KEY_UNLOCKED_PETS);
+        if (hasLegacy) {
+            ListTag capes = tag.getList(KEY_UNLOCKED_CAPES, Tag.TAG_STRING);
+            for (int i = 0; i < capes.size(); i++) {
+                data.unlockedCosmetics.add(capes.getString(i));
+            }
+            ListTag pets = tag.getList(KEY_UNLOCKED_PETS, Tag.TAG_STRING);
+            for (int i = 0; i < pets.size(); i++) {
+                data.unlockedCosmetics.add(pets.getString(i));
+            }
+            if (tag.contains(KEY_EQUIPPED_CAPE, Tag.TAG_STRING)) {
+                String id = tag.getString(KEY_EQUIPPED_CAPE);
+                if (!id.isEmpty()) data.equipped.put(CosmeticType.CAPE.getId(), id);
+            }
+            if (tag.contains(KEY_EQUIPPED_PET, Tag.TAG_STRING)) {
+                String id = tag.getString(KEY_EQUIPPED_PET);
+                if (!id.isEmpty()) data.equipped.put(CosmeticType.PET.getId(), id);
+            }
         }
 
         data.sanitize();
@@ -191,51 +205,61 @@ public class PlayerCosmeticsData {
         this.pvpKills++;
     }
 
-    // --- Capes ---
+    // --- Cosmetics (all types) ---
 
-    public Set<String> getUnlockedCapes() {
-        if (unlockedCapes == null) unlockedCapes = new HashSet<>();
-        return unlockedCapes;
+    public Set<String> getUnlockedCosmetics() {
+        if (unlockedCosmetics == null) unlockedCosmetics = new HashSet<>();
+        return unlockedCosmetics;
     }
 
-    public boolean isCapeUnlocked(String capeId) {
-        if (capeId == null) return false;
-        CapeDefinition def = CapeDefinition.fromId(capeId);
-        if (def != null && def.isUnlockedByDefault()) return true;
+    public boolean isCosmeticUnlocked(String cosmeticId) {
+        if (cosmeticId == null) return false;
+        CosmeticDefinition def = CosmeticsRegistry.fromId(cosmeticId);
+        if (def == null) return false;
+        if (def.isUnlockedByDefault()) return true;
+        if (getUnlockedCosmetics().contains(cosmeticId)) return true;
 
-        if (getUnlockedCapes().contains(capeId)) return true;
-
-        // Check if unlocked via task
-        if (capeId.equalsIgnoreCase(CapeDefinition.MARSIAN.getId()) && isTaskCompleted(TaskDefinition.GOING_TO_MARS.getId())) {
-            return true;
+        // Reward of a completed task
+        for (TaskDefinition task : TaskDefinition.values()) {
+            if (task.getReward() != null && task.getReward().getId().equalsIgnoreCase(cosmeticId)
+                    && isTaskCompleted(task.getId())) {
+                return true;
+            }
         }
-        if (capeId.equalsIgnoreCase(CapeDefinition.MOON.getId()) && isTaskCompleted(TaskDefinition.GOING_TO_MOON.getId())) {
-            return true;
-        }
-        if (capeId.equalsIgnoreCase(CapeDefinition.STARS.getId()) && isTaskCompleted(TaskDefinition.GOING_TO_SPACE.getId())) {
-            return true;
-        }
-
-        // Check if unlocked via task
-        if (capeId.equalsIgnoreCase(CapeDefinition.GRIM.getId()) && isTaskCompleted(TaskDefinition.SLAYING_PLAYERS.getId())) {
-            return true;
-        }
-
         return false;
     }
 
-    public void unlockCape(String capeId) {
-        if (capeId != null) {
-            getUnlockedCapes().add(capeId);
+    public void unlockCosmetic(String cosmeticId) {
+        if (cosmeticId != null) {
+            getUnlockedCosmetics().add(cosmeticId);
         }
     }
 
-    public String getEquippedCapeId() {
-        return equippedCapeId;
+    /** The equipped cosmetic id for a slot type (may be null). */
+    public String getEquippedSlot(String typeId) {
+        if (equipped == null) equipped = new HashMap<>();
+        return equipped.get(typeId);
     }
 
-    public void setEquippedCapeId(String equippedCapeId) {
-        this.equippedCapeId = (equippedCapeId != null && !equippedCapeId.isEmpty()) ? equippedCapeId : null;
+    /** Set the equipped cosmetic for a slot type; null/empty unequips. */
+    public void setEquippedSlot(String typeId, String cosmeticId) {
+        if (equipped == null) equipped = new HashMap<>();
+        if (typeId == null || typeId.isEmpty()) return;
+        if (cosmeticId == null || cosmeticId.isEmpty()) {
+            equipped.remove(typeId);
+        } else {
+            equipped.put(typeId, cosmeticId);
+        }
+    }
+
+    public Map<String, String> getEquippedSlots() {
+        if (equipped == null) equipped = new HashMap<>();
+        return equipped;
+    }
+
+    /** Number of distinct equipped slots (cap + pet + ...). */
+    public int getEquippedSlotCount() {
+        return equipped == null ? 0 : equipped.size();
     }
 
     // --- Tasks ---
@@ -261,52 +285,11 @@ public class PlayerCosmeticsData {
         sanitize();
     }
 
-    // --- Pets ---
-
-    public Set<String> getUnlockedPets() {
-        if (unlockedPets == null) unlockedPets = new HashSet<>();
-        return unlockedPets;
-    }
-
-    public boolean isPetUnlocked(String petId) {
-        if (petId == null) return false;
-        PetDefinition def = PetDefinition.fromId(petId);
-        if (def != null && def.isUnlockedByDefault()) return true;
-
-        return getUnlockedPets().contains(petId);
-    }
-
-    public void unlockPet(String petId) {
-        if (petId != null) {
-            getUnlockedPets().add(petId);
-        }
-    }
-
-    public String getEquippedPetId() {
-        return equippedPetId;
-    }
-
-    public void setEquippedPetId(String equippedPetId) {
-        this.equippedPetId = (equippedPetId != null && !equippedPetId.isEmpty()) ? equippedPetId : null;
-    }
-
     public void resetCosmetics() {
-        getUnlockedCapes().clear();
-        unlockedCapes.add(CapeDefinition.TWO_YEAR_CELEBRATION.getId());
-        unlockedCapes.add(CapeDefinition.SEASON_8.getId());
+        getUnlockedCosmetics().clear();
         setPvpKills(0);
-        if (equippedCapeId != null && !isCapeUnlocked(equippedCapeId)) {
-            equippedCapeId = null;
-        }
-        getUnlockedPets().clear();
-        for (PetDefinition pet : PetDefinition.values()) {
-            if (pet.isUnlockedByDefault()) {
-                getUnlockedPets().add(pet.getId());
-            }
-        }
-        if (equippedPetId != null && !isPetUnlocked(equippedPetId)) {
-            equippedPetId = null;
-        }
-        sanitize();
+        if (equipped == null) equipped = new HashMap<>();
+        equipped.clear();
+        sanitize(); // re-adds default + task-reward unlocks
     }
 }

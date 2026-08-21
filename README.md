@@ -18,6 +18,9 @@ From realistic 0.38g surface gravity and true-to-life forward Mie scattering blu
 - [Cosmetic Store & Reward Progression System](#-cosmetic-store--reward-progression-system)
   - [In-Game Store GUI & Economy](#in-game-store-gui--economy)
   - [Custom Cape Collection](#custom-cape-collection)
+  - [Custom Pets Collection](#custom-pets-collection)
+  - [Custom Trails Collection](#custom-trails-collection)
+  - [Adding New Cosmetic Types](#adding-new-cosmetic-types)
   - [Progression Tasks & Milestones](#progression-tasks--milestones)
   - [3D Cape Rendering Engine & Motion Physics](#3d-cape-rendering-engine--motion-physics)
   - [Real-Time Multiplayer Synchronization](#real-time-multiplayer-synchronization)
@@ -73,12 +76,13 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 
 | Feature | Description | Implementation Details |
 |---|---|---|
-| **Cosmetic Store & Wardrobe** | Built-in GUI for browsing, purchasing, and equipping custom 3D capes. | Accessible via `/store`, `/cosmetics`, or `K` keybind |
+| **Cosmetic Store & Wardrobe** | Built-in category-driven GUI for browsing, purchasing, and equipping cosmetics of any type (capes, pets, trails, …). | Accessible via `/store`, `/cosmetics`, or `K` keybind |
 | **Survival Playtime Economy** | Earn 1 Coin for every 1 hour (3600s) spent in survival/adventure mode. | Server-authoritative tracker persisted in the world save with live progress bar |
-| **7 Hand-Crafted Capes** | Custom 64x32 cape textures celebrating server milestones, spaceflight, Mars, and player parties. | Dedicated `AlyrionCapeLayer` with real-time motion physics |
-| **Milestone Tasks** | Unlock coins and exclusive capes by reaching Space, the Moon, Mars, claiming the Dragon Egg, slaying 10 players, or partying up with 4+ players. | Real-time event & player state evaluation |
-| **Multiplayer Cape Sync** | Network synchronization packets broadcast equipped capes to all nearby players. | Custom C2S / S2C payload network pipeline |
-| **Cosmetic Pets** | Buy and equip 3D pets that orbit your character — currently the **Satellite Pet**, a gold research satellite circling your head. | `SatellitePetModel` + `SatellitePetLayer` orbit renderer, dedicated **Pets** tab in the store with spinning 3D preview |
+| **7 Hand-Crafted Capes** | Custom 64x32 cape textures celebrating server milestones, spaceflight, Mars, and player parties. | `CosmeticRenderLayer` → `CapeCosmeticRenderer` with real-time motion physics |
+| **Milestone Tasks** | Unlock coins and exclusive cosmetics by reaching Space, the Moon, Mars, claiming the Dragon Egg, slaying 10 players, or partying up with 4+ players. | Real-time event & player state evaluation |
+| **Multiplayer Cosmetic Sync** | Network synchronization packets broadcast every player's equipped cosmetics (all slots) to all nearby players. | Generic C2S / S2C payload network pipeline |
+| **Cosmetic Pets** | Buy and equip 3D pets that orbit your character — currently the **Satellite Pet**, a gold research satellite circling your head. | `SatellitePetModel` + `PetCosmeticRenderer` orbit renderer, dedicated **Pets** tab with spinning 3D preview |
+| **Particle Trails** | Buy and equip movement trails — the **Rocket Trail** leaves a fiery exhaust behind you. | `TrailCosmeticRenderer`, dedicated **Trails** tab |
 | **Mars Dimension** | Full extraterrestrial dimension with 384-block world height ($Y = -64$ to $Y = 320$). | `alyrioncore:mars`, multi-noise terrain generator |
 | **0.38g Planetary Gravity** | Living entities experience 38% of Earth gravity while on Mars. | NeoForge Attribute Modifier (`Attributes.GRAVITY`, $-62\%$) |
 | **Authentic Blue Sunsets** | Forward Mie scattering calculations simulate true blue Martian twilights. | Custom `DimensionSpecialEffects` pipeline |
@@ -93,7 +97,7 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Mars Sleeping Pod** | Two-block tech bed that lets players sleep on Mars — even through raging dust storms. | Custom `SleepingPodBlock` with NeoForge bed hooks & dimension-aware sleep logic |
 | **Greenhouse Farming** | Till Martian regolith into farmland and grow Martian Potatoes — but only inside sealed, lit greenhouses. | `RegolithFarmlandBlock`, `MartianPotatoCropBlock` + `HabitatSealManager` integration |
 | **Meteoric Iron Tier** | Full tool & weapon set (sword, pickaxe, axe, shovel, hoe) forged from meteoric nickel-iron. | `ModToolTiers.METEORIC_IRON` — diamond harvest level, 650 durability |
-| **Block Reinforcement** | Bolt reinforcement plates onto any breakable block: it keeps its own look (riveted plate frame on air-facing sides), mines as hard as the original, and must be mined 3–100× before it actually breaks — dropping only the original block. An 8-stage crack overlay shows the reinforcement wearing down hit by hit. Explosions behave exactly as on the unprotected block (TNT breaks it iff it would break the original, with the original's drops). | Iron (3×), Diamond (10×), Meteoric Iron (30×), Netherite (100×); 2×2 craft → 8 plates; `ReinforcedBlock` wrapper + `BreakEvent` hit-absorption + BESR that redraws the original block and its damage |
+| **Block Reinforcement** | Bolt reinforcement plates onto any breakable block: it keeps its own look (riveted plate frame on air-facing sides), mines as hard as the original, and must be mined 3–100× before it actually breaks — dropping only the original block. An 8-stage crack overlay shows the reinforcement wearing down hit by hit. Explosions are absorbed hit by hit like mining: each blast that would destroy the original consumes one hit (crack overlay advances, metal clang) until the tier's budget runs out, then it breaks with the original's drops. | Iron (3×), Diamond (10×), Meteoric Iron (30×), Netherite (100×); 2×2 craft → 8 plates; `ReinforcedBlock` wrapper + `BreakEvent` hit-absorption + BESR that redraws the original block and its damage |
 | **Crashed Probe Structures** | Two jigsaw crash sites (Soviet & US probe) with salvageable scientific chest loot. | NBT structures + `crashed_probes` structure set |
 | **Martian Moons** | Phobos & Deimos added as tidally locked moons of Mars with bespoke celestial textures. | `universe_planets/phobos.json` & `deimos.json` (Rocketnautics + AlyrionCore datapacks) |
 | **CO₂ Dry Ice Sublimation** | Dry ice blocks dynamically release visible sublimation vapor and frost particles. | Custom `DryIceBlock` with animated particle emission |
@@ -105,21 +109,23 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 
 ## 🎨 Cosmetic Store & Reward Progression System
 
-AlyrionCore features an integrated cosmetic wardrobe and progression reward economy. The **server is fully authoritative**: coins, cape & pet unlocks, playtime and task progress are stored per-server inside the world save (keyed by player UUID) and only ever mutated by the server. The client renders a synchronized mirror of the state the server sends it.
+AlyrionCore features an integrated cosmetic wardrobe and progression reward economy. The **server is fully authoritative**: coins, cosmetic unlocks, playtime and task progress are stored per-server inside the world save (keyed by player UUID) and only ever mutated by the server. The client renders a synchronized mirror of the state the server sends it.
+
+The whole system is **type-driven and category-based** (like Essentials / Bedrock marketplace cosmetics): every cosmetic is a `CosmeticDefinition` of a `CosmeticType` (currently **Capes**, **Pets**, **Trails** — more can be added), one equipped slot per category, one store tab per category, and one client renderer per category. Adding a brand-new cosmetic kind needs no data, networking, GUI or render-layer changes — see [Adding New Cosmetic Types](#adding-new-cosmetic-types).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                     ✦ ALYRION COSMETIC STORE & REWARDS ✦            Coins: ⛃ 15 │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│ [ Store & Wardrobe ]  [ Pets ]     [ Tasks & Playtime ]                        │
+│ [ Capes ]  [ Pets ]  [ Trails ]  [ Tasks & Playtime ]                          │
 ├────────────────────────────────────────┬────────────────────────────────────────┤
 │ ┌────────────────────────────────────┐ │ ┌────────────────────────────────────┐ │
 │ │ 2 Year Celebration Cape   [★ FREE] │ │ │      The Martian Cape              │ │
 │ ├────────────────────────────────────┤ │ │  ┌──────┐                           │ │
-│ │ Season 8 Cape             [★ FREE] │ │ │  │ 2D   │ Martian rust dunes and   │ │
-│ ├────────────────────────────────────┤ │ │  │ Cape │ Olympus Mons with a      │ │
-│ │ Stars Cape             [✔ UNLOCKED]│ │ │  │ View │ green Martian.           │ │
-│ ├────────────────────────────────────┤ │ │  └──────┘                           │ │
+│ │ Season 8 Cape             [★ FREE] │ │ │  │ 2D   │ Rust-ochre Martian dunes │ │
+│ ├────────────────────────────────────┤ │ │  │ Cape │ under the red planet,     │ │
+│ │ Stars Cape             [✔ UNLOCKED]│ │ │  │ View │ with a little green       │ │
+│ ├────────────────────────────────────┤ │ │  └──────┘ Martian.                 │ │
 │ │ Moon Cape              [5 Coins]   │ │ │          Status: Unlocked          │ │
 │ ├────────────────────────────────────┤ │ │         [ Preview Only ]           │ │
 │ │ The Martian Cape       [5 Coins]   │ │ └────────────────────────────────────┘ │
@@ -127,6 +133,8 @@ AlyrionCore features an integrated cosmetic wardrobe and progression reward econ
 │ │ Grim Cape              [10 Coins]  │                                          │
 │ ├────────────────────────────────────┤                                          │
 │ │ Satellite Pet           [15 Coins] │                                          │
+│ ├────────────────────────────────────┤                                          │
+│ │ Rocket Trail            [8 Coins]  │                                          │
 │ └────────────────────────────────────┘                                          │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -135,9 +143,9 @@ AlyrionCore features an integrated cosmetic wardrobe and progression reward econ
 - **Access**: Open via chat commands (`/store` or `/cosmetics`) or the dedicated hotkey (default: **`K`**).
 - **Playtime Currency**: Players earn **1 Coin** for every **1 hour (3600 seconds)** spent actively in Survival or Adventure mode (creative and spectator modes do not accumulate playtime). Playtime is counted by the **server**, so it works identically for every client and cannot be spoofed.
 - **Progress Tracking**: The "Tasks & Playtime" tab displays total survival playtime down to the second, alongside a live progress bar tracking time toward the next coin reward. The GUI live-refreshes whenever the server syncs new state.
-- **Three-Tab Layout**: The store is organized into **Store & Wardrobe** (capes), **Pets** (3D companion pets with a spinning in-GUI preview), and **Tasks & Playtime** tabs.
-- **Equipping from the Wardrobe**: The large cape/pet preview panel is **display-only** — equip/unequip is done on the item cards in the list, keeping the preview clean.
-- **Server-Side Persistent Storage**: All progression (coins, unlocked capes, equipped cape, playtime, PvP kills, unlocked pets, equipped pet, completed tasks) is owned by the server and persisted per-world in the `alyrion_cosmetics` saved data (inside the world folder, `data/alyrion_cosmetics.dat`). Each server/world has its **own independent** progression for every player UUID — nothing is stored in `config/` anymore. The client only holds a transient mirror that is re-synced on every login and wiped on logout.
+- **Category Tabs**: Tabs are generated from the cosmetic registry — one tab per `CosmeticType` that has items (**Capes**, **Pets**, **Trails** today), plus a **Tasks & Playtime** tab. Adding an item to the registry automatically adds it to its category tab.
+- **Equipping from the Category Lists**: The large preview panel is **display-only** — equip/unequip is done on the item cards in the list, keeping the preview clean.
+- **Server-Side Persistent Storage**: All progression (coins, unlocked cosmetics, equipped slots per category, playtime, PvP kills, completed tasks) is owned by the server and persisted per-world in the `alyrion_cosmetics` saved data (inside the world folder, `data/alyrion_cosmetics.dat`). Each server/world has its **own independent** progression for every player UUID — nothing is stored in `config/` anymore. The client only holds a transient mirror that is re-synced on every login and wiped on logout. Old saves using the legacy cape/pet split are migrated automatically.
 - **PvP Kill Rewards**: Every direct player kill made in Survival/Adventure counts toward kill-based tasks. The **Grim Reaper** task (`task_kills`) awards **+5 Coins** and the **Grim Cape** after **10 player kills** — or the cape can simply be bought for **10 Coins** in the store.
 
 ---
@@ -152,7 +160,7 @@ All capes are authored in 64x32 Minecraft cape format with bespoke pixel art:
 | **Season 8 Cape** | `season_8.png` | **FREE** | Unlocked by default | Royal crimson and gold themed cape featuring diamond-inlaid crest and golden laurels for Season 8. |
 | **Stars Cape** | `stars.png` | **5 Coins** | Buy or complete *"Going to Space"* | Deep space starfield studded with pure-white stars and an orbiting high-tech research satellite. |
 | **Moon Cape** | `moon.png` | **5 Coins** | Buy or complete *"Going to the Moon"* | Detailed lunar cratered surface overlooking the blue marble of planet Earth in deep space. |
-| **The Martian Cape** | `marsian.png` | **5 Coins** | Buy or complete *"Going to Mars"* | Rust-ochre Martian dunes beneath Olympus Mons featuring a friendly green Martian explorer. |
+| **The Martian Cape** | `marsian.png` | **5 Coins** | Buy or complete *"Going to Mars"* | Rust-ochre Martian dunes under the red planet, with a little green Martian. |
 | **Grim Cape** | `grim.png` | **10 Coins** | Buy or complete *"Grim Reaper"* (10 PvP kills) | Jet-black cape with a bleached skeleton head, earned by forging a grim reputation. |
 | **Pride Cape** | `pride.png` | **Not Buyable** | Complete *"United We Stand"* (party of 4+ via Open Parties and Claims) | Vibrant rainbow cape earned by partying up with at least 4 players in an OPAC party. |
 
@@ -166,13 +174,36 @@ The **Pets** tab lets players purchase and equip 3D companion pets that follow t
 |---|---|---|---|---|
 | **Satellite Pet** | `pets/satellite.png` | **15 Coins** | Buy in the Pets tab | A little gold research satellite that orbits above your head — twin blue solar wings, a tilted antenna dish and a blinking beacon light. |
 
-#### How Pets Are Rendered (`SatellitePetModel` + `SatellitePetLayer`)
+#### How Pets Are Rendered (`SatellitePetModel` + `PetCosmeticRenderer`)
 - **Box-geometry model**: Authored as vanilla `ModelPart` cubes (gold body, mirrored solar wings, mast + dish, separate beacon light) against a 128x32 texture atlas generated by `generate_satellite_pet.py`.
 - **Orbital motion**: The pet circles the player's head with a gentle vertical bob (orbit radius ~0.94 blocks, ~2.35 blocks above the ground), self-spin, and a lazy sway — the dish always angles toward the player.
 - **Blinking beacon**: The antenna light pulses on a fixed blink cycle, tinted and rendered with full brightness.
 - **Hidden when invisible**: Invisible players don't render their pet.
 - **Store preview**: A **spinning 3D satellite** rendered live inside the Pets tab's preview panel, with the pet's current status (Locked / Unlocked / Equipped), price and description.
-- **Multiplayer**: Pets are only rendered client-side for players whose equipped pet the server has broadcast via `s2c_sync_pet` — the same server-authoritative model used for capes.
+- **Multiplayer**: Pets are only rendered client-side for players whose equipped pet the server has broadcast via `s2c_sync_cosmetic` — the same server-authoritative model used for every cosmetic type.
+- **Extensible**: future pets register their own baked `ModelPart` visuals in `PetCosmeticRenderer.visuals` — the framework itself is unchanged.
+
+---
+
+### Custom Trails Collection
+
+The **Trails** tab is the reference implementation for adding a brand-new cosmetic kind: a trail leaves particles behind the player while moving. Trail rendering is pure client-side particles driven by the server-synced equipped slot:
+
+| Trail | Price | Unlock Condition | Description |
+|---|---|---|---|
+| **Rocket Trail** | **8 Coins** | Buy in the Trails tab | Leave a fiery rocket exhaust trail (flame + smoke) behind you as you run. |
+
+---
+
+### Adding New Cosmetic Types
+
+The generic framework makes a new cosmetic kind a small, self-contained change:
+
+1. **`CosmeticType`** — add a constant, e.g. `HAT("hat", "Hats")`.
+2. **`ClientCosmeticsRenderers`** — register a `CosmeticRenderer` implementation for it (world rendering via `render(...)`, optional store icon/preview via `drawStoreIcon` / `drawStorePreview`).
+3. **`CosmeticsRegistry`** — register `CosmeticDefinition`s of that type; each automatically gets a store tab, purchase/equip logic, save-data slot and multiplayer sync.
+
+Nothing else changes: `PlayerCosmeticsData`, the network payloads, `ServerCosmeticsManager`, `CosmeticsManager`, `CosmeticRenderLayer` and `CosmeticStoreScreen` are all type-agnostic.
 
 ---
 
@@ -216,7 +247,7 @@ Players can earn bonus coins and immediately unlock premium capes by accomplishi
 
 ### 3D Cape Rendering Engine & Motion Physics
 
-AlyrionCore implements `AlyrionCapeLayer.java`, a custom player render layer attached to all player skins (both `default` / wide and `slim` / Alex models):
+AlyrionCore implements a single generic player render layer, `CosmeticRenderLayer.java`, attached to all player skins (both `default` / wide and `slim` / Alex models). It dispatches to the `CosmeticRenderer` of every equipped cosmetic type. The cape renderer (`CapeCosmeticRenderer`) keeps the authentic cloak behaviour:
 
 - **Authentic Cloak Physics**: Implements real-time interpolation of player velocity, body rotation, walking bobbing, and vertical descent momentum to calculate natural cape sway and trailing angles.
 - **Crouch Adjustments**: Automatically offsets and angles the cape when the player sneaks.
@@ -228,13 +259,11 @@ AlyrionCore implements `AlyrionCapeLayer.java`, a custom player render layer att
 
 All cosmetics state is synchronized using NeoForge custom payload networking (`CosmeticNetworking.java`). The client never decides anything — it requests, the server validates and persists, then the server broadcasts the result:
 
-- **Client-to-Server (`c2s_equip_cape`)**: The client requests to equip/unequip a cape. The server validates that the cape is actually unlocked for that player before applying it.
-- **Client-to-Server (`c2s_purchase_cape`)**: The client requests a purchase. The server checks the player's coin balance, deducts coins, unlocks the cape and equips it — all against the world's saved data.
+- **Client-to-Server (`c2s_equip_cosmetic`)**: The client requests to equip/unequip a cosmetic (by type + id; empty id unequips the slot). The server validates that the cosmetic is actually unlocked for that player before applying it.
+- **Client-to-Server (`c2s_purchase_cosmetic`)**: The client requests a purchase. The server checks the player's coin balance, deducts coins, unlocks the cosmetic and equips it — all against the world's saved data.
 - **Client-to-Server (`c2s_request_cosmetics`)**: Fallback sync request, used when the store is opened before the login sync arrives.
-- **Client-to-Server (`c2s_equip_pet` / `c2s_purchase_pet`)**: Pet equivalents of the cape requests — the server validates pet ownership and deducts coins from the player's balance.
-- **Server-to-Client (`s2c_sync_cosmetics`)**: The full authoritative state for a player (coins, playtime, PvP kills, unlocked capes, equipped cape, completed tasks, unlocked pets, equipped pet) — pushed on login and after every state change.
-- **Server-to-Client (`s2c_sync_cape`)**: The server broadcasts a player's equipped cape ID to all clients tracking that entity, so everyone sees the correct capes.
-- **Server-to-Client (`s2c_sync_pet`)**: The server broadcasts a player's equipped pet ID to all clients tracking that entity (and on login), so everyone sees the correct orbiting pets.
+- **Server-to-Client (`s2c_sync_cosmetics`)**: The full authoritative state for a player (coins, playtime, PvP kills, unlocked cosmetic ids, equipped slots per category, completed tasks) — pushed on login and after every state change.
+- **Server-to-Client (`s2c_sync_cosmetic`)**: The server broadcasts one player's equipped cosmetic in one slot type to all clients tracking that entity (and on login), so everyone sees the correct capes, pets, trails and future types.
 - **Server-to-Client (`s2c_play_sound`)**: Reward sounds are triggered by the server (e.g. a coin earned or a task completed) and played locally.
 - **Server Tick Driver**: Playtime accumulation and milestone task detection run on the server tick (`ServerCosmeticsEvents`), so progression is identical for every client and persists in the world save.
 
@@ -244,9 +273,10 @@ All cosmetics state is synchronized using NeoForge custom payload networking (`C
 
 Dev/test overrides are **ops-only server commands** (replacing the old client-side Dev Controls tab, which could edit progress on any world or server from the client):
 
-- `/alyrioncosmetics coins` — anyone can view their own coins, playtime and cape count.
+- `/alyrioncosmetics coins` — anyone can view their own coins, playtime, unlocked-cosmetic and equipped-slot counts.
 - `/alyrioncosmetics addcoins <player> <amount>` — grant coins (op level 2).
 - `/alyrioncosmetics addplaytime <player> <seconds>` — add survival playtime, awarding any coins earned along the way (op level 2).
+- `/alyrioncosmetics unlock <player> <cosmetic>` — unlock any cosmetic by registry id (op level 2).
 - `/alyrioncosmetics completetask <player> <task>` — instantly complete a task (`task_space`, `task_moon`, `task_mars`, `task_dragon_egg`, `task_kills`, `task_party`) (op level 2).
 - `/alyrioncosmetics resettasks <player>` — reset a player's task progression (op level 2).
 - `/alyrioncosmetics resetcosmetics <player>` — reset a player's cosmetic unlocks (op level 2).
@@ -730,7 +760,7 @@ Reinforce any breakable block so it survives repeated mining — the fortress-bl
 - **Applying**: right-click a breakable block with a plate. The block is replaced by a `reinforced_block` wrapper that stores the original state — it keeps its own look (a riveted plate frame on air-facing sides, with the original block drawn inside by a block-entity renderer), so a reinforced wall still looks exactly like the wall you built.
 - **Mining**: the block **mines as hard as the original** (same hardness, tool multipliers, correct-tool requirement — a pickaxe requirement carries over). Each mining cycle consumes one hit; the reinforcement absorbs `tier ×` cycles before the block finally breaks. An **8-stage crack overlay** shows the plating wearing down hit by hit.
 - **Drops**: it always drops **only the original block** — with the original's silk-touch / fortune behavior — never the wrapper. The `reinforced_block` has no item form and can't be picked up.
-- **Explosions**: TNT (and other explosions) behave exactly as on the unprotected block — it breaks *iff* the explosion would have broken the original, and drops the original's loot.
+- **Explosions**: TNT (and other explosions) are absorbed like mining hits — each blast that would have destroyed the original consumes one hit (crack overlay advances), and only after the tier's full hit budget does the block break, dropping the original's loot.
 - **Creative players** bypass the hits and mine reinforced blocks instantly.
 
 ---

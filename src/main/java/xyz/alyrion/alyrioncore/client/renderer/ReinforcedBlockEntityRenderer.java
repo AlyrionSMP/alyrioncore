@@ -20,14 +20,14 @@ import xyz.alyrion.alyrioncore.block.ReinforcedBlockEntity;
 
 /**
  * Draws the ORIGINAL block model inside the reinforced block's plate frame,
- * plus the cumulative damage crack overlay.
+ * plus the damage crack overlay.
  *
- * The frame itself is the blockstate model (chunk-culled, so plates only show
- * on air-facing sides); this renderer supplies the block's own look so the
+ * The frame is the blockstate model (chunk-culled, so plates only show on
+ * air-facing sides); this renderer supplies the block's own look so the
  * reinforced block is never just a new texture — it is the original block
- * wrapped in plates. The crack overlay is one of 8 stage models (registered
- * as additional models) chosen from the block entity's server-synced damage
- * stage, so everyone sees the reinforcement wear down as hits are absorbed.
+ * wrapped in plates. The crack overlay is one of 8 stage models (registered as
+ * additional models) chosen from the block entity's crack stage, which the
+ * server updates on the BE ONLY — the block itself is never replaced.
  */
 public class ReinforcedBlockEntityRenderer implements BlockEntityRenderer<ReinforcedBlockEntity> {
 
@@ -72,7 +72,7 @@ public class ReinforcedBlockEntityRenderer implements BlockEntityRenderer<Reinfo
         if (stage > 0) {
             BakedModel crack = Minecraft.getInstance().getModelManager().getModel(CRACK_MODELS[stage]);
             BlockState state = blockEntity.getBlockState();
-            VertexConsumer crackBuffer = buffers.getBuffer(RenderType.translucent());
+            VertexConsumer crackBuffer = buffers.getBuffer(RenderType.cutout());
             Minecraft.getInstance().getBlockRenderer().getModelRenderer()
                     .renderModel(pose.last(), crackBuffer, state, crack, 1.0F, 1.0F, 1.0F, light, overlay);
         }

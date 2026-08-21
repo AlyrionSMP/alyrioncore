@@ -17,9 +17,11 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.block.ReinforcementTier;
 import xyz.alyrion.alyrioncore.item.DryIceShardItem;
+import xyz.alyrion.alyrioncore.item.FertilizerItem;
 import xyz.alyrion.alyrioncore.item.MartianRockSampleItem;
 import xyz.alyrion.alyrioncore.item.ModToolTiers;
 import xyz.alyrion.alyrioncore.item.ReinforcementPlateItem;
+import xyz.alyrion.alyrioncore.item.UshankaItem;
 
 import java.util.List;
 
@@ -200,5 +202,18 @@ public class ModItems {
     public static final DeferredItem<Item> BAKED_MARTIAN_POTATO = ITEMS.registerItem(
             "baked_martian_potato",
             props -> new Item(props.food(BAKED_MARTIAN_POTATO_FOOD))
+    );
+
+    public static final DeferredItem<FertilizerItem> FERTILIZER = ITEMS.registerItem(
+            "fertilizer",
+            FertilizerItem::new,
+            new Item.Properties()
+    );
+
+    // --- Worn items looted from crashed probes ---
+    public static final DeferredItem<UshankaItem> USHANKA = ITEMS.registerItem(
+            "ushanka",
+            props -> new UshankaItem(ModArmorMaterials.USHANKA, net.minecraft.world.item.ArmorItem.Type.HELMET, props),
+            new Item.Properties()
     );
 }

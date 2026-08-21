@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.HolderLookup;
+import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 
 /**
@@ -22,7 +23,7 @@ public class ReinforcedBlockEntity extends BlockEntity {
 
     private BlockState originalState = Blocks.AIR.defaultBlockState();
     private int hitsRemaining = 1;
-    /** 0..7 cumulative damage stage shown by the crack overlay (0 = pristine). */
+    /** 0..7 cumulative damage stage drawn by the crack overlay (0 = pristine). */
     private int crackStage = 0;
 
     public ReinforcedBlockEntity(BlockPos pos, BlockState state) {
@@ -53,12 +54,6 @@ public class ReinforcedBlockEntity extends BlockEntity {
         this.crackStage = crackStage;
     }
 
-    /** Maps consumed hits to a 0..7 crack stage (0 = pristine, 7 = nearly broken). */
-    public static int crackStageFor(int totalHits, int hitsRemaining) {
-        int consumed = Math.max(0, totalHits - hitsRemaining);
-        return consumed * 7 / Math.max(1, totalHits - 1);
-    }
-
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -76,6 +71,9 @@ public class ReinforcedBlockEntity extends BlockEntity {
         }
         this.hitsRemaining = tag.getInt("hits_remaining");
         this.crackStage = tag.getInt("crack_stage");
+        if (this.level != null && this.level.isClientSide) {
+            AlyrionCore.LOGGER.info("[reinforce] client BE loaded at {} stage {} hits {} original {}", getBlockPos(), this.crackStage, this.hitsRemaining, this.originalState);
+        }
     }
 
     @Override
