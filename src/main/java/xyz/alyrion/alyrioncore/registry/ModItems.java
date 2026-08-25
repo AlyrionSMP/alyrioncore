@@ -16,6 +16,7 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.block.ReinforcementTier;
+import xyz.alyrion.alyrioncore.item.CrateItem;
 import xyz.alyrion.alyrioncore.item.DryIceShardItem;
 import xyz.alyrion.alyrioncore.item.FertilizerItem;
 import xyz.alyrion.alyrioncore.item.MartianRockSampleItem;
@@ -215,5 +216,12 @@ public class ModItems {
             "ushanka",
             props -> new UshankaItem(ModArmorMaterials.USHANKA, net.minecraft.world.item.ArmorItem.Type.HELMET, props),
             new Item.Properties()
+    );
+
+    // --- Store delivery crates (contents live in DataComponents.CONTAINER) ---
+    public static final DeferredItem<CrateItem> CRATE = ITEMS.registerItem(
+            "crate",
+            CrateItem::new,
+            new Item.Properties().stacksTo(1)
     );
 }

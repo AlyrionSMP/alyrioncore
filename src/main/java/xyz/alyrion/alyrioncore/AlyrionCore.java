@@ -11,6 +11,7 @@ import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
 import xyz.alyrion.alyrioncore.registry.ModCreativeTabs;
 import xyz.alyrion.alyrioncore.registry.ModItems;
+import xyz.alyrion.alyrioncore.registry.ModMenus;
 
 @Mod(AlyrionCore.MODID)
 public class AlyrionCore {
@@ -31,6 +32,7 @@ public class AlyrionCore {
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITY_TYPES.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
     }

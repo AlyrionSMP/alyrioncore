@@ -83,6 +83,9 @@ public class ModCreativeTabs {
 
                         // Probe salvage & worn items
                         output.accept(ModItems.USHANKA.get());
+
+                        // Store & economy
+                        output.accept(ModItems.CRATE.get());
                     })
                     .build()
             );

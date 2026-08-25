@@ -3,6 +3,8 @@ package xyz.alyrion.alyrioncore.client;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;
@@ -25,9 +27,11 @@ import xyz.alyrion.alyrioncore.client.renderer.CosmeticRenderLayer;
 import xyz.alyrion.alyrioncore.client.renderer.OxygenGeneratorBlockEntityRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.ReinforcedBlockEntityRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.SatellitePetModel;
+import xyz.alyrion.alyrioncore.client.renderer.UshankaItemRenderer;
 import xyz.alyrion.alyrioncore.client.renderer.UshankaModel;
 import xyz.alyrion.alyrioncore.registry.ModBlockEntities;
 import xyz.alyrion.alyrioncore.registry.ModItems;
+import xyz.alyrion.alyrioncore.registry.ModMenus;
 
 @EventBusSubscriber(modid = AlyrionCore.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientModEvents {
@@ -72,6 +76,11 @@ public class ClientModEvents {
                     EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
                 return UshankaModel.getInstance();
             }
+
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return UshankaItemRenderer.getInstance();
+            }
         }, ModItems.USHANKA.get());
     }
 
@@ -80,6 +89,12 @@ public class ClientModEvents {
         event.registerBlockEntityRenderer(ModBlockEntities.AIRLOCK.get(), AirlockBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.OXYGEN_GENERATOR.get(), OxygenGeneratorBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.REINFORCED.get(), ReinforcedBlockEntityRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        // CrateMenu is a 3-row chest layout, so the vanilla container screen fits as-is.
+        event.register(ModMenus.CRATE.get(), ContainerScreen::new);
     }
 
     @SubscribeEvent

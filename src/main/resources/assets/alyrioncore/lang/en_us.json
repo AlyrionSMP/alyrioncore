@@ -87,6 +87,7 @@
   "item.alyrioncore.netherite_reinforcement_plate": "Netherite Reinforcement Plate",
   "item.alyrioncore.fertilizer": "Fertilizer",
   "item.alyrioncore.ushanka": "Soviet Ushanka",
+  "item.alyrioncore.crate": "Store Crate",
   "item.alyrioncore.fertilizer.tooltip_1": "§7Apply to farmland to increase",
   "item.alyrioncore.fertilizer.tooltip_2": "§a§l+50% §7crop growth speed (1.5x)",
   "message.alyrioncore.fertilizer_applied": "§a✔ Farmland fertilized (+50% growth speed)",

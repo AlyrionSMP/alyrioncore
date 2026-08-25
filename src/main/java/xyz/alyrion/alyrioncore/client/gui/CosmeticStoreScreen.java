@@ -3,6 +3,8 @@ package xyz.alyrion.alyrioncore.client.gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.client.renderer.ClientCosmeticsRenderers;
 import xyz.alyrion.alyrioncore.client.renderer.CosmeticRenderer;
@@ -12,6 +14,9 @@ import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsRegistry;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticType;
 import xyz.alyrion.alyrioncore.cosmetics.TaskDefinition;
+import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
+import xyz.alyrion.alyrioncore.store.ItemPackDefinition;
+import xyz.alyrion.alyrioncore.store.ItemPacksRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +46,10 @@ import java.util.List;
 public class CosmeticStoreScreen extends CosmeticScreen {
 
     private static final Object TASKS_TAB = new Object();
+    private static final Object PACKS_TAB = new Object();
+
+    private ItemPackDefinition selectedPack = null;
+    private double tasksScroll = 0.0;
 
     // --- Fixed panel geometry (clamped for tiny windows) ---
     private int pw() {
@@ -122,6 +131,7 @@ public class CosmeticStoreScreen extends CosmeticScreen {
                 tabs.add(type);
             }
         }
+        tabs.add(PACKS_TAB);
         tabs.add(TASKS_TAB);
         if (tabIndex >= tabs.size()) {
             tabIndex = 0;
@@ -132,8 +142,22 @@ public class CosmeticStoreScreen extends CosmeticScreen {
     private void selectDefault() {
         if (onTasks()) {
             selected = null;
+            selectedPack = null;
             return;
         }
+        if (onPacks()) {
+            selected = null;
+            List<ItemPackDefinition> packs = ItemPacksRegistry.all();
+            if (packs.isEmpty()) {
+                selectedPack = null;
+                return;
+            }
+            if (selectedPack == null || !packs.contains(selectedPack)) {
+                selectedPack = packs.get(0);
+            }
+            return;
+        }
+        selectedPack = null;
         List<CosmeticDefinition> items = CosmeticsRegistry.getByType(currentType());
         if (items.isEmpty()) {
             selected = null;
@@ -146,6 +170,10 @@ public class CosmeticStoreScreen extends CosmeticScreen {
 
     private boolean onTasks() {
         return !tabs.isEmpty() && tabs.get(tabIndex) == TASKS_TAB;
+    }
+
+    private boolean onPacks() {
+        return !tabs.isEmpty() && tabs.get(tabIndex) == PACKS_TAB;
     }
 
     private CosmeticType currentType() {
@@ -173,17 +201,32 @@ public class CosmeticStoreScreen extends CosmeticScreen {
         }
 
         if (!onTasks()) {
-            List<CosmeticDefinition> items = CosmeticsRegistry.getByType(currentType());
-            int cardH = cardHeight(items.size());
-            int y = bodyTop() + 14;
-            for (CosmeticDefinition cosmetic : items) {
-                if (y + cardH > bodyBottom()) break;
-                final CosmeticDefinition def = cosmetic;
-                this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
-                    selected = def;
-                    rebuildWidgets();
-                }).bounds(catX(), y, catW(), cardH).build());
-                y += cardH + 3;
+            if (onPacks()) {
+                List<ItemPackDefinition> packs = ItemPacksRegistry.all();
+                int cardH = cardHeight(packs.size());
+                int y = bodyTop() + 14;
+                for (ItemPackDefinition pack : packs) {
+                    if (y + cardH > bodyBottom()) break;
+                    final ItemPackDefinition def = pack;
+                    this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
+                        selectedPack = def;
+                        rebuildWidgets();
+                    }).bounds(catX(), y, catW(), cardH).build());
+                    y += cardH + 3;
+                }
+            } else {
+                List<CosmeticDefinition> items = CosmeticsRegistry.getByType(currentType());
+                int cardH = cardHeight(items.size());
+                int y = bodyTop() + 14;
+                for (CosmeticDefinition cosmetic : items) {
+                    if (y + cardH > bodyBottom()) break;
+                    final CosmeticDefinition def = cosmetic;
+                    this.addRenderableWidget(Button.builder(Component.literal(""), btn -> {
+                        selected = def;
+                        rebuildWidgets();
+                    }).bounds(catX(), y, catW(), cardH).build());
+                    y += cardH + 3;
+                }
             }
         }
     }
@@ -238,8 +281,18 @@ public class CosmeticStoreScreen extends CosmeticScreen {
 
         if (onTasks()) {
             renderTasksTab(guiGraphics);
-            String hint = "Tasks complete automatically while you play — rewards are credited instantly.";
+            String hint = "Tasks complete automatically while you play.";
             guiGraphics.drawCenteredString(this.font, fit("§7" + hint, pw() - 16), ox() + pw() / 2, oy() + ph() - 17, 0xAAAAAA);
+        } else if (onPacks()) {
+            renderPacksCatalog(guiGraphics, mouseX, mouseY);
+            // Action bar paints BEFORE the item preview so it can never be
+            // skipped if the item render misbehaves.
+            renderPackActionBar(guiGraphics, mouseX, mouseY);
+            try {
+                renderPackPreview(guiGraphics);
+            } catch (Throwable t) {
+                AlyrionCore.LOGGER.debug("Store pack preview failed: {}", t.toString());
+            }
         } else {
             renderCatalog(guiGraphics, mouseX, mouseY, tick);
             // Action bar paints BEFORE the 3D preview so it can never be
@@ -273,6 +326,12 @@ public class CosmeticStoreScreen extends CosmeticScreen {
                     renderer.drawStoreIcon(guiGraphics, items.get(0), iconX, iconY, 16, tick);
                 }
                 guiGraphics.drawCenteredString(this.font, fit("§7" + type.getDisplayName(), sideW() - 4), x + sideW() / 2, y + tabH() - 10, 0xFFFFFF);
+            } else if (tab == PACKS_TAB) {
+                List<ItemPackDefinition> packs = ItemPacksRegistry.all();
+                if (!packs.isEmpty()) {
+                    guiGraphics.renderItem(packs.get(0).iconStack(), iconX, iconY);
+                }
+                guiGraphics.drawCenteredString(this.font, "§7Packs", x + sideW() / 2, y + tabH() - 10, 0xFFFFFF);
             } else {
                 drawTaskStar(guiGraphics, iconX, iconY);
                 guiGraphics.drawCenteredString(this.font, "§7Tasks", x + sideW() / 2, y + tabH() - 10, 0xFFFFFF);
@@ -342,12 +401,23 @@ public class CosmeticStoreScreen extends CosmeticScreen {
      *  vanilla widget so no stock button texture can ever show through. */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && !onTasks() && selected != null) {
-            int bx = prevCenterX() - 75;
-            int by = oy() + ph() - 26;
-            int bw = 150;
-            int bh = 18;
-            if (mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + bh) {
+        int bx = prevCenterX() - 75;
+        int by = oy() + ph() - 26;
+        int bw = 150;
+        int bh = 18;
+        boolean actionClicked = button == 0
+                && mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + bh;
+
+        if (actionClicked) {
+            if (onPacks()) {
+                if (selectedPack != null) {
+                    CosmeticsManager manager = CosmeticsManager.get();
+                    if (manager.getCoins() >= selectedPack.price()) {
+                        CosmeticNetworking.sendPurchaseItemPack(selectedPack.id());
+                    }
+                }
+                return true;
+            } else if (!onTasks() && selected != null) {
                 CosmeticsManager manager = CosmeticsManager.get();
                 if (manager.isEquipped(selected)) {
                     manager.unequip(selected.getType());
@@ -361,6 +431,17 @@ public class CosmeticStoreScreen extends CosmeticScreen {
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (onTasks() && scrollY != 0
+                && mouseX >= prevX() && mouseX < catX() + catW()
+                && mouseY >= bodyTop() && mouseY < bodyBottom()) {
+            tasksScroll -= scrollY * 12.0;
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     private void renderPreview(GuiGraphics guiGraphics, long tick, float partialTick, int mouseX, int mouseY) {
@@ -410,6 +491,116 @@ public class CosmeticStoreScreen extends CosmeticScreen {
             info = "§6" + preview.getPrice() + " Coins" + (manager.getCoins() >= preview.getPrice() ? "" : " §7(need " + (preview.getPrice() - manager.getCoins()) + " more)");
         }
         guiGraphics.drawCenteredString(this.font, fit(info, pw - 8), cx, modelBottom + 24, 0xFFFFFF);
+    }
+
+    // --- Item Packs tab ---
+
+    private void renderPacksCatalog(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        List<ItemPackDefinition> packs = ItemPacksRegistry.all();
+        int cardH = cardHeight(packs.size());
+        int y = bodyTop() + 14;
+
+        guiGraphics.drawString(this.font, "§6§lITEM PACKS §7(" + packs.size() + ")",
+                catX() + 4, bodyTop() + 2, 0xFFFFFF, true);
+
+        for (ItemPackDefinition pack : packs) {
+            if (y + cardH > bodyBottom()) break;
+            boolean isSelected = pack == selectedPack;
+            boolean hover = mouseX >= catX() && mouseX < catX() + catW() && mouseY >= y && mouseY < y + cardH;
+
+            guiGraphics.fill(catX(), y, catX() + catW(), y + cardH, isSelected ? 0xFF1B2740 : hover ? 0xFF202B44 : 0xFF161D2E);
+            guiGraphics.renderOutline(catX(), y, catW(), cardH, isSelected ? 0xFFFFD700 : 0xFF31405E);
+
+            guiGraphics.renderItem(pack.iconStack(), catX() + 4, y + (cardH - 16) / 2);
+
+            String status = "§6" + pack.price() + "⛃";
+            int statusW = this.font.width(status);
+            guiGraphics.drawString(this.font, status, catX() + catW() - statusW - 4, y + (cardH - 8) / 2, 0xFFFFFF, true);
+
+            String name = "§f" + fit(pack.displayName(), catW() - 24 - statusW - 6);
+            guiGraphics.drawString(this.font, name, catX() + 23, y + (cardH - 8) / 2, 0xFFFFFF, false);
+
+            y += cardH + 3;
+        }
+    }
+
+    private void renderPackPreview(GuiGraphics guiGraphics) {
+        if (selectedPack == null) return;
+
+        CosmeticsManager manager = CosmeticsManager.get();
+        int px = prevX();
+        int pw = prevRight() - px;
+        int cx = prevCenterX();
+
+        // Large icon of the pack's representative item
+        int iconSize = 36;
+        int iconY = bodyTop() + 14;
+        guiGraphics.fill(cx - iconSize / 2 - 4, iconY - 4, cx + iconSize / 2 + 4, iconY + iconSize + 4, 0xFF161D2E);
+        guiGraphics.renderOutline(cx - iconSize / 2 - 4, iconY - 4, iconSize + 8, iconSize + 8, 0xFFEAB308);
+        guiGraphics.renderItem(selectedPack.iconStack(), cx - 8, iconY + 8);
+
+        guiGraphics.drawCenteredString(this.font, "§e§l" + fit(selectedPack.displayName(), pw - 8), cx, iconY + iconSize + 10, 0xFFFFFF);
+
+        String info;
+        if (manager.getCoins() >= selectedPack.price()) {
+            info = "§6" + selectedPack.price() + " Coins — ready to buy";
+        } else {
+            info = "§6" + selectedPack.price() + " Coins §7(need " + (selectedPack.price() - manager.getCoins()) + " more)";
+        }
+        guiGraphics.drawCenteredString(this.font, fit(info, pw - 8), cx, iconY + iconSize + 22, 0xFFFFFF);
+
+        guiGraphics.drawCenteredString(this.font, fit("§7" + selectedPack.description(), tw()), cx, iconY + iconSize + 38, 0xAAAAAA);
+
+        renderPackContents(guiGraphics, cx, iconY + iconSize + 50);
+    }
+
+    private int tw() {
+        return prevRight() - prevX();
+    }
+
+    private void renderPackContents(GuiGraphics guiGraphics, int centerX, int topY) {
+        // Skip empty stacks (unresolved item ids) so the grid has no holes
+        List<ItemStack> contents = new ArrayList<>();
+        for (ItemStack stack : selectedPack.contents()) {
+            if (!stack.isEmpty()) {
+                contents.add(stack);
+            }
+        }
+        int cell = 20;
+        int cols = Math.max(1, tw() / (cell + 2));
+        int rows = Math.min(3, (contents.size() + cols - 1) / cols);
+
+        guiGraphics.drawCenteredString(this.font, "§7Contains:", centerX, topY, 0xAAAAAA);
+
+        for (int i = 0; i < Math.min(contents.size(), rows * cols); i++) {
+            ItemStack stack = contents.get(i);
+            int col = i % cols;
+            int row = i / cols;
+            int x = centerX - (cols * (cell + 2) - 2) / 2 + col * (cell + 2);
+            int y = topY + 12 + row * (cell + 2);
+            // renderItem decorates stacks with their count itself
+            guiGraphics.renderItem(stack, x, y);
+        }
+    }
+
+    private void renderPackActionBar(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (selectedPack == null) return;
+        CosmeticsManager manager = CosmeticsManager.get();
+
+        int bx = prevCenterX() - 75;
+        int by = oy() + ph() - 26;
+        int bw = 150;
+        int bh = 18;
+        boolean hover = mouseX >= bx && mouseX < bx + bw && mouseY >= by && mouseY < by + bh;
+
+        boolean canAfford = manager.getCoins() >= selectedPack.price();
+        String label = "§6BUY · " + selectedPack.price() + " ⛃";
+        int fill = canAfford ? 0xFF3A2C12 : 0xFF1A2130;
+        int border = canAfford ? 0xFFB98A2F : 0xFF31405E;
+
+        guiGraphics.fill(bx, by, bx + bw, by + bh, canAfford && hover ? 0xFF2A3550 : fill);
+        guiGraphics.renderOutline(bx, by, bw, bh, border);
+        guiGraphics.drawCenteredString(this.font, canAfford ? label : "§7" + label.substring(2), bx + bw / 2, by + 5, 0xFFFFFF);
     }
 
     private static String taskTitleFor(CosmeticDefinition cosmetic) {
@@ -477,7 +668,7 @@ public class CosmeticStoreScreen extends CosmeticScreen {
         int tx = prevX();
         int tw = (catX() + catW()) - tx;
 
-        // Playtime card
+        // Playtime card (fixed at the top, never scrolls)
         int py = bodyTop();
         int playH = 30;
         guiGraphics.fill(tx, py, tx + tw, py + playH, 0xFF161D2E);
@@ -506,29 +697,95 @@ public class CosmeticStoreScreen extends CosmeticScreen {
                 fit(String.format("§fNext: %dm %02ds (%d%%)", nextCoinSecs / 60, nextCoinSecs % 60, (int) (progress * 100)), barW - 4),
                 barX + barW / 2, barY + 1, 0xFFFFFF);
 
-        // Task cards
-        int ty = py + playH + 6;
+        // Task cards: each card is exactly as tall as its text needs and the
+        // list simply flows downwards, clipped and scrollable when it is
+        // taller than the panel.
+        int listTop = py + playH + 6;
+        int listBottom = bodyBottom();
         TaskDefinition[] tasks = TaskDefinition.values();
-        int gaps = (tasks.length - 1) * 3;
-        int cardH = Math.max(18, Math.min(30, (bodyBottom() - ty - gaps) / Math.max(1, tasks.length)));
 
-        for (TaskDefinition task : tasks) {
-            if (ty + cardH > bodyBottom()) break;
-            boolean completed = manager.isTaskCompleted(task.getId());
+        int[] heights = new int[tasks.length];
+        String[][] wrapped = new String[tasks.length][];
+        int totalHeight = 0;
+        for (int i = 0; i < tasks.length; i++) {
+            wrapped[i] = wrap("§7" + tasks[i].getDescription(), tw - 8);
+            heights[i] = 18 + wrapped[i].length * 10;
+            totalHeight += heights[i];
+        }
+        totalHeight += Math.max(0, tasks.length - 1) * 3;
 
-            guiGraphics.fill(tx, ty, tx + tw, ty + cardH, completed ? 0xFF0F291E : 0xFF1F2937);
-            guiGraphics.renderOutline(tx, ty, tw, cardH, completed ? 0xFF10B981 : 0xFF4B5563);
+        int contentH = listBottom - listTop;
+        double maxScroll = Math.max(0, totalHeight - contentH);
+        tasksScroll = Mth.clamp(tasksScroll, 0.0, maxScroll);
+        int scrollOff = (int) tasksScroll;
 
-            String reward = "§6+" + task.getCoinReward() + "⛃" + (task.getReward() != null ? " §b+" + fit(task.getReward().getDisplayName(), tw / 3) : "");
-            int rW = this.font.width(reward);
-            guiGraphics.drawString(this.font, reward, tx + tw - rW - 4, ty + 3, 0xFFFFFF, true);
+        guiGraphics.enableScissor(tx, listTop, tx + tw, listBottom);
+        int ty = listTop - scrollOff;
+        for (int i = 0; i < tasks.length; i++) {
+            TaskDefinition task = tasks[i];
+            int cardH = heights[i];
+            if (ty + cardH > listTop && ty < listBottom) {
+                boolean completed = manager.isTaskCompleted(task.getId());
 
-            guiGraphics.drawString(this.font,
-                    (completed ? "§a✔ " : "§e⏳ ") + fit(task.getTitle(), tw - rW - 14),
-                    tx + 4, ty + 3, 0xFFFFFF, true);
-            guiGraphics.drawString(this.font, "§7" + fit(task.getDescription(), tw - 8), tx + 4, ty + 13, 0xAAAAAA, false);
+                guiGraphics.fill(tx, ty, tx + tw, ty + cardH, completed ? 0xFF0F291E : 0xFF1F2937);
+                guiGraphics.renderOutline(tx, ty, tw, cardH, completed ? 0xFF10B981 : 0xFF4B5563);
 
+                String reward = "§6+" + task.getCoinReward() + "⛃"
+                        + (task.getReward() != null ? " §b+" + fit(task.getReward().getDisplayName(), tw / 3) : "");
+                int rW = this.font.width(reward);
+                guiGraphics.drawString(this.font, reward, tx + tw - rW - 4, ty + 4, 0xFFFFFF, true);
+
+                guiGraphics.drawString(this.font,
+                        (completed ? "§a✔ " : "§e⏳ ") + fit(task.getTitle(), tw - rW - 14),
+                        tx + 4, ty + 4, 0xFFFFFF, true);
+                for (int l = 0; l < wrapped[i].length; l++) {
+                    guiGraphics.drawString(this.font, wrapped[i][l], tx + 4, ty + 14 + l * 10, 0xAAAAAA, false);
+                }
+            }
             ty += cardH + 3;
         }
+        guiGraphics.disableScissor();
+
+        // Scrollbar (only when the list actually overflows)
+        if (maxScroll > 0) {
+            int trackX = tx + tw - 3;
+            guiGraphics.fill(trackX, listTop, trackX + 2, listBottom, 0xFF1A2130);
+            int thumbH = Math.max(12, (int) ((long) contentH * contentH / totalHeight));
+            int thumbY = listTop + (int) ((contentH - thumbH) * (tasksScroll / maxScroll));
+            guiGraphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, 0xFFEAB308);
+        }
+    }
+
+    /** Greedy word wrap that keeps § color codes across lines. */
+    private String[] wrap(String text, int maxW) {
+        List<String> lines = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        for (String word : text.split(" ")) {
+            String candidate = line.length() == 0 ? word : line + " " + word;
+            if (this.font.width(candidate) <= maxW) {
+                line = new StringBuilder(candidate);
+            } else if (this.font.width(word) > maxW) {
+                if (line.length() > 0) {
+                    lines.add(line.toString());
+                    line = new StringBuilder();
+                }
+                String last = null;
+                for (char c : word.toCharArray()) {
+                    String next = last == null ? String.valueOf(c) : last + c;
+                    if (this.font.width(next) > maxW && last != null) {
+                        lines.add(last);
+                        last = String.valueOf(c);
+                    } else {
+                        last = next;
+                    }
+                }
+                if (last != null) line = new StringBuilder(last);
+            } else {
+                lines.add(line.toString());
+                line = new StringBuilder(word);
+            }
+        }
+        if (line.length() > 0) lines.add(line.toString());
+        return lines.toArray(new String[0]);
     }
 }

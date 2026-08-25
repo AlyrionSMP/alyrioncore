@@ -14,6 +14,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsManager;
 import xyz.alyrion.alyrioncore.cosmetics.ServerCosmeticsManager;
+import xyz.alyrion.alyrioncore.store.ServerItemPackManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -124,6 +125,21 @@ public class CosmeticNetworking {
         }
     }
 
+    // Packet: Client -> Server: "I want to buy item pack X"
+    public record C2SPurchaseItemPackPayload(String packId) implements CustomPacketPayload {
+        public static final Type<C2SPurchaseItemPackPayload> TYPE =
+                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_purchase_item_pack"));
+
+        public static final StreamCodec<ByteBuf, C2SPurchaseItemPackPayload> STREAM_CODEC =
+                ByteBufCodecs.STRING_UTF8.map(C2SPurchaseItemPackPayload::new, C2SPurchaseItemPackPayload::packId);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+
     // Packet: Server -> Client: "Here is your full cosmetics state"
     public record S2CSyncCosmeticsPayload(
             int coins,
@@ -223,6 +239,19 @@ public class CosmeticNetworking {
                 }
         );
 
+        // Client -> Server: item pack purchase request (coins deducted server-side)
+        registrar.playToServer(
+                C2SPurchaseItemPackPayload.TYPE,
+                C2SPurchaseItemPackPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    context.enqueueWork(() -> {
+                        if (context.player() instanceof ServerPlayer serverPlayer) {
+                            ServerItemPackManager.purchase(serverPlayer, payload.packId());
+                        }
+                    });
+                }
+        );
+
         // Client -> Server: full state request (fallback sync)
         registrar.playToServer(
                 C2SRequestCosmeticsPayload.TYPE,
@@ -280,6 +309,10 @@ public class CosmeticNetworking {
 
     public static void sendPurchaseCosmetic(String cosmeticId) {
         sendToServer(new C2SPurchaseCosmeticPayload(cosmeticId != null ? cosmeticId : ""));
+    }
+
+    public static void sendPurchaseItemPack(String packId) {
+        sendToServer(new C2SPurchaseItemPackPayload(packId != null ? packId : ""));
     }
 
     public static void sendRequestSync() {
