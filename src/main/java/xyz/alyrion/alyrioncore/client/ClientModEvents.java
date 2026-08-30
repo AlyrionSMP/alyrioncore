@@ -74,7 +74,7 @@ public class ClientModEvents {
             @Override
             public HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
                     EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
-                return UshankaModel.getInstance();
+                return UshankaModel.getArmorInstance();
             }
 
             @Override

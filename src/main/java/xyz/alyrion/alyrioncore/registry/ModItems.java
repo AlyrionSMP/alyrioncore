@@ -215,7 +215,7 @@ public class ModItems {
     public static final DeferredItem<UshankaItem> USHANKA = ITEMS.registerItem(
             "ushanka",
             props -> new UshankaItem(ModArmorMaterials.USHANKA, net.minecraft.world.item.ArmorItem.Type.HELMET, props),
-            new Item.Properties()
+            new Item.Properties().stacksTo(1)
     );
 
     // --- Store delivery crates (contents live in DataComponents.CONTAINER) ---

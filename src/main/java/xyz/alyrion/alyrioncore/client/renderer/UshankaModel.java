@@ -30,21 +30,37 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class UshankaModel extends HumanoidArmorModel<LivingEntity> {
 
-    private static UshankaModel instance;
+    private static UshankaModel armorInstance;
+    private static UshankaModel itemInstance;
 
     private UshankaModel(ModelPart root) {
         super(root);
     }
 
-    public static UshankaModel getInstance() {
-        if (instance == null) {
-            instance = new UshankaModel(createBodyLayer().bakeRoot());
+    public static UshankaModel create() {
+        return new UshankaModel(createBodyLayer().bakeRoot());
+    }
+
+    public static UshankaModel getArmorInstance() {
+        if (armorInstance == null) {
+            armorInstance = create();
         }
-        return instance;
+        return armorInstance;
+    }
+
+    public static UshankaModel getItemInstance() {
+        if (itemInstance == null) {
+            itemInstance = create();
+        }
+        return itemInstance;
+    }
+
+    public static UshankaModel getInstance() {
+        return getArmorInstance();
     }
 
     private static LayerDefinition createBodyLayer() {
-        MeshDefinition mesh = HumanoidModel.createMesh(CubeDeformation.NONE, 0.0F);
+        MeshDefinition mesh = new MeshDefinition();
         PartDefinition root = mesh.getRoot();
 
         // Crown: a fur dome over the top half of the head, slightly oversized.
@@ -54,29 +70,36 @@ public class UshankaModel extends HumanoidArmorModel<LivingEntity> {
                         .addBox(-4.5F, -9.5F, -4.5F, 9.0F, 5.0F, 9.0F),
                 PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        // The hat part must exist (the armor layer toggles it) but stays empty.
+        // Required humanoid parts exist in the root hierarchy so HumanoidModel
+        // doesn't throw NoSuchElementException, but keep them completely empty
+        // so they never render ghost cubes with overlapping UVs.
         root.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
+        root.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
+        root.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
+        root.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
+        root.addOrReplaceChild("right_leg", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
+        root.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         // Brow flap on the forehead, protruding and tilted slightly forward.
         head.addOrReplaceChild("front_flap",
                 CubeListBuilder.create().texOffs(20, 16)
-                        .addBox(-4.2F, -3.0F, -1.0F, 8.0F, 3.0F, 1.0F),
+                        .addBox(-4.0F, -3.0F, -1.0F, 8.0F, 3.0F, 1.0F),
                 PartPose.offsetAndRotation(0.0F, -5.5F, -4.1F, -0.10F, 0.0F, 0.0F));
 
         // Ear flaps hanging past the chin, tilted slightly outward.
         head.addOrReplaceChild("ear_flap_right",
                 CubeListBuilder.create().texOffs(40, 0)
-                        .addBox(-1.1F, -0.5F, -3.0F, 1.0F, 8.0F, 6.0F),
+                        .addBox(-1.0F, -0.5F, -3.0F, 1.0F, 8.0F, 6.0F),
                 PartPose.offsetAndRotation(-4.1F, -4.5F, -0.8F, 0.0F, 0.0F, 0.10F));
         head.addOrReplaceChild("ear_flap_left",
                 CubeListBuilder.create().texOffs(40, 0).mirror()
-                        .addBox(0.1F, -0.5F, -3.0F, 1.0F, 8.0F, 6.0F),
+                        .addBox(0.0F, -0.5F, -3.0F, 1.0F, 8.0F, 6.0F),
                 PartPose.offsetAndRotation(4.1F, -4.5F, -0.8F, 0.0F, 0.0F, -0.10F));
 
         // Neck flap at the back, tilted slightly backwards.
         head.addOrReplaceChild("back_flap",
                 CubeListBuilder.create().texOffs(0, 16)
-                        .addBox(-4.2F, -0.5F, 0.0F, 8.0F, 8.0F, 1.0F),
+                        .addBox(-4.0F, -0.5F, 0.0F, 8.0F, 8.0F, 1.0F),
                 PartPose.offsetAndRotation(0.0F, -4.5F, 3.9F, 0.10F, 0.0F, 0.0F));
 
         return LayerDefinition.create(mesh, 64, 64);

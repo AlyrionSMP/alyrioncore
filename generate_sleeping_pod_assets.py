@@ -7,7 +7,7 @@ import json
 import os
 from PIL import Image, ImageDraw
 
-MOD_DIR = "/Users/lea/alyrioncore"
+MOD_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(MOD_DIR, "src/main/resources/data/alyrioncore")
 MINECRAFT_DATA_DIR = os.path.join(MOD_DIR, "src/main/resources/data/minecraft")
 ASSETS_DIR = os.path.join(MOD_DIR, "src/main/resources/assets/alyrioncore")
@@ -244,30 +244,47 @@ def make_sleeping_pod_glass():
     return grid
 
 def make_sleeping_pod_item_icon():
-    # 32x32 pixel art item icon for the Sleeping Pod
-    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    
-    # Draw isometric futuristic capsule
-    # Base shadow
-    d.polygon([(4, 20), (16, 26), (28, 20), (16, 14)], fill=(25, 30, 40, 220))
-    # Titanium Hull Sled
-    d.polygon([(4, 18), (16, 24), (28, 18), (28, 21), (16, 27), (4, 21)], fill=(50, 58, 72, 255))
-    # Main White Shell
-    d.polygon([(5, 14), (16, 19), (27, 14), (27, 18), (16, 24), (5, 18)], fill=(215, 225, 238, 255))
-    # Headboard console (at back-left)
-    d.polygon([(5, 9), (13, 13), (13, 17), (5, 13)], fill=(180, 195, 215, 255))
-    d.polygon([(5, 9), (10, 7), (18, 11), (13, 13)], fill=(235, 242, 252, 255))
-    # Screen on headboard
-    d.polygon([(7, 11), (11, 13), (11, 15), (7, 13)], fill=(30, 210, 240, 255))
-    # Stasis Bed Mattress inside
-    d.polygon([(11, 16), (16, 18), (24, 14), (19, 12)], fill=(40, 60, 95, 255))
-    # Translucent Glass Canopy Dome
-    d.polygon([(9, 10), (19, 15), (27, 11), (17, 6)], fill=(80, 210, 245, 140))
-    # Canopy highlight shine
-    d.line([(12, 9), (21, 13)], fill=(240, 255, 255, 200), width=1)
-    # Status LED
-    d.ellipse([(5, 17), (7, 19)], fill=(40, 240, 120, 255))
+    # 16x16 pixel art item icon for the Sleeping Pod
+    SLEEPING_POD_16 = [
+        '................',
+        '.....OOOOOO.....',
+        '...OOwwwwwwOO...',
+        '..OwwWWwwWWmmO..',
+        '.OwwWWccccWWmSO.',
+        '.OwWWcCCCCgWWmSO',
+        '.OwWCcCCgggmWWSO',
+        '.OmWCGgggggmWWSO',
+        '.OmWCGgggggmWWSO',
+        '.OSWLLHHHHLmWSSO',
+        '.OSbWWwwWWWWbSSO',
+        '.ObbBBbbBBBBbbSO',
+        '..OBBBddBBBBBdO.',
+        '..OBddDDDDddBdO.',
+        '...OOOOOOOOOO...',
+        '................',
+    ]
+    SLEEPING_POD_PAL = {
+        '.': (0, 0, 0, 0),
+        'O': (20, 24, 32, 255),
+        'w': (240, 245, 252, 255),
+        'W': (210, 220, 232, 255),
+        'm': (166, 178, 194, 255),
+        'S': (118, 130, 148, 255),
+        'b': (92, 102, 120, 255),
+        'B': (60, 68, 82, 255),
+        'd': (40, 46, 56, 255),
+        'D': (26, 30, 38, 255),
+        'c': (194, 242, 252, 255),
+        'C': (56, 190, 214, 255),
+        'G': (36, 158, 182, 255),
+        'g': (26, 130, 152, 255),
+        'L': (42, 232, 248, 255),
+        'H': (216, 172, 28, 255),
+    }
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for y in range(16):
+        for x in range(16):
+            img.putpixel((x, y), SLEEPING_POD_PAL[SLEEPING_POD_16[y][x]])
     
     filepath = os.path.join(TEXTURE_ITEM_DIR, "sleeping_pod.png")
     os.makedirs(os.path.dirname(filepath), exist_ok=True)

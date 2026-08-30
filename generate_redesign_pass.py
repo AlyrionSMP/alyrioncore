@@ -555,34 +555,47 @@ def martian_olivine_ore():
 # ---------------------------------------------------------------------------
 HEMATITE_NODULE = [
     '................',
+    '.....OOOO.......',
+    '...OOLLSSOO.....',
+    '..OLHLLSSHmSOO..',
+    '.OLHLmMLHmmMmDO.',
+    '.OLMmMMRdMmmdDO.',
+    '.OLMmMmRdMddDdEO',
+    '.OMmMmRkrddDDEEO',
+    '.OMMmRkdDddDEEEO',
+    '..OMmRddDDdDDEO.',
+    '..OMrdDdDDdEEO..',
+    '...OrdDdDddEOO..',
+    '...OOdDDdEEO....',
+    '....OOOOOO......',
     '................',
-    '......0000......',
-    '....0556650....',
-    '...065544220...',
-    '..0554422220...',
-    '..0544221110...',
-    '.05422111000...',
-    '.04322110000...',
-    '.04321100000...',
-    '..0321100000...',
-    '..0321100000...',
-    '...02110000....',
-    '....010000.....',
-    '......000......',
     '................',
 ]
-NODULE_PALETTE = ['#1c212b', '#2c3242', '#3d4457', '#525a70', '#6c758e',
-                  '#8d96ae', '#b4bccd', '#e2e6f0']
+NODULE_PALETTE_MAP = {
+    '.': (0, 0, 0, 0),
+    'O': '#141720',
+    'E': '#22171c',
+    'r': '#632218',
+    'R': '#913424',
+    'k': '#bc4a34',
+    'D': '#282f40',
+    'd': '#3c465c',
+    'M': '#54607c',
+    'm': '#72809f',
+    'L': '#96a4c2',
+    'H': '#c6d2ea',
+    'S': '#ffffff',
+}
 
 
 def hematite_nodule():
-    img = grid_img(HEMATITE_NODULE, NODULE_PALETTE)
-    img[3][5] = hex('#ffffff')
-    img[3][6] = hex('#ffffff')
-    # break the flat shadow side with subtle facet variation
-    for (x, y) in ((10, 7), (12, 9), (9, 10), (11, 12), (8, 6), (11, 6), (10, 11)):
-        img[y][x] = hex(NODULE_PALETTE[2])
-    img[9][4] = hex(NODULE_PALETTE[6])
+    img = []
+    for row in HEMATITE_NODULE:
+        line = []
+        for ch in row:
+            col = NODULE_PALETTE_MAP[ch]
+            line.append((0, 0, 0, 0) if col == (0, 0, 0, 0) else hex(col))
+        img.append(line)
     return img
 
 
@@ -699,36 +712,51 @@ def dry_ice_shard():
     return grid_img(AMETHYST_SHARD_GRID, SHARD_PALETTE)
 
 
-# Hand-drawn martian rock sample: basalt chunk with rust streak + teal fleck
+# Hand-drawn martian rock sample: faceted basalt chunk with rust streak & mineral fleck
 ROCK_SAMPLE = [
     '................',
-    '................',
-    '.....0000.......',
-    '....044320......',
-    '...04433220.....',
-    '..0443322110....',
-    '..0432221110....',
-    '.043222110000...',
-    '.032211010000...',
-    '.032211000000...',
-    '..0211000000....',
-    '..021000000.....',
-    '...0100000......',
-    '....00000.......',
+    '....OOOOO.......',
+    '...OHLLMmOO.....',
+    '..OHHLLMmMmEO...',
+    '.OHLLMMRRkkEmEO.',
+    '.OLMmMRRkrkSEsEO',
+    '.OLMMmkrrSEssSEO',
+    '.OLMmMSrSECCsSEO',
+    '.OMmMmMsSEccSSEO',
+    '..OMmMSsSSSssEO.',
+    '..OMMSSssSsSEO..',
+    '...OMSSsSssEO...',
+    '...OSssSsSEO....',
+    '....OOOOOO......',
     '................',
     '................',
 ]
-ROCK_PALETTE = ['#181315', '#261f22', '#362e31', '#473f42', '#5e5456']
+ROCK_PALETTE_MAP = {
+    '.': (0, 0, 0, 0),
+    'O': '#141014',
+    'E': '#1f1516',
+    'H': '#9a8d95',
+    'L': '#766971',
+    'M': '#564a52',
+    'm': '#443940',
+    'S': '#2c2329',
+    's': '#372d33',
+    'R': '#d66d3a',
+    'r': '#b04e22',
+    'k': '#782e12',
+    'C': '#4ee6cf',
+    'c': '#1f9e8e',
+}
 
 
 def martian_rock_sample():
-    img = grid_img(ROCK_SAMPLE, ROCK_PALETTE)
-    outline_item(img, OUTLINE_ITEM)
-    for (x, y) in ((9, 9), (7, 10), (10, 8)):
-        img[y][x] = hex(ROCK_PALETTE[2])
-    img[8][7] = hex('#c96232')          # rust streak
-    img[7][8] = hex('#2fd4bd')          # teal crystal fleck
-    img[4][8] = hex('#8d96ae')          # mineral glint
+    img = []
+    for row in ROCK_SAMPLE:
+        line = []
+        for ch in row:
+            col = ROCK_PALETTE_MAP[ch]
+            line.append((0, 0, 0, 0) if col == (0, 0, 0, 0) else hex(col))
+        img.append(line)
     return img
 
 

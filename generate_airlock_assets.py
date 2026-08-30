@@ -3,7 +3,7 @@
 import os
 from PIL import Image, ImageDraw
 
-TEX_DIR = "/Users/lea/alyrioncore/src/main/resources/assets/alyrioncore/textures"
+TEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src/main/resources/assets/alyrioncore/textures")
 
 def save(img, rel):
     path = os.path.join(TEX_DIR, rel)
@@ -99,26 +99,49 @@ def led_texture(name, rgb):
     d.rectangle([6, 6, 7, 9], fill=(min(rgb[0] + 90, 255), min(rgb[1] + 90, 255), min(rgb[2] + 90, 255), 255))
     save(img, f"block/airlock_led_{name}.png")
 
-# --- Item icon: mini airlock door ---
+# --- Item icon: 16x16 airlock door sprite ---
 def item_texture():
-    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    # frame
-    d.rectangle([5, 3, 26, 28], fill=(58, 62, 70, 255))
-    d.rectangle([7, 5, 24, 26], fill=(86, 92, 102, 255))
-    # viewport (top)
-    d.rectangle([10, 7, 21, 16], fill=(40, 43, 49, 255))
-    d.rectangle([11, 8, 20, 15], fill=(110, 205, 235, 200))
-    # glare
-    d.line([(12, 9), (16, 9)], fill=(230, 250, 255, 255))
-    # hazard stripe band
-    for x in range(7, 24, 3):
-        d.rectangle([x, 20, x + 1, 24], fill=(214, 180, 30, 255))
-        d.rectangle([x + 1, 20, x + 2, 24], fill=(30, 30, 32, 255))
-    # handle
-    d.rectangle([13, 25, 18, 26], fill=(150, 156, 166, 255))
-    # status light
-    d.ellipse([6, 4, 8, 6], fill=(40, 220, 90, 255))
+    AIRLOCK_16 = [
+        '................',
+        '...OOOOOOOOOO...',
+        '..OfffffffffdO..',
+        '..OfFfffffFFdO..',
+        '..OfWgggggWWdO..',
+        '..OfWgGGkkWWdO..',
+        '..OfWGkkkkWWdO..',
+        '..OfWWWWWWWWdO..',
+        '..OfHHHhhhhFdO..',
+        '..OfBbLbBBbFdO..',
+        '..OfBbLbBBbFdO..',
+        '..OfBBsSBBbFdO..',
+        '..OfHHHhhhhFdO..',
+        '..OfdddDDddFdO..',
+        '..OdddddddddDO..',
+        '...OOOOOOOOOO...',
+    ]
+    AIRLOCK_PAL = {
+        '.': (0, 0, 0, 0),
+        'O': (22, 24, 32, 255),
+        'f': (140, 150, 168, 255),
+        'F': (88, 96, 112, 255),
+        'd': (56, 62, 74, 255),
+        'D': (38, 42, 52, 255),
+        'W': (34, 38, 48, 255),
+        'g': (198, 242, 250, 255),
+        'G': (60, 188, 208, 255),
+        'k': (24, 120, 140, 255),
+        'H': (224, 176, 32, 255),
+        'h': (40, 42, 48, 255),
+        'b': (108, 118, 136, 255),
+        'B': (74, 82, 96, 255),
+        'L': (168, 178, 196, 255),
+        'S': (54, 226, 114, 255),
+        's': (30, 158, 74, 255),
+    }
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for y in range(16):
+        for x in range(16):
+            img.putpixel((x, y), AIRLOCK_PAL[AIRLOCK_16[y][x]])
     save(img, "item/airlock.png")
 
 frame_texture()
