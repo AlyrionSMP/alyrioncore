@@ -29,3 +29,10 @@ type="optional"
 versionRange="[0.26.1,)"
 ordering="NONE"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="atmospherics"
+type="optional"
+versionRange="[2.6.5,)"
+ordering="NONE"
+side="CLIENT"

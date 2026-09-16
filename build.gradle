@@ -80,6 +80,10 @@ configurations {
 dependencies {
     // Epic Fight compat: compile against it, but don't require it at runtime
     compileOnly "maven.modrinth:epic-fight:${project.epicfight_version}"
+
+    // ATMOSPHERICS compat: client-only mod; we push Mars biome atmosphere profiles into
+    // its live config (see client/compat/AtmosphericsCompat), never a runtime requirement.
+    compileOnly "maven.modrinth:atmospherics:${project.atmospherics_version}"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
