@@ -1,7 +1,7 @@
 {
   "parent": "sol",
   "name": "mars",
-  "radius": 6360000.0,
+  "radius": 1590000.0,
   "acceleration_at_surface": 3.7,
   "position": {
     "type": "circular_orbit_period",
