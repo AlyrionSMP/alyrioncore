@@ -52,6 +52,7 @@ From realistic 0.38g surface gravity and true-to-life forward Mie scattering blu
 - [Client & Quality of Life Systems](#-client--quality-of-life-systems)
   - [Universal Rebindable Escape / Close Screen Action](#universal-rebindable-escape--close-screen-action)
   - [Cosmetic Store Hotkey & Commands](#cosmetic-store-hotkey--commands)
+  - [ATMOSPHERICS Atmosphere Interop](#atmospherics-atmosphere-interop)
 - [Tool Requirements & Mining Tags](#-tool-requirements--mining-tags)
 - [Development, Setup & Building](#-development-setup--building)
 - [License & Credits](#-license--credits)
@@ -102,8 +103,9 @@ Rather than relying on generic fantasy tropes, the mod models real-world planeta
 | **Martian Moons** | Phobos & Deimos added as tidally locked moons of Mars with bespoke celestial textures. | `universe_planets/phobos.json` & `deimos.json` (Rocketnautics + AlyrionCore datapacks) |
 | **CO₂ Dry Ice Sublimation** | Dry ice blocks dynamically release visible sublimation vapor and frost particles. | Custom `DryIceBlock` with animated particle emission |
 | **Rich Geological Catalog** | 29 unique blocks including volcanics, bricks, ores, breccia, resource blocks, technology and soils with custom pixel art. | Hand-crafted 16x16 textures (full 2026 vanilla-style redesign), pickaxe/shovel tool tags |
-| **Universal Escape Keybind** | Rebind the standard Escape key action (Pause/Close GUI) to mouse buttons or other keys. | Custom `ModKeyMappings` with screen event routing |
+| **Universal Escape Keybind** | Rebind the standard Escape key action (Pause/Close GUI) to mouse buttons or other keys. Unbound by default — vanilla Escape is untouched unless you assign it. | Custom `ModKeyMappings` with screen event routing |
 | **Rocketnautics Interop** | Celestial definitions, orbital parameters, and atmospheric drag integration. | `data/alyrioncore` and `data/rocketnautics` datapacks |
+| **ATMOSPHERICS Interop** | Mars fog, sky, haze and dust-storm tones for every AlyrionCore biome, handed to the client-side atmosphere mod. | `client/compat/AtmosphericsCompat.java` (optional CLIENT dependency) |
 
 ---
 
@@ -357,14 +359,27 @@ Mars gets a **living, seasonally correct weather system** simulated server-side 
 
 ### Dust Devils
 - During midday (solar 3500–8500 ticks) or `dust_devils` states, the server spawns **towering conical dust columns** (18–30 blocks tall, 2.5–4.5 block radius) that wander with subtle drift and live 30–90 seconds.
-- Client-side, each devil renders a rotating, widening vortex of rust-orange `DustParticleOptions` and Martian-regolith block particles within 100 blocks of the player.
+- Client-side, each devil renders a thin rotating vortex of rust-orange `DustParticleOptions` within 64 blocks of the player (≤6 particles per devil at the full particle setting) — detail stays local and cheap.
 - Global storms disperse localized convective columns — the whole sky becomes the storm instead.
 
 ### Storm-Aware Rendering
-- **Ambient wind & dust particles** scale with smoothed storm intensity (up to 28 particles/tick, blown in the server wind direction).
-- **Fog ramp**: `ViewportEvent.RenderFog` collapses the far plane from a clear view down to ~12–30 blocks during a global storm (dense Martian dust blackout), with regional storms at ~42–82 blocks.
-- **Fog color**: `ComputeFogColor` blends the clear butterscotch tone into a deep, uniform apocalyptic ochre/terracotta as intensity rises.
-- **Sunset suppression** and **fog dimming** inside `MarsDimensionEffects` (see above).
+A storm is carried by **field effects, not particle spam**: the particle layer is deliberately thin, so weather costs almost nothing, and it scales with the vanilla *Particles* setting (`ALL` = full, `DECREASED` = 35 %, `MINIMAL` = none).
+
+| Layer | Hook | Effect |
+|---|---|---|
+| **Fog ramp** | `ViewportEvent.RenderFog` | Far plane collapses from a clear view to **3–12 blocks** in a global storm (regional: 14–56), near plane at 35 % of far — you lose the horizon, then the terrain, then almost everything. |
+| **Fog colour** | `ViewportEvent.ComputeFogColor` | Blends butterscotch into deep ochre/terracotta, then darkens the whole tone (up to −45 %) as intensity rises: a storm takes the light away, it does not merely tint the view. |
+| **Dust veil** | `RenderGuiEvent.Post` | Full-screen ochre tint plus top/bottom vignette bands, ramp `intensity^0.7`, alpha **≤ 0.40 / ≤ 0.65** and darkening with the storm — three draw calls, no post-processing pass. Suppressed while a screen is open, so menus stay untinted. |
+| **Atmospherics dynamics** | `AtmosphericsCompat` | When ATMOSPHERICS is installed its mixins own fog colour *and* fog distance, so the same storm curve is pushed into its per-biome values (visibility → 6 blocks, sky browns out, haze and fines thicken) and written back when the storm ends. |
+| **Sodium fog occlusion** | `SodiumCompat` | Sodium's *Fog Occlusion* option clamps its chunk search distance to the fog end, which at storm visibility unloads sections around the player — terrain popping in and out up close. It is suspended while visibility is low and the player's own value is restored when the storm ends or on logout. |
+| **Wind sway** | `ViewportEvent.ComputeCameraAngles` | Up to ±0.9° of roll with a small pitch/yaw wobble, on the same clock as the dust. |
+| **Gust pressure** | `ViewportEvent.ComputeFov` | Up to ~2° of extra FOV at the height of a global storm. |
+| **Electrostatic flashes** | `ClientLevel#setSkyFlashTime` | Rare discharges during global storms (~1 in 400 ticks) — Martian storms spark, they never rain. |
+| **Sunset suppression** | `MarsDimensionEffects` | The sunrise/sunset colour drops out above 0.65 intensity: the Sun is hidden behind the dust. |
+
+Ambient wind-borne dust itself is a handful of cheap `DustParticleOptions` near the player (≈7/tick at full intensity, one in six a sand particle for grit).
+
+Spawning follows vanilla's own conditions rather than the raw client tick: nothing spawns while the game is **paused** or the level is **frozen** (`/tick freeze`) — the client tick event still fires in those states, and feeding the frozen particle engine would dump the queued dust in one burst on unpause — and the particle budget drops to **zero while the window is unfocused**, since that work is invisible. The field effects keep running in both cases, so a storm still looks like a storm on a second monitor and the dust refills within a second of refocusing.
 
 ### Weather Command (`/marsweather`)
 | Subcommand | Permission | Description |
@@ -792,7 +807,8 @@ AlyrionCore implements a universal keybinding handler:
 
 - **Key Mapping Name**: `key.alyrioncore.escape` ("Escape (Pause / Close Screen)")
 - **Category**: `key.categories.alyrioncore` ("AlyrionCore")
-- **Default Key**: `GLFW_KEY_ESCAPE` (Universal conflict context)
+- **Default Key**: **Unbound** (`GLFW_KEY_UNKNOWN`) — vanilla `Escape` behaves normally until you bind a key or mouse button in *Controls → AlyrionCore*.
+- **Left mouse is refused**: the action consumes whatever input it is bound to, so a left-click binding would hijack every interaction and every menu. Picking it in *Controls* is cleared in the same frame and written back to `options.txt` as unbound; a hand-edited `options.txt` is corrected on the first client tick, and left clicks are never consumed by the action even if something else assigns it.
 
 #### How It Works (`ClientGameEvents.java`)
 - **In-Game World**: Pressing your bound key/mouse button consumes the click and brings up the Game Pause menu.
@@ -808,6 +824,19 @@ AlyrionCore implements a universal keybinding handler:
 - **Key Mapping Name**: `key.alyrioncore.open_store` ("Open Cosmetic Store")
 - **Default Key**: **`K`** (In-game context)
 - **Chat Commands**: `/store` or `/cosmetics` opens the store and rewards screen directly from the chat prompt.
+
+### ATMOSPHERICS Atmosphere Interop
+
+[ATMOSPHERICS](https://modrinth.com/mod/atmospherics) (mod id `atmospherics`, client-only) owns per-biome fog, sky, haze, cloud and star colouring. Out of the box it knows nothing about Mars — the planet's biomes are absent from its config (`config/ambientfog/biome_fog.json`), so Mars would fall back to terrestrial default fog while its renderer mixins supersede our own `MarsDimensionEffects` tint.
+
+`client/compat/AtmosphericsCompat.java` (optional **CLIENT**-side dependency, `2.6.5+`) pushes a Mars profile for all six AlyrionCore biomes into the mod's live config:
+
+- **Base day colours** come from each biome's own registered `effects` (`BiomeFogSettings.fromBiomeId`), so Olympus Mons stays dark basalt while Planum Boreum stays pale.
+- **Thin-air visibility**: `fogDensity 0.85`, fog from **24 → 420 blocks** — a 600 Pa atmosphere hazes rather than blinds.
+- **Low dust haze**: `haze.strength 1.8` at radius 56 blocks, plus sparse suspended-fines air haze (intensity 0.55).
+- **Dust-tone weather override**: should vanilla weather ever run on Mars, rain/thunder render as ochre dust storms (visibility 140 / 90 blocks) instead of blue-grey terrestrial rain.
+
+The profile is written into the live config only, never to disk, and only into AlyrionCore's own biomes — user presets and hand edits survive, and if a preset replaces the config object the profiles are re-applied on the next tick. Their mixins inject at the **tail of `FogRenderer.setupColor`**, i.e. *after* vanilla's fog colour and distance are computed, which is why a dust storm cannot be rendered by our own fog hooks alone: the live storm curve is therefore also pushed into their values — visibility collapses to ~6 blocks, the sky browns out and haze/airborne fines thicken — and the calm values are captured when a storm starts and written back when it ends. With ATMOSPHERICS absent the integration is inert. The Martian **blue sunset** is unaffected either way: their sunrise mixin targets the base `DimensionSpecialEffects#getSunriseColor`, which `MarsDimensionEffects` overrides.
 
 ---
 

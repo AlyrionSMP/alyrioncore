@@ -161,6 +161,53 @@ Gating `IEnergyStorage` / `IFluidHandler` to one face breaks real mods:
 - Fix: `config/fml.toml` → `maxThreads = 1` serializes mod construction
   (slower startup, kills the whole class of parallel-registration races).
 
+### 3.5 ATMOSPHERICS: per-biome atmospheres are a mutable public config
+- Client-only mod (`com.beash.atmospherics`). Data model:
+  `FogConfig.biomes: Map<String /*biome id*/, BiomeFogSettings>`, all **public mutable fields**,
+  plus helpers `copy()`, `sanitize()`, `fromBiomeId(id)`, `applyRegistryColors(settings, id)`.
+- Lookups are **by biome id only** — no dimension keying — so a modded dimension is invisible to
+  the mod until someone adds entries. Ship them from your mod; don't make users hand-tune the menu.
+- Integration that works: `Atmospherics.getConfig()` → build with
+  `BiomeFogSettings.fromBiomeId(yourBiome)` (pulls fog/sky straight from your biome's own `effects`)
+  → tune → `sanitize()` → `put` back. Do **not** call `saveConfig()` for keys you own: keep it
+  in-memory, and re-apply when the config *instance* changes (preset load) or your keys are missing.
+- Their mixins hook the **renderers** (`BackgroundRenderer` fog rgb, `ClientLevel#getSkyColor`,
+  `WorldRenderer` sky/clouds), so they win wherever they have a biome entry. But
+  `DimensionEffectsSunriseMixin` injects into the **base** `DimensionSpecialEffects#getSunriseColor`,
+  so a subclass override still wins — which is why Mars keeps its blue sunset.
+- `compileOnly "maven.modrinth:atmospherics:2.6.5.1"`: Modrinth maven also serves `2.6.5`, a
+  *different* game-version build of the same release series — pin the exact number for your MC.
+
+### 3.6 Rocketnautics/Cosmonautics `universe_planets`: override by `priority`, not file order
+- Planets are read from **every** namespace (`data/<ns>/universe_planets/*.json` via a plain
+  `SimpleJsonResourceReloadListener`) and deduplicated **by the JSON `name`, not the file path**:
+  per name an `ObjectRBTreeSet` ordered by `priority` descending, the first entry wins, and
+  lower-priority siblings are folded in by `subsume()` (`resolve(a, b)` returns `a` when present).
+- So overriding a planet the mod already ships (`mars`, `moon`, …) = same `name`, higher `priority`.
+  Equal priority merges field-by-field instead of replacing, and shipping the file in the mod's
+  namespace or yours makes no difference — namespaces are not the key, so mirroring both is safe.
+- Gravity is **derived, not declared**: `mu = acceleration_at_surface * radius^2`, and the orbit is
+  `a = cbrt(mu_parent * period_seconds^2 / 4pi^2)`. Radius *is* mass — an Earth-sized radius makes
+  Mars heavier than the pack's Earth and quadruples the capture/landing velocity budget.
+
+### 3.7 Aggressive fog + Sodium fog occlusion = chunks vanish near the player
+- Sodium's *Fog Occlusion* option is a render-distance optimisation: with it on,
+  `RenderSectionManager#getSearchDistance()` returns `getEffectiveRenderDistance()`, i.e. Sodium stops
+  loading/rendering sections past the fog end. Collapse fog to a handful of blocks (dust-storm
+  blackout) and whole 16-block sections around the player pop in and out. Players report it as
+  "weird chunks not rendering really near the player" — it is not a chunk loading bug.
+- Fix shape: suspend it only while the effect is active. No Sodium dependency needed —
+  `net.caffeinemc.mods.sodium.client.SodiumClientMod.options()` returns a public mutable field tree
+  (`options().performance.useFogOcclusion`) that the chunk renderer reads per frame, so a field write
+  applies immediately. Remember the player's value and put it back (storm end, logout): Sodium persists
+  options to `config/sodium-options.json` (`performance.use_fog_occlusion`), so a left-on override can
+  become permanent.
+- ATMOSPHERICS ships the same mitigation (`sodiumFogOcclusionAutoDisabled` + `sodium-options.json`
+  string juggling), but it writes the file once at startup and Sodium rewrites it — checked live on this
+  pack: their flag is `true` while the file still reads `performance.use_fog_occlusion: true`.
+- Sodium's implementation sits in a **nested jar** (`META-INF/jarjar/net.caffeinemc.sodium-…-mod.jar`);
+  scan that, not the outer bootstrap jar, or you will find no config classes at all.
+
 ---
 
 ## 4. Code gotchas (NeoForge 1.21.1 / Parchment)
