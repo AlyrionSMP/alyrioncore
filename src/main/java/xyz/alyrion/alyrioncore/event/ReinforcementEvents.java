@@ -151,6 +151,16 @@ public class ReinforcementEvents {
      * What may be reinforced: any breakable, non-fluid block without a block
      * entity (chests/machines keep their data and are excluded so they are
      * never destroyed by the replacement), that is not already reinforced.
+     *
+     * <p>Additionally the block must be a <em>full, solid block with a normal
+     * block model</em>: its collision shape must fill the whole 1×1×1 cell
+     * ({@link BlockState#isCollisionShapeFullBlock}) and it must render as a
+     * regular {@code MODEL} (not {@code INVISIBLE} or
+     * {@code ENTITYBLOCK_ANIMATED}). This keeps torches, doors, levers,
+     * buttons, slabs, stairs, fences, carpets, rails and the like from being
+     * reinforced — their partial/offset models produce a broken-looking or
+     * misbehaving wrapper. Full-cube blocks such as glass, whose collision
+     * shape is a full block even though they are transparent, stay eligible.</p>
      */
     private static boolean canReinforce(Level level, BlockPos pos, BlockState target, Player player) {
         if (target.isAir() || !target.getFluidState().isEmpty()) {
@@ -164,6 +174,13 @@ public class ReinforcementEvents {
         }
         if (level.getBlockEntity(pos) != null) {
             return false;
+        }
+        // Must be a full, solid block with a normal block model.
+        if (target.getRenderShape() != net.minecraft.world.level.block.RenderShape.MODEL) {
+            return false; // invisible / entity-block animated (e.g. some crops, banners)
+        }
+        if (!target.isCollisionShapeFullBlock(level, pos)) {
+            return false; // partial/offset models: torches, doors, levers, rails, ...
         }
         return level.mayInteract(player, pos);
     }

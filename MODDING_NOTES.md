@@ -250,7 +250,16 @@ Ship-block-reinforcement on top of ANY block without new textures:
   with one `reinforced_block` (blockstate property = tier) whose BE stores the
   ORIGINAL `BlockState` (via `NbtUtils.writeBlockState`) + remaining hits.
   Exclude air/fluids/unbreakable (`getDestroySpeed < 0`) and anything with a BE
-  (chests/machines would lose their data). No BlockItem, no loot table.
+  (chests/machines would lose their data). Also require a FULL cube with a
+  normal block model — `getRenderShape() == MODEL` and
+  `isCollisionShapeFullBlock(level, pos)`. Without that second guard you can
+  plate torches, doors, levers, slabs, stairs, fences, rails and glass panes,
+  and the wrapper then looks broken (plate frame floating around a partial
+  model, hitbox that no longer matches what you see). Note the guard gates NEW
+  applications only: wrappers already saved in a world keep working, so an old
+  save can still hold reinforced stairs/doors. Full cubes that are merely
+  transparent (glass) have a full collision shape and stay eligible.
+  No BlockItem, no loot table.
 - **Hit absorption** = cancel `BlockEvent.BreakEvent` (fires inside the
   patched `ServerPlayerGameMode.destroyBlock`, BEFORE removal, for both the
   STOP_DESTROY_BLOCK and the delayed-tick paths — verified via javap). Cancel →
