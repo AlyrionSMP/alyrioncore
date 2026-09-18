@@ -75,6 +75,68 @@ public final class ItemPacksRegistry {
                 ),
                 ItemPackDefinition.resolveStack("create:controls", 1)
         ));
+
+        // --- Aeronautics Starter Kit: everything needed for one first flying
+        // contraption. Contents follow the mods' own ponder scenes in the pack
+        // (Create: Aeronautics 1.3.2 bundle = aeronautics + simulated + offroad):
+        // "physics_assembler_intro" assembles a block group into a Simulated
+        // Contraption (selected with Super Glue or Honey Glue), "portable_engine"
+        // burns fuel into rotation, "propeller_bearing_size/thrust" turns a bearing
+        // plus sail-like blocks (tag create:windmill_sails) into thrust, and the
+        // gyroscopic bearing is the self-stabilizing one used for helicopters.
+        register(new ItemPackDefinition(
+                "aeronautics_starter_kit",
+                "Aeronautics Starter Kit",
+                "Everything for a first flying contraption: assembler, engine, propellers & sails.",
+                75,
+                List.of(
+                        // The heart: assembles the blocks into a physics contraption,
+                        // and any assembler can take one apart again.
+                        ItemPackDefinition.resolveStack("simulated:physics_assembler", 1),
+                        // Select the block group to assemble — Honey Glue is the
+                        // Simulated-native tool (Super Glue also works, and Honey Glue
+                        // will attach to overlapping Super Glue but not the reverse).
+                        ItemPackDefinition.resolveStack("simulated:honey_glue", 1),
+                        ItemPackDefinition.resolveStack("create:super_glue", 1),
+                        // Rotational force from burning fuel; the red one is the base
+                        // recipe, every other colour is a dye variant of it.
+                        ItemPackDefinition.resolveStack("simulated:red_portable_engine", 1),
+                        ItemPackDefinition.resolveStack("minecraft:coal", 64),
+                        // Fuel only goes in by automated means, so the engine needs a
+                        // funnel fed from a container that rides along.
+                        ItemPackDefinition.resolveStack("create:andesite_funnel", 1),
+                        ItemPackDefinition.resolveStack("minecraft:chest", 1),
+                        // Thrust. A bearing attaches to the block in front of it and any
+                        // structure with at least two sail-like blocks counts as a
+                        // propeller; the gyroscopic one keeps itself upright, which is
+                        // what makes a first hover stay stable.
+                        ItemPackDefinition.resolveStack("aeronautics:gyroscopic_propeller_bearing", 1),
+                        ItemPackDefinition.resolveStack("aeronautics:propeller_bearing", 1),
+                        // Ready-made propellers, for when a one-block propeller on a
+                        // shaft is enough (the andesite one is the base style).
+                        ItemPackDefinition.resolveStack("aeronautics:andesite_propeller", 2),
+                        // Propeller blades and wings: moving sails generate lift, which
+                        // is how a contraption stays in the air once it is fast enough.
+                        ItemPackDefinition.resolveStack("create:white_sail", 16),
+                        ItemPackDefinition.resolveStack("create:sail_frame", 4),
+                        // Symmetric sails make no lift, only drag — rudders and
+                        // stabilizers for steering.
+                        ItemPackDefinition.resolveStack("simulated:white_symmetric_sail", 4),
+                        // Drivetrain, so the engine can reach the bearing at any angle.
+                        ItemPackDefinition.resolveStack("create:shaft", 8),
+                        ItemPackDefinition.resolveStack("create:cogwheel", 2),
+                        ItemPackDefinition.resolveStack("create:large_cogwheel", 1),
+                        ItemPackDefinition.resolveStack("create:gearbox", 1),
+                        ItemPackDefinition.resolveStack("create:andesite_casing", 4),
+                        // Somewhere to sit, and the two tools the ponder scenes rely on:
+                        // the wrench reverses a propeller's thrust, the goggles read
+                        // Thrust and Airflow off it.
+                        ItemPackDefinition.resolveStack("create:white_seat", 1),
+                        ItemPackDefinition.resolveStack("create:wrench", 1),
+                        ItemPackDefinition.resolveStack("aeronautics:aviators_goggles", 1)
+                ),
+                ItemPackDefinition.resolveStack("simulated:physics_assembler", 1)
+        ));
     }
 
     /** Ensure the registry is loaded (idempotent). Safe once mod registries are frozen. */
