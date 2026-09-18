@@ -1,10 +1,14 @@
 package xyz.alyrion.alyrioncore.client.gui;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 import xyz.alyrion.alyrioncore.AlyrionCore;
 import xyz.alyrion.alyrioncore.client.renderer.ClientCosmeticsRenderers;
 import xyz.alyrion.alyrioncore.client.renderer.CosmeticRenderer;
@@ -558,10 +562,22 @@ public class CosmeticStoreScreen extends CosmeticScreen {
         return prevRight() - prevX();
     }
 
+    /**
+     * The client's registry access, needed to resolve enchanted pack contents.
+     * Null before the client is in a world; the preview then shows the same items
+     * without their enchantments rather than not at all.
+     */
+    private static @Nullable RegistryAccess clientRegistryAccess() {
+        Level level = Minecraft.getInstance().level;
+        return level != null ? level.registryAccess() : null;
+    }
+
     private void renderPackContents(GuiGraphics guiGraphics, int centerX, int topY) {
-        // Skip empty stacks (unresolved item ids) so the grid has no holes
+        // Build the entries with the client's registry access so enchanted contents
+        // (an enchanted sword) preview exactly as they will be delivered, then skip
+        // any empty stacks (unresolved item ids) so the grid has no holes
         List<ItemStack> contents = new ArrayList<>();
-        for (ItemStack stack : selectedPack.contents()) {
+        for (ItemStack stack : selectedPack.buildContents(clientRegistryAccess())) {
             if (!stack.isEmpty()) {
                 contents.add(stack);
             }

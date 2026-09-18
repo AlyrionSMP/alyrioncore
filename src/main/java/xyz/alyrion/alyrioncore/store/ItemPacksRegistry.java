@@ -47,31 +47,31 @@ public final class ItemPacksRegistry {
                         // In Create 6 a Train Track is a sequenced assembly (sleepers -> two
                         // nugget deploying steps -> pressing). Handing over finished tracks
                         // skips the whole line; 192 blocks is a 3-chunk stretch of track.
-                        ItemPackDefinition.resolveStack("create:track", 192),
+                        ItemPackDefinition.PackEntry.of("create:track", 192),
                         // Assembly AND disassembly happen at a station only, so a basic
                         // line wants a station at each end.
-                        ItemPackDefinition.resolveStack("create:track_station", 2),
+                        ItemPackDefinition.PackEntry.of("create:track_station", 2),
                         // Create 6 has no bogey item (nothing crafts create:small_bogey /
                         // create:large_bogey): using a Train Casing on a track creates one
                         // bogey, and clicking the track again cycles the style. Six casings
                         // are three carriages' worth (two bogeys each).
-                        ItemPackDefinition.resolveStack("create:railway_casing", 6),
+                        ItemPackDefinition.PackEntry.of("create:railway_casing", 6),
                         // Every train needs Train Controls on board; the second one lets a
                         // train depart a terminus station in either direction.
-                        ItemPackDefinition.resolveStack("create:controls", 2),
+                        ItemPackDefinition.PackEntry.of("create:controls", 2),
                         // The carriage body is anything you glue onto the bogeys — without
                         // Super Glue the blocks simply fall off the train.
-                        ItemPackDefinition.resolveStack("create:super_glue", 2),
+                        ItemPackDefinition.PackEntry.of("create:super_glue", 2),
                         // Trains only burn fuel they find in an assembled chest or barrel
                         // (fuel in vaults is ignored), and the chests double as the
                         // carriage body, so no separate crate is needed.
-                        ItemPackDefinition.resolveStack("minecraft:chest", 2),
-                        ItemPackDefinition.resolveStack("minecraft:coal", 64),
-                        ItemPackDefinition.resolveStack("create:white_seat", 4),
-                        ItemPackDefinition.resolveStack("create:wrench", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:chest", 2),
+                        ItemPackDefinition.PackEntry.of("minecraft:coal", 64),
+                        ItemPackDefinition.PackEntry.of("create:white_seat", 4),
+                        ItemPackDefinition.PackEntry.of("create:wrench", 1),
                         // Schedules drive a train with nobody at the Controls; the driver
                         // must be a mob (or a Steam 'n' Rails conductor) sitting there.
-                        ItemPackDefinition.resolveStack("create:schedule", 2)
+                        ItemPackDefinition.PackEntry.of("create:schedule", 2)
                 ),
                 ItemPackDefinition.resolveStack("create:controls", 1)
         ));
@@ -92,50 +92,75 @@ public final class ItemPacksRegistry {
                 List.of(
                         // The heart: assembles the blocks into a physics contraption,
                         // and any assembler can take one apart again.
-                        ItemPackDefinition.resolveStack("simulated:physics_assembler", 1),
+                        ItemPackDefinition.PackEntry.of("simulated:physics_assembler", 1),
                         // Select the block group to assemble — Honey Glue is the
                         // Simulated-native tool (Super Glue also works, and Honey Glue
                         // will attach to overlapping Super Glue but not the reverse).
-                        ItemPackDefinition.resolveStack("simulated:honey_glue", 1),
-                        ItemPackDefinition.resolveStack("create:super_glue", 1),
+                        ItemPackDefinition.PackEntry.of("simulated:honey_glue", 1),
+                        ItemPackDefinition.PackEntry.of("create:super_glue", 1),
                         // Rotational force from burning fuel; the red one is the base
                         // recipe, every other colour is a dye variant of it.
-                        ItemPackDefinition.resolveStack("simulated:red_portable_engine", 1),
-                        ItemPackDefinition.resolveStack("minecraft:coal", 64),
+                        ItemPackDefinition.PackEntry.of("simulated:red_portable_engine", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:coal", 64),
                         // Fuel only goes in by automated means, so the engine needs a
                         // funnel fed from a container that rides along.
-                        ItemPackDefinition.resolveStack("create:andesite_funnel", 1),
-                        ItemPackDefinition.resolveStack("minecraft:chest", 1),
+                        ItemPackDefinition.PackEntry.of("create:andesite_funnel", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:chest", 1),
                         // Thrust. A bearing attaches to the block in front of it and any
                         // structure with at least two sail-like blocks counts as a
                         // propeller; the gyroscopic one keeps itself upright, which is
                         // what makes a first hover stay stable.
-                        ItemPackDefinition.resolveStack("aeronautics:gyroscopic_propeller_bearing", 1),
-                        ItemPackDefinition.resolveStack("aeronautics:propeller_bearing", 1),
+                        ItemPackDefinition.PackEntry.of("aeronautics:gyroscopic_propeller_bearing", 1),
+                        ItemPackDefinition.PackEntry.of("aeronautics:propeller_bearing", 1),
                         // Ready-made propellers, for when a one-block propeller on a
                         // shaft is enough (the andesite one is the base style).
-                        ItemPackDefinition.resolveStack("aeronautics:andesite_propeller", 2),
+                        ItemPackDefinition.PackEntry.of("aeronautics:andesite_propeller", 2),
                         // Propeller blades and wings: moving sails generate lift, which
                         // is how a contraption stays in the air once it is fast enough.
-                        ItemPackDefinition.resolveStack("create:white_sail", 16),
-                        ItemPackDefinition.resolveStack("create:sail_frame", 4),
+                        ItemPackDefinition.PackEntry.of("create:white_sail", 16),
+                        ItemPackDefinition.PackEntry.of("create:sail_frame", 4),
                         // Symmetric sails make no lift, only drag — rudders and
                         // stabilizers for steering.
-                        ItemPackDefinition.resolveStack("simulated:white_symmetric_sail", 4),
+                        ItemPackDefinition.PackEntry.of("simulated:white_symmetric_sail", 4),
                         // Drivetrain, so the engine can reach the bearing at any angle.
-                        ItemPackDefinition.resolveStack("create:shaft", 8),
-                        ItemPackDefinition.resolveStack("create:cogwheel", 2),
-                        ItemPackDefinition.resolveStack("create:large_cogwheel", 1),
-                        ItemPackDefinition.resolveStack("create:gearbox", 1),
-                        ItemPackDefinition.resolveStack("create:andesite_casing", 4),
+                        ItemPackDefinition.PackEntry.of("create:shaft", 8),
+                        ItemPackDefinition.PackEntry.of("create:cogwheel", 2),
+                        ItemPackDefinition.PackEntry.of("create:large_cogwheel", 1),
+                        ItemPackDefinition.PackEntry.of("create:gearbox", 1),
+                        ItemPackDefinition.PackEntry.of("create:andesite_casing", 4),
                         // Somewhere to sit, and the two tools the ponder scenes rely on:
                         // the wrench reverses a propeller's thrust, the goggles read
                         // Thrust and Airflow off it.
-                        ItemPackDefinition.resolveStack("create:white_seat", 1),
-                        ItemPackDefinition.resolveStack("create:wrench", 1),
-                        ItemPackDefinition.resolveStack("aeronautics:aviators_goggles", 1)
+                        ItemPackDefinition.PackEntry.of("create:white_seat", 1),
+                        ItemPackDefinition.PackEntry.of("create:wrench", 1),
+                        ItemPackDefinition.PackEntry.of("aeronautics:aviators_goggles", 1)
                 ),
                 ItemPackDefinition.resolveStack("simulated:physics_assembler", 1)
+        ));
+
+        // --- Traveler's Kit: a complete field loadout for heading out. Chainmail
+        // has no crafting recipe in vanilla — it only comes from mob drops, loot
+        // and trades — so the kit is the reliable way to hand a full set over.
+        register(new ItemPackDefinition(
+                "travelers_kit",
+                "Traveler's Kit",
+                "Chainmail armour, an enchanted iron sword, a bow with arrows & an iron backpack.",
+                40,
+                List.of(
+                        ItemPackDefinition.PackEntry.of("minecraft:chainmail_helmet", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:chainmail_chestplate", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:chainmail_leggings", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:chainmail_boots", 1),
+                        // Sharpness I + Unbreaking II, applied from the datapack
+                        // enchantment registry when the pack is built.
+                        ItemPackDefinition.PackEntry.enchanted("minecraft:iron_sword", 1,
+                                Map.of("minecraft:sharpness", 1, "minecraft:unbreaking", 2)),
+                        ItemPackDefinition.PackEntry.of("minecraft:bow", 1),
+                        ItemPackDefinition.PackEntry.of("minecraft:arrow", 16),
+                        // Sophisticated Backpacks, the backpack mod in the pack.
+                        ItemPackDefinition.PackEntry.of("sophisticatedbackpacks:iron_backpack", 1)
+                ),
+                ItemPackDefinition.resolveStack("sophisticatedbackpacks:iron_backpack", 1)
         ));
     }
 

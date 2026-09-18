@@ -47,7 +47,7 @@ public class ServerItemPackManager {
         }
 
         List<ItemStack> overflow = new ArrayList<>();
-        ItemStack crate = CrateItem.createFilled(pack.contents(), overflow);
+        ItemStack crate = CrateItem.createFilled(pack.buildContents(player.server.registryAccess()), overflow);
         ItemHandlerHelper.giveItemToPlayer(player, crate);
         for (ItemStack extra : overflow) {
             ItemHandlerHelper.giveItemToPlayer(player, extra.copy());
