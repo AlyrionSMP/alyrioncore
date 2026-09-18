@@ -681,7 +681,7 @@ public class CosmeticStoreScreen extends CosmeticScreen {
         long nextCoinSecs = seconds % 3600;
 
         guiGraphics.drawString(this.font,
-                fit(String.format("§ePlaytime: §f%dh %02dm %02ds §7| §61 Coin / 1h", hours, minutes, secs), tw - 8),
+                fit(String.format("§eSurvival playtime: §f%dh %02dm %02ds §7| §61 Coin / 1h", hours, minutes, secs), tw - 8),
                 tx + 4, py + 4, 0xFFFFFF, true);
 
         int barX = tx + 4;

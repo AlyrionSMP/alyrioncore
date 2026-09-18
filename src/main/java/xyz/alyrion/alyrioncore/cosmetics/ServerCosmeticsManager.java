@@ -153,7 +153,6 @@ public class ServerCosmeticsManager {
         if (player.isCreative() || player.isSpectator()) return;
 
         PlayerCosmeticsData data = getPlayerData(player);
-        long prev = data.getSurvivalPlaytimeSeconds();
         data.incrementSurvivalPlaytime();
         long current = data.getSurvivalPlaytimeSeconds();
 
@@ -164,7 +163,16 @@ public class ServerCosmeticsManager {
             notify(player,
                     "§6§l[Alyrion SMP] §e+1 Coin §fearned for 1 hour of survival playtime! (Total: §6" + data.getCoins() + " Coins§f)",
                     CosmeticSound.LEVEL_UP);
-        } else if (current % 60 == 0) {
+            return;
+        }
+
+        // Keep the running total in sync while the player is online: the store's
+        // playtime card reads the client mirror, which otherwise only ever gets the
+        // value from login (or the last purchase), leaving the bar frozen.
+        if (current % CosmeticConfig.PLAYTIME_SYNC_INTERVAL_SECONDS == 0) {
+            syncToPlayer(player);
+        }
+        if (current % 60 == 0) {
             // Periodic save every minute
             markDirty(player);
         }
