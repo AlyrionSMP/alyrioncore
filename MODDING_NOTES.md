@@ -391,3 +391,12 @@ how to implement gradual state without per-tick ticking:
      Pass the flood fill's visited set to the tracker for the O(1) membership
      test. Resets then only happen on genuine breaches (vented) or when the
      room physically shrinks past its old min cell (you rebuilt it).
+- **Gate the air refill on the vacuum check, never on the seal result alone**:
+  the tick-side refill (`EntityTickEvent.Post` → `setAirSupply(max)`) and the
+  breathe-side rule (`LivingBreatheEvent`) must both early-return outside a
+  vacuum atmosphere. `SealResult.PRESSURIZED` is the right answer for "is this
+  room breathable on a non-vacuum world", so reusing it as a shortcut in the
+  refill path (`vacuum ? sealState(...) : PRESSURIZED`) silently refills the air
+  bar faster than water/lava/powder snow drain it — drowning becomes impossible
+  in the Overworld, the Nether and the End. Costs nothing to get wrong in a dev
+  world; only shows up as "you cannot drown at all" in the modpack.
