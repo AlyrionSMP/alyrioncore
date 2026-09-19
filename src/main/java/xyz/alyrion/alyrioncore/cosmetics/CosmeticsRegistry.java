@@ -60,7 +60,7 @@ public final class CosmeticsRegistry {
         register("grim", CosmeticType.CAPE, "Grim Cape",
                 "A black cape bearing a bleached skull, earned with 10 coins or 10 player kills.", 10, false);
         register("pride", CosmeticType.CAPE, "Pride Cape",
-                "A vibrant rainbow cape earned by partying up with at least 4 players (Open Parties and Claims).",
+                "The Progress Pride flag: rainbow stripes behind the trans chevron, earned by partying up with at least 4 players (Open Parties and Claims).",
                 0, false, false); // task-only: never purchasable
 
         // --- Pets ---

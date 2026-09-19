@@ -164,7 +164,7 @@ All capes are authored in 64x32 Minecraft cape format with bespoke pixel art:
 | **Moon Cape** | `moon.png` | **5 Coins** | Buy or complete *"Going to the Moon"* | Detailed lunar cratered surface overlooking the blue marble of planet Earth in deep space. |
 | **The Martian Cape** | `marsian.png` | **5 Coins** | Buy or complete *"Going to Mars"* | Rust-ochre Martian dunes under the red planet, with a little green Martian. |
 | **Grim Cape** | `grim.png` | **10 Coins** | Buy or complete *"Grim Reaper"* (10 PvP kills) | Jet-black cape with a bleached skeleton head, earned by forging a grim reputation. |
-| **Pride Cape** | `pride.png` | **Not Buyable** | Complete *"United We Stand"* (party of 4+ via Open Parties and Claims) | Vibrant rainbow cape earned by partying up with at least 4 players in an OPAC party. |
+| **Pride Cape** | `pride.png` | **Not Buyable** | Complete *"United We Stand"* (party of 4+ via Open Parties and Claims) | The Progress Pride flag worn hoist-up: six rainbow stripes behind the nested black/brown and trans chevron, earned by partying up with at least 4 players in an OPAC party. |
 
 ---
 
@@ -899,7 +899,7 @@ All blocks in AlyrionCore strictly follow standard Minecraft NeoForge data conve
 
 ### Asset Generation Scripts
 - `generate_enhanced_textures.py`: Regenerates pixel-art textures for all 19 blocks and 8 items with 3-pass shading and specular highlights.
-- `generate_capes.py`: Regenerates all 64x32 custom capes with anti-aliased pixel art (includes the Grim Cape and the Pride Cape's full-bleed rainbow).
+- `generate_capes.py`: Regenerates all 64x32 custom capes with anti-aliased pixel art (includes the Grim Cape and the Pride Cape, whose Progress-flag chevron geometry is sampled from the flag's own SVG).
 - `generate_new_textures.py`: Generates the Meteoric Iron equipment tier, resource-block textures and the Martian Potato / Baked Martian Potato item art.
 - `generate_sleeping_pod_assets.py`: Generates the two-block Sleeping Pod blockstates, multi-part models and interior/casing/glass textures.
 - `generate_habitat_greenhouse_assets.py`: Generates the Airlock bulkhead frame models + blockstate (the animated hatch is rendered at runtime), the Regolith Farmland / crop-stage blockstates, models and textures, and the procedurally painted 8-stage Martian Potato plant textures.

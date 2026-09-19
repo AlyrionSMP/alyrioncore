@@ -430,25 +430,104 @@ def create_cape_grim():
     print("Saved grim.png")
 
 def create_cape_pride():
-    """Classic 6-stripe pride flag, all stripes EQUAL height (3px each),
-    filling the full 18-row cape design area. Pure stdlib (uses mcutil)."""
+    """Progress Pride flag (Daniel Quasar, 2018) worn hoist-up on the cape's 10x16 art area.
+
+    Geometry is lifted from the flag's own SVG (Wikimedia Commons, viewBox
+    0 0 6000 3810): five nested chevrons whose hoist extents are 1577 (black), 1209
+    (brown), 844 (light blue), 477 (pink) and 111 (white) units, each arm bending at
+    +1764 to an apex on the flag's centre line, over six equal 635-unit rainbow
+    stripes. The chevrons are painted outer-to-inner, which is why the flag reads as
+    one big white wedge with the trans pink and light blue hugging it and the black
+    and brown wrapping the outside - not as four thin stripes stacked on a white bar.
+
+    DESIGN samples that geometry onto the cape grid (16 rows hoist -> fly, 10 cols
+    wearer's left -> right) by hand and de-aliased, because at 10 columns a naive
+    sample collapses the thin bands into speckle. Each band's arm is a 1px diagonal
+    stepping one column per row and closes on a flat 2px tip on the centre seam
+    (pink row 4, light blue 5, brown 6, black 7, with the white wedge closing above
+    them), so the chevron's point is a clean stack of tips instead of the old single
+    misaligned black spike. The whole chevron is then set one row higher than a
+    strict sample would place it: at this size the flag's own proportions leave the
+    white wedge crowding the hem side, and one row up clears it.
+
+    Six stripes never divide 10 columns evenly, so the widths are 1/2/2/2/2/1 for
+    red/orange/yellow/green/blue/violet - the four middle stripes land equal at 2px
+    and the red and violet read as clipped by the cape's edge, rather than the
+    flag's own 2/1/2/2/1/2 rhythm whose two 1px stripes read as squeezed.
+
+    Faces: cols 12..21 carry the flag as worn - the same region the store blits as the
+    cape icon - cols 1..10 mirror it for the cloth's inner side, cols 11/0 repeat the
+    design edge each side folds onto and row 0 carries the top/bottom hems, every
+    edge pixel shaded 15% down so the flag reads as cloth around the cape slab.
+    Pure stdlib (mcutil)."""
     import os
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mc-scripts'))
     import mcutil as mc
 
-    stripes = ["#E40303", "#FF8C00", "#FFED00", "#008026", "#24408E", "#732982"]
+    # canonical Progress flag palette (the SVG's own hexes); K is the flag's black,
+    # kept in the pack's near-black (AlyrionCore uses #0A0A0D for black cloth)
+    COL = {
+        'R': "#E40303", 'O': "#FF8C00", 'Y': "#FFED00", 'G': "#008026",
+        'B': "#004DFF", 'V': "#750787",                       # 6 rainbow stripes
+        'K': "#0A0A0D", 'N': "#613915",                       # chevron: black, brown
+        'L': "#74D7EE", 'I': "#FFAFC8", 'W': "#FFFFFF",       # chevron: trans flag
+    }
+
+    # 16 rows = hoist (shoulders) -> fly (hem), 10 cols = red (left) -> violet (right)
+    DESIGN = (
+        "IWWWWWWWWI",
+        "LIWWWWWWIL",
+        "NLIWWWWILN",
+        "KNLIWWILNK",
+        "RKNLIILNKV",
+        "ROKNLLNKBV",
+        "ROOKNNKBBV",
+        "ROOYKKGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+        "ROOYYGGBBV",
+    )
+
+    # guard the chevron: every band pixel must mirror across the 4/5 seam (the rainbow
+    # stripes legitimately do not - that is how a band pixel differs from a stripe one)
+    # and every row must be full width, so the misaligned tip cannot creep back in
+    BANDS = "NLIWK"
+    for yr, row in enumerate(DESIGN):
+        assert len(row) == 10, (yr, row)
+        for x in range(5):
+            a, b = row[x], row[9 - x]
+            if a in BANDS or b in BANDS:
+                assert a == b, 'row %d lost its chevron symmetry: %s' % (yr, row)
+
+    # the slab's edge faces are the same cloth, one shade darker (reads as cloth depth)
+    def hem(char):
+        return tuple(int(c * 0.85) for c in mc.hex2rgb(COL[char])) + (255,)
 
     img = [[(0, 0, 0, 0)] * 64 for _ in range(32)]
-    y = 0
-    for color in stripes:
-        for _ in range(3):                      # every stripe is 3 rows
-            for x in range(22):                 # cols 0..21: both halves plus seam
-                img[y][x] = mc.hex2rgb(color) + (255,)
-            y += 1
+    for yr, row in enumerate(DESIGN):                      # texture rows 1..16
+        y = 1 + yr
+        for xr, char in enumerate(row):
+            rgb = mc.hex2rgb(COL[char]) + (255,)
+            img[y][12 + xr] = rgb                          # worn face (store icon blit)
+            img[y][10 - xr] = rgb                          # inner face, mirrored
+        img[y][11] = hem(row[0])                           # side face folding onto col 12
+        img[y][0] = hem(row[9])                            # side face folding onto col 21
+
+    # row 0: the slab's top face is UV'd to cols 1..10 (cape top hem, so it mirrors the
+    # inner face) while its bottom face takes cols 11..20 (cape bottom hem)
+    for xr, char in enumerate(DESIGN[0]):
+        img[0][10 - xr] = hem(char)
+    for xr, char in enumerate(DESIGN[15]):
+        img[0][11 + xr] = hem(char)
 
     mc.write_png("src/main/resources/assets/alyrioncore/textures/capes/pride.png", img)
-    print("Saved pride.png")
+    print("Saved pride.png (Progress Pride flag)")
 
 if __name__ == "__main__":
     create_cape_2_year()
