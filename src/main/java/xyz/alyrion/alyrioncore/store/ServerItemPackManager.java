@@ -19,9 +19,10 @@ import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
  * Server-authoritative item pack fulfillment.
  *
  * Purchasing a pack deducts coins from the same wallet as cosmetics
- * ({@link PlayerCosmeticsData}) and hands out the pack as a {@link CrateItem}
- * — a portable chest whose contents live in the stack's CONTAINER component.
- * Any contents that don't fit inside the crate are given directly. Unlike
+ * ({@link PlayerCosmeticsData}) and hands the contents over the way the pack asks
+ * for ({@link ItemPackDefinition.Delivery}): as a {@link CrateItem} — a portable
+ * chest whose contents live in the stack's CONTAINER component, with anything that
+ * does not fit inside given separately — or straight to the inventory. Unlike
  * cosmetics, packs are consumables — there is no "owned" state to persist.
  */
 public class ServerItemPackManager {
@@ -46,11 +47,21 @@ public class ServerItemPackManager {
             savedData.setDirty();
         }
 
-        List<ItemStack> overflow = new ArrayList<>();
-        ItemStack crate = CrateItem.createFilled(pack.buildContents(player.server.registryAccess()), overflow);
-        ItemHandlerHelper.giveItemToPlayer(player, crate);
-        for (ItemStack extra : overflow) {
-            ItemHandlerHelper.giveItemToPlayer(player, extra.copy());
+        List<ItemStack> contents = pack.buildContents(player.server.registryAccess());
+        switch (pack.delivery()) {
+            case CRATE -> {
+                List<ItemStack> overflow = new ArrayList<>();
+                ItemStack crate = CrateItem.createFilled(contents, overflow);
+                ItemHandlerHelper.giveItemToPlayer(player, crate);
+                for (ItemStack extra : overflow) {
+                    ItemHandlerHelper.giveItemToPlayer(player, extra.copy());
+                }
+            }
+            case DIRECT -> {
+                for (ItemStack stack : contents) {
+                    ItemHandlerHelper.giveItemToPlayer(player, stack);
+                }
+            }
         }
 
         ServerCosmeticsManager.get().syncToPlayer(player);

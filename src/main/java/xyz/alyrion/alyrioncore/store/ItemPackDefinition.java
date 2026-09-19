@@ -35,6 +35,7 @@ import java.util.Map;
  * @param description   one-liner shown under the preview
  * @param price         cost in Alyrion coins
  * @param contents      entries resolved into ItemStacks on demand
+ * @param delivery      how the resolved stacks reach the player
  * @param iconStack     representative stack drawn as the catalog icon
  */
 public record ItemPackDefinition(
@@ -43,7 +44,20 @@ public record ItemPackDefinition(
         String description,
         int price,
         List<PackEntry> contents,
+        Delivery delivery,
         ItemStack iconStack) {
+
+    /**
+     * How a purchased pack reaches the player. A pack whose contents are a single
+     * small stack (or a couple of them) is handed over directly: wrapping it in a
+     * {@link CrateItem} only adds a right-click before the item is usable.
+     */
+    public enum Delivery {
+        /** Handed over as a filled {@link CrateItem} — the contents live in its container component. */
+        CRATE,
+        /** Given straight to the player's inventory; anything that does not fit drops at their feet. */
+        DIRECT
+    }
 
     /** One line of a pack: an item id, how many of it, and enchantments to apply. */
     public record PackEntry(String itemId, int count, Map<String, Integer> enchantments) {

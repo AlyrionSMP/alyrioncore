@@ -73,6 +73,7 @@ public final class ItemPacksRegistry {
                         // must be a mob (or a Steam 'n' Rails conductor) sitting there.
                         ItemPackDefinition.PackEntry.of("create:schedule", 2)
                 ),
+                ItemPackDefinition.Delivery.CRATE,
                 ItemPackDefinition.resolveStack("create:controls", 1)
         ));
 
@@ -135,6 +136,7 @@ public final class ItemPacksRegistry {
                         ItemPackDefinition.PackEntry.of("create:wrench", 1),
                         ItemPackDefinition.PackEntry.of("aeronautics:aviators_goggles", 1)
                 ),
+                ItemPackDefinition.Delivery.CRATE,
                 ItemPackDefinition.resolveStack("simulated:physics_assembler", 1)
         ));
 
@@ -160,7 +162,25 @@ public final class ItemPacksRegistry {
                         // Sophisticated Backpacks, the backpack mod in the pack.
                         ItemPackDefinition.PackEntry.of("sophisticatedbackpacks:iron_backpack", 1)
                 ),
+                ItemPackDefinition.Delivery.CRATE,
                 ItemPackDefinition.resolveStack("sophisticatedbackpacks:iron_backpack", 1)
+        ));
+
+        // --- Super Glue: one cheap utility item, so it skips the crate ---
+        // Create's Super Glue is what turns a loose pile of blocks into a group that
+        // moves as one contraption (train carriages, flying machines, sliding doors).
+        // The recipe yields a single item (2 slimeballs + 1 iron nugget + 1 iron
+        // plate), so one per purchase matches what a crafter would get anyway, and
+        // the stack is handed straight to the inventory: a crate around a single item
+        // is just one extra right-click before it can be used.
+        register(new ItemPackDefinition(
+                "super_glue",
+                "Super Glue",
+                "One Create Super Glue for grouping blocks into contraptions, given straight to your inventory.",
+                5,
+                List.of(ItemPackDefinition.PackEntry.of("create:super_glue", 1)),
+                ItemPackDefinition.Delivery.DIRECT,
+                ItemPackDefinition.resolveStack("create:super_glue", 1)
         ));
     }
 
