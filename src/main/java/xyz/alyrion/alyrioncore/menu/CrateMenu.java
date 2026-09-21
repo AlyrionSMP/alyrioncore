@@ -1,62 +1,119 @@
 package xyz.alyrion.alyrioncore.menu;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import xyz.alyrion.alyrioncore.item.CrateItem;
-import xyz.alyrion.alyrioncore.item.CrateItem.CrateInventory;
+import xyz.alyrion.alyrioncore.registry.ModItems;
 import xyz.alyrion.alyrioncore.registry.ModMenus;
 
-/**
- * A 3-row chest menu bound to a crate item stack, with one twist: the crate's
- * slots are take-out only. {@link TakeOnlySlot#mayPlace} returns false, which
- * every vanilla insert path consults (cursor clicks, number-key swaps,
- * drag-painting and shift-click via {@code moveItemStackTo}), so items can
- * leave the crate but never enter it.
- *
- * Registered as a real {@link MenuType} (see {@link ModMenus}) so the client
- * builds the identical menu from the crate stack sent in the open packet —
- * click prediction and server logic can never disagree.
- */
 public class CrateMenu extends ChestMenu {
+   private final ItemStack crateStack;
+   private final Player player;
+   private boolean destroyed = false;
 
-    public CrateMenu(int containerId, Inventory playerInventory, ItemStack crateStack) {
-        super(ModMenus.CRATE.get(), containerId, playerInventory, new CrateInventory(crateStack), 3);
-    }
+   public CrateMenu(int containerId, Inventory playerInventory, ItemStack crateStack) {
+      super((MenuType)ModMenus.CRATE.get(), containerId, playerInventory, new CrateItem.CrateInventory(crateStack), 3);
+      this.crateStack = crateStack;
+      this.player = playerInventory.player;
+   }
 
-    /** Client-side factory entry point: the crate stack arrives in the extra buffer. */
-    public CrateMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
-        this(containerId, playerInventory,
-                ItemStack.OPTIONAL_STREAM_CODEC.decode(extraData));
-    }
+   public CrateMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
+      this(containerId, playerInventory, (ItemStack)ItemStack.OPTIONAL_STREAM_CODEC.decode(extraData));
+   }
 
-    /**
-     * ChestMenu adds the container's slots first, then the player inventory —
-     * so every slot added while fewer than {@link CrateItem#SIZE} slots exist
-     * is a crate slot and gets wrapped take-out only. addSlot is dispatched
-     * virtually from the super constructor, which is exactly what makes this
-     * wrapper trick work.
-     */
-    @Override
-    protected Slot addSlot(Slot slot) {
-        if (this.slots.size() < CrateItem.SIZE) {
-            return super.addSlot(new TakeOnlySlot(slot));
-        }
-        return super.addSlot(slot);
-    }
+   protected Slot addSlot(Slot slot) {
+      return this.slots.size() < 27 ? super.addSlot(new CrateMenu.TakeOnlySlot(slot)) : super.addSlot(new CrateMenu.LockedCrateSlot(slot, this.crateStack));
+   }
 
-    /** Delegating view of a crate slot that refuses any insertion. */
-    private static final class TakeOnlySlot extends Slot {
-        private TakeOnlySlot(Slot wrapped) {
-            super(wrapped.container, wrapped.getContainerSlot(), wrapped.x, wrapped.y);
-        }
+   public void broadcastChanges() {
+      super.broadcastChanges();
+      this.checkEmptyAndDestroy();
+   }
 
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
-    }
+   public void clicked(int slotId, int button, ClickType clickType, Player player) {
+      super.clicked(slotId, button, clickType, player);
+      this.checkEmptyAndDestroy();
+   }
+
+   public ItemStack quickMoveStack(Player player, int index) {
+      ItemStack result = super.quickMoveStack(player, index);
+      this.checkEmptyAndDestroy();
+      return result;
+   }
+
+   public void removed(Player player) {
+      super.removed(player);
+      this.checkEmptyAndDestroy();
+   }
+
+   private void checkEmptyAndDestroy() {
+      if (!this.destroyed) {
+         if (this.getContainer().isEmpty()) {
+            if (this.getCarried().isEmpty()) {
+               this.destroyed = true;
+               this.destroyCrate();
+            }
+         }
+      }
+   }
+
+   private void destroyCrate() {
+      if (!this.player.level().isClientSide()) {
+         this.crateStack.setCount(0);
+         Inventory inv = this.player.getInventory();
+
+         for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack s = inv.getItem(i);
+            if (s == this.crateStack || s.is((Item)ModItems.CRATE.get()) && CrateItem.isCrateEmpty(s)) {
+               inv.setItem(i, ItemStack.EMPTY);
+            }
+         }
+
+         if (this.player.getMainHandItem() == this.crateStack) {
+            this.player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+         }
+
+         if (this.player.getOffhandItem() == this.crateStack) {
+            this.player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+         }
+
+         inv.setChanged();
+         CrateItem.playDestroyEffects(this.player.level(), this.player);
+         if (this.player instanceof ServerPlayer serverPlayer && serverPlayer.containerMenu == this) {
+            serverPlayer.closeContainer();
+         }
+      }
+   }
+
+   private static final class LockedCrateSlot extends Slot {
+      private final ItemStack crateStack;
+
+      private LockedCrateSlot(Slot wrapped, ItemStack crateStack) {
+         super(wrapped.container, wrapped.getContainerSlot(), wrapped.x, wrapped.y);
+         this.crateStack = crateStack;
+      }
+
+      public boolean mayPickup(Player player) {
+         return this.getItem() == this.crateStack ? false : super.mayPickup(player);
+      }
+   }
+
+   private static final class TakeOnlySlot extends Slot {
+      private TakeOnlySlot(Slot wrapped) {
+         super(wrapped.container, wrapped.getContainerSlot(), wrapped.x, wrapped.y);
+      }
+
+      public boolean mayPlace(ItemStack stack) {
+         return false;
+      }
+   }
 }

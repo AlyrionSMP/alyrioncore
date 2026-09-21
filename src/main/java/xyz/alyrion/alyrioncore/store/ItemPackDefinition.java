@@ -37,6 +37,7 @@ import java.util.Map;
  * @param contents      entries resolved into ItemStacks on demand
  * @param delivery      how the resolved stacks reach the player
  * @param iconStack     representative stack drawn as the catalog icon
+ * @param claimChunks   number of bonus claim chunks granted if delivery is CLAIM_CHUNKS
  */
 public record ItemPackDefinition(
         String id,
@@ -45,18 +46,41 @@ public record ItemPackDefinition(
         int price,
         List<PackEntry> contents,
         Delivery delivery,
-        ItemStack iconStack) {
+        ItemStack iconStack,
+        int claimChunks) {
+
+    public ItemPackDefinition(
+            String id,
+            String displayName,
+            String description,
+            int price,
+            List<PackEntry> contents,
+            Delivery delivery,
+            ItemStack iconStack) {
+        this(id, displayName, description, price, contents, delivery, iconStack, 0);
+    }
+
+    /** Helper factory for an OPAC bonus claim chunk pack. */
+    public static ItemPackDefinition claimChunks(
+            String id,
+            String displayName,
+            String description,
+            int price,
+            int chunks,
+            ItemStack iconStack) {
+        return new ItemPackDefinition(id, displayName, description, price, List.of(), Delivery.CLAIM_CHUNKS, iconStack, chunks);
+    }
 
     /**
-     * How a purchased pack reaches the player. A pack whose contents are a single
-     * small stack (or a couple of them) is handed over directly: wrapping it in a
-     * {@link CrateItem} only adds a right-click before the item is usable.
+     * How a purchased pack reaches the player.
      */
     public enum Delivery {
-        /** Handed over as a filled {@link CrateItem} — the contents live in its container component. */
+        /** Handed over as a filled crate — the contents live in its container component. */
         CRATE,
         /** Given straight to the player's inventory; anything that does not fit drops at their feet. */
-        DIRECT
+        DIRECT,
+        /** Grants bonus claim chunks via Open Parties and Claims. */
+        CLAIM_CHUNKS
     }
 
     /** One line of a pack: an item id, how many of it, and enchantments to apply. */
@@ -66,12 +90,16 @@ public record ItemPackDefinition(
             return new PackEntry(itemId, count, Map.of());
         }
 
-        /** Enchantment ids ("minecraft:sharpness") to levels. */
+        public static PackEntry of(String itemId, int count, Map<String, Integer> enchantments) {
+            return new PackEntry(itemId, count, enchantments);
+        }
+
         public static PackEntry enchanted(String itemId, int count, Map<String, Integer> enchantments) {
-            return new PackEntry(itemId, count, Map.copyOf(enchantments));
+            return new PackEntry(itemId, count, enchantments);
         }
     }
 
+    /** Sum of all counts across every entry (e.g. 192 for the tracks entry alone). */
     public int totalItemCount() {
         int total = 0;
         for (PackEntry entry : contents) {
@@ -81,21 +109,16 @@ public record ItemPackDefinition(
     }
 
     /**
-     * Resolve the pack into the stacks that are handed over — and that the store
-     * preview draws, so the preview shows exactly what is delivered.
-     *
-     * Enchantments are datapack entries, so applying them needs a
-     * {@link RegistryAccess}; without one (a client before it joins a world) the
-     * affected stacks come out unenchanted instead of throwing. Unknown items and
-     * enchantments log a warning and are skipped rather than breaking the pack.
+     * Resolves every entry into real {@link ItemStack}s. Safe on both sides;
+     * unknown item ids drop with a warning so a missing optional dependency
+     * degrades rather than crashes. Enchantments are applied only when a non-null
+     * registry access is provided (the server has this at purchase time).
      */
     public List<ItemStack> buildContents(@Nullable RegistryAccess registries) {
         List<ItemStack> stacks = new ArrayList<>(contents.size());
         for (PackEntry entry : contents) {
             ItemStack stack = resolveStack(entry.itemId(), entry.count());
-            if (stack.isEmpty()) {
-                continue;
-            }
+            if (stack.isEmpty()) continue;
             for (Map.Entry<String, Integer> enchantment : entry.enchantments().entrySet()) {
                 applyEnchantment(stack, enchantment.getKey(), enchantment.getValue(), registries);
             }
@@ -106,36 +129,33 @@ public record ItemPackDefinition(
 
     private static void applyEnchantment(ItemStack stack, String enchantmentId, int level,
                                          @Nullable RegistryAccess registries) {
-        if (registries == null) {
-            return;
-        }
+        if (registries == null) return;
         ResourceLocation id = ResourceLocation.tryParse(enchantmentId);
-        if (id == null) {
-            return;
-        }
-        Registry<Enchantment> enchantments = registries.registryOrThrow(Registries.ENCHANTMENT);
-        ResourceKey<Enchantment> key = ResourceKey.create(Registries.ENCHANTMENT, id);
-        Holder<Enchantment> holder = enchantments.getHolder(key).orElse(null);
+        if (id == null) return;
+        Registry<Enchantment> registry = registries.registry(Registries.ENCHANTMENT).orElse(null);
+        if (registry == null) return;
+        Holder.Reference<Enchantment> holder =
+                registry.getHolder(ResourceKey.create(Registries.ENCHANTMENT, id)).orElse(null);
         if (holder == null) {
-            AlyrionCore.LOGGER.warn("ItemPack references unknown enchantment '{}' — entry stays unenchanted",
-                    enchantmentId);
+            AlyrionCore.LOGGER.debug("Enchantment {} not found in registry, skipping", id);
             return;
         }
         stack.enchant(holder, level);
     }
 
     /**
-     * Resolve "minecraft:stick"-style ids against the vanilla+mod registries. A
-     * missing item (e.g. Create not installed) logs a warning and yields an empty
-     * stack that is skipped when the pack is built.
+     * Builds one stack from an id and count. Returns {@link ItemStack#EMPTY}
+     * with a debug log when the id isn't registered, so missing content is
+     * harmless.
      */
     public static ItemStack resolveStack(String itemId, int count) {
-        ResourceLocation rl = ResourceLocation.parse(itemId);
-        Item item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
-        if (item == null) {
-            AlyrionCore.LOGGER.warn("ItemPack references unknown item '{}' — entry will be skipped", itemId);
+        ResourceLocation id = ResourceLocation.tryParse(itemId);
+        if (id == null) return ItemStack.EMPTY;
+        Item item = BuiltInRegistries.ITEM.get(id);
+        if (item == net.minecraft.world.item.Items.AIR) {
+            AlyrionCore.LOGGER.debug("Item {} not found in registry (mod missing?)", id);
             return ItemStack.EMPTY;
         }
-        return new ItemStack(item, count);
+        return new ItemStack(item, Math.max(1, count));
     }
 }

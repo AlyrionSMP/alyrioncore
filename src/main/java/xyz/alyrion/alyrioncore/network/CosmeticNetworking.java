@@ -139,6 +139,23 @@ public class CosmeticNetworking {
         }
     }
 
+    // Packet: Client -> Server: "Convert between Alyrion coins and Numismatics spurs"
+    public record C2SConvertCurrencyPayload(boolean toSpurs, int amount) implements CustomPacketPayload {
+        public static final Type<C2SConvertCurrencyPayload> TYPE =
+                new Type<>(ResourceLocation.fromNamespaceAndPath(AlyrionCore.MODID, "c2s_convert_currency"));
+
+        public static final StreamCodec<ByteBuf, C2SConvertCurrencyPayload> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, C2SConvertCurrencyPayload::toSpurs,
+                ByteBufCodecs.VAR_INT, C2SConvertCurrencyPayload::amount,
+                C2SConvertCurrencyPayload::new
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
 
     // Packet: Server -> Client: "Here is your full cosmetics state"
     public record S2CSyncCosmeticsPayload(
@@ -252,6 +269,23 @@ public class CosmeticNetworking {
                 }
         );
 
+        // Client -> Server: currency conversion request
+        registrar.playToServer(
+                C2SConvertCurrencyPayload.TYPE,
+                C2SConvertCurrencyPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    context.enqueueWork(() -> {
+                        if (context.player() instanceof ServerPlayer serverPlayer) {
+                            if (payload.toSpurs()) {
+                                xyz.alyrion.alyrioncore.compat.NumismaticsCompat.convertCoinsToSpurs(serverPlayer, payload.amount());
+                            } else {
+                                xyz.alyrion.alyrioncore.compat.NumismaticsCompat.convertSpursToCoins(serverPlayer, payload.amount());
+                            }
+                        }
+                    });
+                }
+        );
+
         // Client -> Server: full state request (fallback sync)
         registrar.playToServer(
                 C2SRequestCosmeticsPayload.TYPE,
@@ -313,6 +347,10 @@ public class CosmeticNetworking {
 
     public static void sendPurchaseItemPack(String packId) {
         sendToServer(new C2SPurchaseItemPackPayload(packId != null ? packId : ""));
+    }
+
+    public static void sendConvertCurrency(boolean toSpurs, int amount) {
+        sendToServer(new C2SConvertCurrencyPayload(toSpurs, amount));
     }
 
     public static void sendRequestSync() {

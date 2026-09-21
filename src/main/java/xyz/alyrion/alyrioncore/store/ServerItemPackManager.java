@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.network.PacketDistributor;
+import xyz.alyrion.alyrioncore.compat.OpacCompat;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticSound;
 import xyz.alyrion.alyrioncore.cosmetics.CosmeticsSavedData;
 import xyz.alyrion.alyrioncore.cosmetics.PlayerCosmeticsData;
@@ -22,8 +23,8 @@ import xyz.alyrion.alyrioncore.network.CosmeticNetworking;
  * ({@link PlayerCosmeticsData}) and hands the contents over the way the pack asks
  * for ({@link ItemPackDefinition.Delivery}): as a {@link CrateItem} — a portable
  * chest whose contents live in the stack's CONTAINER component, with anything that
- * does not fit inside given separately — or straight to the inventory. Unlike
- * cosmetics, packs are consumables — there is no "owned" state to persist.
+ * does not fit inside given separately — straight to the inventory, or by
+ * granting bonus claim chunks via Open Parties and Claims.
  */
 public class ServerItemPackManager {
 
@@ -38,6 +39,33 @@ public class ServerItemPackManager {
         if (data.getCoins() < pack.price()) {
             // Not enough coins: reject and re-sync the true state
             ServerCosmeticsManager.get().syncToPlayer(player);
+            return;
+        }
+
+        if (pack.delivery() == ItemPackDefinition.Delivery.CLAIM_CHUNKS) {
+            if (!OpacCompat.isOpacInstalled()) {
+                player.displayClientMessage(Component.literal("§cOpen Parties and Claims is not installed on this server."), false);
+                return;
+            }
+            boolean success = OpacCompat.addBonusClaimChunks(player, pack.claimChunks());
+            if (!success) {
+                player.displayClientMessage(Component.literal("§cFailed to grant claim chunks. Please try again or contact an administrator."), false);
+                return;
+            }
+            data.setCoins(data.getCoins() - pack.price());
+            CosmeticsSavedData savedData = CosmeticsSavedData.get(player.server);
+            if (savedData != null) {
+                savedData.setDirty();
+            }
+            ServerCosmeticsManager.get().syncToPlayer(player);
+            player.displayClientMessage(Component.literal(
+                    "§6§l[Alyrion SMP] §aPurchased " + pack.displayName()
+                            + "! §7(§6-" + pack.price() + " Coins§7)"), false);
+            player.displayClientMessage(Component.literal(
+                    "§a+" + pack.claimChunks() + " claim chunk" + (pack.claimChunks() > 1 ? "s" : "")
+                            + " granted to your Open Parties and Claims limit!"), false);
+            PacketDistributor.sendToPlayer(player,
+                    new CosmeticNetworking.S2CPlaySoundPayload(CosmeticSound.SUCCESS.getId()));
             return;
         }
 
@@ -61,6 +89,8 @@ public class ServerItemPackManager {
                 for (ItemStack stack : contents) {
                     ItemHandlerHelper.giveItemToPlayer(player, stack);
                 }
+            }
+            case CLAIM_CHUNKS -> {
             }
         }
 

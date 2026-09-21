@@ -182,6 +182,25 @@ public final class ItemPacksRegistry {
                 ItemPackDefinition.Delivery.DIRECT,
                 ItemPackDefinition.resolveStack("create:super_glue", 1)
         ));
+
+        if (xyz.alyrion.alyrioncore.compat.OpacCompat.isOpacInstalled()) {
+            register(ItemPackDefinition.claimChunks(
+                    "claim_chunk_1",
+                    "Additional Claim Chunk",
+                    "1 additional chunk claim in Open Parties and Claims.",
+                    2,
+                    1,
+                    ItemPackDefinition.resolveStack("minecraft:filled_map", 1)
+            ));
+            register(ItemPackDefinition.claimChunks(
+                    "claim_chunk_10",
+                    "10 Additional Claim Chunks",
+                    "10 additional chunk claims in Open Parties and Claims.",
+                    18,
+                    10,
+                    ItemPackDefinition.resolveStack("minecraft:filled_map", 10)
+            ));
+        }
     }
 
     /** Ensure the registry is loaded (idempotent). Safe once mod registries are frozen. */
@@ -194,7 +213,11 @@ public final class ItemPacksRegistry {
     public static ItemPackDefinition fromId(String id) {
         ensureLoaded();
         if (id == null) return null;
-        return PACKS.get(id);
+        ItemPackDefinition pack = PACKS.get(id);
+        if (pack != null && pack.delivery() == ItemPackDefinition.Delivery.CLAIM_CHUNKS && !xyz.alyrion.alyrioncore.compat.OpacCompat.isOpacInstalled()) {
+            return null;
+        }
+        return pack;
     }
 
     public static boolean isRegistered(String id) {
@@ -203,6 +226,12 @@ public final class ItemPacksRegistry {
 
     public static List<ItemPackDefinition> all() {
         ensureLoaded();
-        return Collections.unmodifiableList(new ArrayList<>(PACKS.values()));
+        List<ItemPackDefinition> list = new ArrayList<>();
+        for (ItemPackDefinition pack : PACKS.values()) {
+            if (pack.delivery() != ItemPackDefinition.Delivery.CLAIM_CHUNKS || xyz.alyrion.alyrioncore.compat.OpacCompat.isOpacInstalled()) {
+                list.add(pack);
+            }
+        }
+        return Collections.unmodifiableList(list);
     }
 }

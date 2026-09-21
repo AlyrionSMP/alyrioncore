@@ -22,6 +22,7 @@ import xyz.alyrion.alyrioncore.block.ReinforcedBlock;
 import xyz.alyrion.alyrioncore.block.ReinforcedBlockEntity;
 import xyz.alyrion.alyrioncore.block.ReinforcementTier;
 import xyz.alyrion.alyrioncore.registry.ModBlocks;
+import xyz.alyrion.alyrioncore.cosmetics.ServerCosmeticsManager;
 
 /**
  * The two halves of the reinforcement mechanic:
@@ -139,6 +140,10 @@ public class ReinforcementEvents {
             }
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
+            }
+
+            if (tier == ReinforcementTier.NETHERITE && player instanceof ServerPlayer serverPlayer) {
+                ServerCosmeticsManager.get().completeTask(serverPlayer, xyz.alyrion.alyrioncore.cosmetics.TaskDefinition.FORTRESS, false);
             }
         }
         // Cancel on both sides so the target block's own interaction (levers,

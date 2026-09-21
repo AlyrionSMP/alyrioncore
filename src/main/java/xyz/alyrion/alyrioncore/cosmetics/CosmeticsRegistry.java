@@ -62,6 +62,24 @@ public final class CosmeticsRegistry {
         register("pride", CosmeticType.CAPE, "Pride Cape",
                 "The Progress Pride flag: rainbow stripes behind the trans chevron, earned by partying up with at least 4 players (Open Parties and Claims).",
                 0, false, false); // task-only: never purchasable
+        register("chicken", CosmeticType.CAPE, "Chicken Cape",
+                "A lively green cape sporting a clucking chicken face.", 5, false);
+        register("trans_pride", CosmeticType.CAPE, "Trans Pride Cape",
+                "Pastel blue, pink, and white stripes of the Transgender Pride flag.", 5, false);
+        register("communism", CosmeticType.CAPE, "Communism Cape",
+                "A bold red cape emblazoned with the golden hammer and sickle.", 5, false);
+        register("ender", CosmeticType.CAPE, "End Cape",
+                "A deep violet void cape adorned with an Ender Dragon crest.", 10, false);
+        register("wither", CosmeticType.CAPE, "Wither Cape",
+                "A dark, tattered ash cloak bearing the skeletal visage of the Wither.", 15, false);
+        register("creeper", CosmeticType.CAPE, "Red Creeper Cape",
+                "A jet-black cape bearing an ominous crimson Creeper face, earned by dying 100 times.", 5, false);
+        register("zombie_villager", CosmeticType.CAPE, "Zombie Villager Cape",
+                "A split-faced cape depicting the triumph of curing a Zombie Villager.", 5, false);
+        register("overload", CosmeticType.CAPE, "Overload Cape",
+                "A glitched black and magenta missing-texture cape for those who shattered the bank with 1,000 coins.", 50, false);
+        register("palestine", CosmeticType.CAPE, "Palestine Cape",
+                "A vibrant red, black, white, and green flag cape. Grants a +10% (1.1x) playtime coin multiplier while equipped!", 0, true);
 
         // --- Pets ---
         register("satellite", CosmeticType.PET, "Satellite Pet",
